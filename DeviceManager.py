@@ -121,10 +121,13 @@ class DeviceManager:
 	def __del__(self):
 		self.thread_terminate = True
 		self.thread_sensor.join()
-	def on_dev_info(self):
+	def get_dev_info(self):
 		sensorMsg = b""
 		sensorMsg += bytes('r', 'ascii')
 		Msg=""
+		if len(self.currentPeriperals) == 0:
+			return
+
 		for i in self.currentPeriperals:
 			",".join(map(str,i.getList()))
 			Msg+= ",".join(map(str,i.getList()))+"\n"
@@ -154,7 +157,7 @@ class DeviceManager:
 				if self._on_message != None:
 					try:
 						on_message = self.on_message
-						on_message(SENSOR, content)
+						#on_message(SENSOR, content)
 						time.sleep(1)
 					except:
 						print(f"Sensor failed")			

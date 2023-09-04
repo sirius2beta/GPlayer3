@@ -38,7 +38,6 @@ class GPlayer:
 		self.get_video_format()
 		
 		self._on_setDevice = None
-		self._get_dev_info = None
 		
 		self.deviceManager = DM.DeviceManager()
 		self.deviceManager.on_message = self.sendMsg
@@ -266,12 +265,7 @@ class GPlayer:
 				action = indata[0]
 				if action == 'd': # get device info
 					self.deviceManager.get_dev_info()
-					#if self.get_dev_info != None:
-					#	get_dev_info = self.get_dev_info
-					#	get_dev_info()
-						
-					#else:
-					#	print("no get_dev_info callback")
+
 				if action == 'm': # device pin mapping and setting
 					indata = indata[1:]
 					print("Dev mapping:")
@@ -291,12 +285,7 @@ class GPlayer:
 						print(f' -type:{newDev.type}')
 						print(f' -settings:{newDev.settings}')
 						self.deviceManager.addDevice(newDev)
-
-					#if self.on_setDevice != None:
-					#	on_setDevice = self.on_setDevice
-						#on_setDevice(sensorList)
-					#else:
-					#	print("no on_setDevice callback")
+				
 			elif header == QUIT[0]:
 				print("[QUIT]")
 				video = int(indata[6:].decode())
@@ -314,13 +303,7 @@ class GPlayer:
 	def on_setDevice(self, func):
 		self._on_setDevice = func
 
-	@property
-	def get_dev_info(self):
-		return self._get_dev_info
 
-	@get_dev_info.setter
-	def get_dev_info(self, func):
-		self._get_dev_info = func
 	
 	#def on_msg_callback(self):
 	#	def decorator(func):
