@@ -4,6 +4,7 @@ FORMAT = b'\x20'
 COMMAND = b'\x30'
 QUIT = b'\x40'
 SENSOR = b'\x50'
+
 import serial
 import anrot_module
 

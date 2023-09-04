@@ -12,11 +12,7 @@ import DeviceManager as DM
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
 
-HEARTBEAT = b'\x10'
-FORMAT = b'\x20'
-COMMAND = b'\x30'
-QUIT = b'\x40'
-SENSOR = b'\x50'
+
 
 class GPlayer:
 	def __init__(self):
@@ -203,7 +199,7 @@ class GPlayer:
 			indata = indata
 			header = indata[0]
 
-			if header == HEARTBEAT[0]:
+			if header == GC.HEARTBEAT[0]:
 				indata = indata[1:]
 				ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
 				self.BOAT_ID = indata[4]
@@ -219,17 +215,17 @@ class GPlayer:
 				self.newConnection = True
 				
 
-			elif header == FORMAT[0]:
+			elif header == GC.FORMAT[0]:
 				indata = indata[1:].decode()
 				print("[FORMAT]")
 				msg = chr(self.BOAT_ID)+"\n".join(self.camera_format)
-				msg = FORMAT + msg.encode()
+				msg = GC.FORMAT + msg.encode()
 
 				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
 				self.client.sendto(msg,(self.S_CLIENT_IP,self.OUT_PORT))
 
 				
-			elif header == COMMAND[0]:
+			elif header == GC.COMMAND[0]:
 				indata = indata[1:].decode()
 				print("[COMMAND]")
 				print(indata)
@@ -258,7 +254,7 @@ class GPlayer:
 						self.pipelines[videoindex] = Gst.parse_launch(gstring)
 						self.pipelines[videoindex].set_state(Gst.State.PLAYING)
 						self.pipelines_state[videoindex] = True
-			elif header == SENSOR[0]:
+			elif header == GC.SENSOR[0]:
 				print("[SENSOR]")
 				sensorList = [[1,'i']]
 				indata = indata[1:].decode()
@@ -286,7 +282,7 @@ class GPlayer:
 						print(f' -settings:{newDev.settings}')
 						self.deviceManager.addDevice(newDev)
 				
-			elif header == QUIT[0]:
+			elif header == GC.QUIT[0]:
 				print("[QUIT]")
 				video = int(indata[6:].decode())
 				if video in self.pipelinesexist:
