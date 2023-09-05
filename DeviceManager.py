@@ -141,10 +141,6 @@ class DeviceManager:
 			except:
 				print(f"Sensor failed")	
 	def sensorLoop(self):
-		value = 0
-
-		
-		
 		while self.thread_terminate == False:
 			content = b''
 			count = 0
