@@ -271,10 +271,12 @@ class GPlayer:
 						operation = indata[0]
 						metaList = indata[1:].split(',')
 
-						newDev.ID = metaList[0]
-						newDev.pinIDList = metaList[1].split()
-						newDev.type = metaList[2]
-						newDev.settings = metaList[3]
+						newDev.ID = int(metaList[0])
+						newDev.periID = int(metaList[1])
+						newDev.pinIDList = list(map(int,metaList[2].split()))
+						newDev.type = int(metaList[3])
+						newDev.settings = metaList[4].split()
+						newDev.dataBuffer = ""
 						print(f' -ID:{newDev.ID}')
 						for j in newDev.pinIDList:
 							print(f' -Device Pin:{j}')

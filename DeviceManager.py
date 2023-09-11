@@ -121,6 +121,7 @@ class DeviceManager:
 	def __del__(self):
 		self.thread_terminate = True
 		self.thread_sensor.join()
+
 	def get_dev_info(self):
 		sensorMsg = b""
 		sensorMsg += bytes('r', 'ascii')
@@ -140,25 +141,33 @@ class DeviceManager:
 				on_message(SENSOR, sensorMsg)
 			except:
 				print(f"Sensor failed")	
+
 	def sensorLoop(self):
 		while self.thread_terminate == False:
-			content = b''
-			count = 0
 			for cp in self.currentPeriperals:
 				if cp.IO != None:
 					indata = cp.read()
-					content+=indata
-					count+=1
-			if content != b'':	
-				if self._on_message != None:
-					try:
-						on_message = self.on_message
-						#on_message(SENSOR, content)
-						time.sleep(1)
-					except:
-						print(f"Sensor failed")			
-			
-			
+					if indata == "":
+						continue
+					else:
+						print(indata)
+					pinData = indata.split(':')
+					if len(pinData) == 2:
+						pinID = pinData[0]
+						pinData = pinData[1]
+
+						for d in self.devices:
+							if (d.periID == cp.ID) and (d.pinIDList[0] == pinID):
+								print("ok")
+	
+			if self._on_message != None:
+				try:
+					on_message = self.on_message
+					#on_message(SENSOR, content)
+					
+				except:
+					print(f"Sensor failed")			
+
 			
 			#value += 1;
 			#sensorMsg = SENSOR
@@ -185,6 +194,22 @@ class DeviceManager:
 	def addDevice(self, device):
 		# register device
 		self.devices.append(device)
+		for p in self.currentPeriperals:
+			print(p.manufacturer)
+			print(device.periID)
+			if p.ID == device.periID:
+				if p.manufacturer == "Arduino LLC":
+					print("Arduino add")
+					if device.type == 0:
+						msg = ""
+						msg += "s,"
+						msg += str(device.type)
+						msg += ","
+						msg += str(device.pinIDList[0])
+						msg += ","
+						msg += device.settings[0]
+						print(msg)
+						p.write(msg)
 	@property
 	def sensorList(self):
 		return self.sensorList

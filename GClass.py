@@ -29,12 +29,15 @@ class Peripheral:
 			print("    -connected to gyro...")
 			self.m_IMU = anrot_module.anrot_module('./config.json')
 			self.IO = 1
-
+	def write(self, msg):
+		if self.IO != None:
+			if self.manufacturer == "Arduino LLC":
+				self.IO.write((msg+"\n").encode())
 
 	def read(self):
 		if self.IO != None:
 			if self.manufacturer == "Arduino LLC":
-				return self.IO.readline()
+				return self.IO.readline().decode()[:-1]
 			if self.manufacturer == "Silicon Labs":
 				try:
 					data = self.m_IMU.get_module_data(10)
@@ -44,7 +47,7 @@ class Peripheral:
 					print('error')
 					data = b''
 					pass
-				return data
+				return data.decode()
 				
 
 		else:
@@ -59,9 +62,10 @@ class Peripheral:
 	
 
 class Device:
-	ID = ""
+	ID = 0
 	#deviceName = ""
-	type = ""
+	type = 0
 	settings = ""
 	pinIDList = []
+	dataBuffer = []
 
