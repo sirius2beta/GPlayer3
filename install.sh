@@ -6,3 +6,5 @@
 PATH=/home/pi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/games:/usr/games:/home/pi/.local/bin
 export PATH
 sudo cp GPlayer3.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable GPlayer3.service
