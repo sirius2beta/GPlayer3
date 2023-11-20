@@ -1,8 +1,6 @@
 [Unit]
 Description=GPlayer3
 
-Wants=network.target
-After=syslog.target network-online.target
 
 [Service]
 Type=idle
