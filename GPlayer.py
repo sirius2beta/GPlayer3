@@ -283,7 +283,18 @@ class GPlayer:
 						print(f' -type:{newDev.type}')
 						print(f' -settings:{newDev.settings}')
 						self.deviceManager.addDevice(newDev)
-				
+				if action == 'c':
+					indata = indata[1:]
+					print("Dev command:")
+					task = indata[0]
+					dev = GC.Device()
+					metaList = indata[1:].split(",")
+					dev.ID = int(metaList[0])
+					dev.periID = int(metaList[1])
+					dev.pinIDList = list(map(int, metaList[2].split()))
+					dev.type = int(metaList[3])
+					dev.settings = metaList[4].split()
+					self.deviceManager.processCMD(dev)
 			elif header == GC.QUIT[0]:
 				print("[QUIT]")
 				video = int(indata[6:].decode())

@@ -115,7 +115,18 @@ class DeviceManager:
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.manufacturer}, D:{i.dev}, ID:{i.ID}")
 			i.connect()
 		
-		
+	def processCMD(self, dev):
+		print(" --dev: processCMD")
+		for peri in self.currentPeriperals:
+			print(f"  - peri.ID:{peri.ID}, dev.periID:{dev.periID}")
+			if peri.ID == dev.periID:
+				print(f"  - manu: {peri.manufacturer}")
+				if peri.manufacturer == "Arduino LLC":
+					print(f"  - type: {dev.type}")
+					if dev.type == 2:
+						print("  -stepper cmd--")
+						peri.write(f"s,{dev.type},0,{dev.pinIDList[0]} {dev.pinIDList[1]} {dev.settings[0]} {dev.settings[1]}")
+						peri.write(f"c,{dev.type},{dev.pinIDList[0]},{dev.settings[2]}")
 		
 		
 	def __del__(self):
