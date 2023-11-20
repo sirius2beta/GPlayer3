@@ -1,0 +1,14 @@
+[Unit]
+Description=GPlayer3
+
+Wants=network.target
+After=syslog.target network-online.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python3 /home/pi/GPlayer3/demo.py
+WorkingDirectory=/home/pi
+User=pi
+
+[Install]
+WantedBy=multi-user.target
