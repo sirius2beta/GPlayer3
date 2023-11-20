@@ -8,4 +8,4 @@ export PATH
 sudo cp GPlayer3.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable GPlayer3.service
-cp 79-sir.rules /etc/udev/rules.d/
+sudo cp 79-sir.rules /etc/udev/rules.d/
