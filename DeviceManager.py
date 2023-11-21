@@ -106,7 +106,7 @@ class DeviceManager:
 					else:
 						id_exist.append(n)
 						break
-				udev_file.write(f"SUBSYSTEM==\"tty\", ATTRS{{idProduct}}=={i[0]}, ATTRS{{idVendor}}=={i[1]}, SYMLINK+=\"PD{n}\", MODE=\"0777\"\n")
+				udev_file.write(f"SUBSYSTEM==\"tty\", ATTRS{{idProduct}}=={i.idProduct }, ATTRS{{idVendor}}=={i.idVendor}, SYMLINK+=\"PD{n}\", MODE=\"0777\"\n")
 				i.ID = n
 			
 		udev_file.close()
