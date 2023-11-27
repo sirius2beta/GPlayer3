@@ -230,11 +230,15 @@ class GPlayer:
 				print("[COMMAND]")
 				print(indata)
 				cformat = indata.split()[:5]
-				if len(cformat) < 5:
-					continue
+
 
 				print(cformat)
-				encoder, mid, quality, ip, port = indata.split()[5:]
+				try:
+					encoder, mid, quality, ip, port = indata.split()[5:]
+				
+				except:
+					continue
+				
 				#print(quality, ip, port)
 
 				if(' '.join(cformat) not in self.camera_format):
