@@ -230,7 +230,8 @@ class GPlayer:
 				print("[COMMAND]")
 				print(indata)
 				cformat = indata.split()[:5]
-				if(len(cformat) < 5) continue
+				if len(cformat) < 5:
+					continue
 
 				print(cformat)
 				encoder, mid, quality, ip, port = indata.split()[5:]
