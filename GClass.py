@@ -28,7 +28,7 @@ class Peripheral:
 			self.IO = serial.Serial(self.dev,9600)
 		if self.manufacturer == "ArduPilot":
 			print("    -connected to ardupilot...")
-			self.IO = serial.Serial(self.dev,9600)
+
 		if self.manufacturer == "Silicon Labs":
 			print("    -connected to gyro...")
 			self.m_IMU = anrot_module.anrot_module('./config.json')
