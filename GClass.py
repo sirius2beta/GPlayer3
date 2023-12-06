@@ -19,11 +19,15 @@ class Peripheral:
 		self.IO = None
 		self.m_IMU = None
 		
+		
 	def getList(self):
 		return [self.idProduct, self.idVendor, self.manufacturer, self.dev, self.ID]
 	def connect(self):
 		if self.manufacturer == "Arduino LLC":
 			print("    -connected to arduino...")
+			self.IO = serial.Serial(self.dev,9600)
+		if self.manufacturer == "ArduPilot":
+			print("    -connected to ardupilot...")
 			self.IO = serial.Serial(self.dev,9600)
 		if self.manufacturer == "Silicon Labs":
 			print("    -connected to gyro...")
