@@ -12,8 +12,8 @@ import MavManager
 
 class GToolBox:
 	def __init__(self):
-		self.mavManager = MavManager.MavManager(this)
-		self.deviceManager = DM.DeviceManager(this)
+		self.mavManager = MavManager.MavManager(self)
+		self.deviceManager = DM.DeviceManager(self)
 
 class Peripheral:
 	def __init__(self, idProduct = "", idVendor="", manufacturer="", dev="", ID = 0):

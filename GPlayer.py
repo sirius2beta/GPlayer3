@@ -96,6 +96,7 @@ class GPlayer:
 				time.sleep(0.5)
 				if self.newConnection:
 					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
+					self.toolBox.mavManager.connectGCS(f"udp:192.168.0.99:14450", True)
 					self.newConnection = False
 			except:
 				if self.newConnection:
@@ -209,11 +210,11 @@ class GPlayer:
 				if primary == 'P':
 					self.P_CLIENT_IP = indata.split()[0]
 					self.P_CLIENT_IP = ip
-					self.toolBox.connectGCS(f"{ip}:14450", True)
+					
 				else:
 					self.S_CLIENT_IP = indata.split()[0]
 					self.S_CLIENT_IP = ip
-					self.toolBox.connectGCS(f"{ip}:14550", False)
+					#self.toolBox.mavManager.connectGCS(f"udp:{ip}:14550", False)
 				self.newConnection = True
 				
 
@@ -268,7 +269,7 @@ class GPlayer:
 				indata = indata[1:].decode()
 				action = indata[0]
 				if action == 'd': # get device info
-					self.deviceManager.get_dev_info()
+					self.toolBox.deviceManager.get_dev_info()
 
 				if action == 'm': # device pin mapping and setting
 					indata = indata[1:]
@@ -290,7 +291,7 @@ class GPlayer:
 							print(f' -Device Pin:{j}')
 						print(f' -type:{newDev.type}')
 						print(f' -settings:{newDev.settings}')
-						self.deviceManager.addDevice(newDev)
+						self.toolBox.deviceManager.addDevice(newDev)
 				if action == 'c':
 					indata = indata[1:]
 					print("Dev command:")
@@ -302,7 +303,7 @@ class GPlayer:
 					dev.pinIDList = list(map(int, metaList[2].split()))
 					dev.type = int(metaList[3])
 					dev.settings = metaList[4].split()
-					self.deviceManager.processCMD(dev)
+					self.toolBox.deviceManager.processCMD(dev)
 			elif header == GC.QUIT[0]:
 				print("[QUIT]")
 				video = int(indata[6:].decode())
