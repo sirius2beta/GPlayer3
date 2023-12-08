@@ -88,7 +88,7 @@ class GPlayer:
 		while run:
 			if self.thread_terminate is True:
 				break
-			#beat = b'\x10' + self.BOAT_NAME.encode()
+
 			beat = b'\x10'+chr(self.BOAT_ID).encode()
 			# Send primary heartbeat every 0.5s
 			try:
@@ -209,9 +209,11 @@ class GPlayer:
 				if primary == 'P':
 					self.P_CLIENT_IP = indata.split()[0]
 					self.P_CLIENT_IP = ip
+					self.toolBox.connectGCS(f"{ip}:14450", True)
 				else:
 					self.S_CLIENT_IP = indata.split()[0]
 					self.S_CLIENT_IP = ip
+					self.toolBox.connectGCS(f"{ip}:14550", False)
 				self.newConnection = True
 				
 
