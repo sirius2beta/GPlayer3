@@ -16,6 +16,7 @@ from gi.repository import Gst, GLib, GObject
 
 class GPlayer:
 	def __init__(self):
+		self.toolBox = GC.GToolBox()
 		self.BOAT_ID = 0
 		self.GROUND_NAME = 'ground1'
 
@@ -35,8 +36,7 @@ class GPlayer:
 		
 		self._on_setDevice = None
 		
-		self.deviceManager = DM.DeviceManager()
-		self.deviceManager.on_message = self.sendMsg
+		self.toolBox.deviceManager.on_message = self.sendMsg
 
 		GObject.threads_init()
 		Gst.init(None)
