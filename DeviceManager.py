@@ -9,7 +9,7 @@ SENSOR = b'\x50'
 class DeviceManager:
 	
 		
-	def __init__(self):
+	def __init__(self, toolBox):
 		self.savedPeripherals = []
 		self.currentPeriperals = []
 		self.registeredPeriphrals = []
@@ -112,6 +112,9 @@ class DeviceManager:
 		udev_file.close()
 		print(f"DM::Current device:")
 		for i in self.currentPeriperals:
+			if i.manufacturer == "ArduPilot":
+				print("ardupilot FC")
+				self.toolBox.mavManager.connectVehicle(i.dev)
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.manufacturer}, D:{i.dev}, ID:{i.ID}")
 			i.connect()
 		
