@@ -10,6 +10,8 @@ class DeviceManager:
 	
 		
 	def __init__(self, toolBox):
+		self.toolBox = toolBox
+		self.ready = False
 		self.savedPeripherals = []
 		self.currentPeriperals = []
 		self.registeredPeriphrals = []
@@ -87,8 +89,6 @@ class DeviceManager:
 		print(f"DM::Registered device:")
 		for i in self.savedPeripherals:
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.ID}")
-			i.connect()
-	
 		
 		# compare exist and added device
 		for i in self.currentPeriperals:
