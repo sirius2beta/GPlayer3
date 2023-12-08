@@ -7,10 +7,12 @@ SENSOR = b'\x50'
 
 import serial
 import anrot_module
+import DeviceManager as DM
 
 class GToolBox:
 	def __init__(self):
-		self.mavManager = MavManager.MavManager()
+		self.mavManager = MavManager.MavManager(this)
+		self.deviceManager = DM.DeviceManager(this)
 
 class Peripheral:
 	def __init__(self, idProduct = "", idVendor="", manufacturer="", dev="", ID = 0):
