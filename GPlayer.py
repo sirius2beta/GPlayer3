@@ -96,7 +96,7 @@ class GPlayer:
 				time.sleep(0.5)
 				if self.newConnection:
 					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.toolBox.mavManager.connectGCS(f"udp:192.168.0.99:14450", True)
+					#self.toolBox.mavManager.connectGCS(f"udp:192.168.0.99:14450", True)
 					self.newConnection = False
 			except:
 				if self.newConnection:
