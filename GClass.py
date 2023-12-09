@@ -11,6 +11,7 @@ import multiprocessing
 import DeviceManager as DM
 import MavManager
 
+
 class GToolBox:
 	def __init__(self):
 		self.mav_conn, child_conn = multiprocessing.Pipe()
