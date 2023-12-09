@@ -12,7 +12,7 @@ def task(conn):
 	mavrouter = MavManager(None)
 	while True:
 		msg = conn.recv() 
-		print(f"============:{msg}")
+		print(f"  MavManager receive msg:{msg}")
 		header = msg.split()[0]
 		body = msg.split()[1]
 		if header == "p": 
@@ -45,22 +45,24 @@ class MavManager:
 		self.vehicle = None
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.start()
+		self.lock = threading.Lock()
 
 	def __del__(self):
 		self.thread_terminate = True
 		self.loop.join()
 	def connectGCS(self, ip, isPrimary):
 		if isPrimary:
+			
 			if self.gcs_conn_p != None:
-				self.gcs_conn_p.close()
-				self.gcs_conn_s = None
+				self.gcs_conn_p.close()			
 			self.gcs_conn_p = mavutil.mavlink_connection(ip, input=False)
+			
 		else:
+			self.lock.acquire()
 			if self.gcs_conn_s != None:
 				self.gcs_conn_s.close()
-				self.gcs_conn_s = None
 			self.gcs_conn_s = mavutil.mavlink_connection(ip, input=False)
-
+			self.lock.release()
 	def connectVehicle(self, dev):
 		if self.vehicle != None:
 				self.vehicle.close()
@@ -72,7 +74,9 @@ class MavManager:
             # Don't block for a GCS message - we have messages
             # from the vehicle to get too
 			if self.vehicle != None:
+				self.lock.acquire()
 				vcl_msg = self.vehicle.recv_match(blocking=False)
+				
 				gcs_msg_p = ''
 				gcs_msg_s = ''
 				if self.gcs_conn_p != None:
@@ -83,7 +87,7 @@ class MavManager:
 					gcs_msg_s = self.gcs_conn_s.recv_match(blocking=False)
 					self.handleMsg(vcl_msg, self.gcs_conn_s)
 					self.handleMsg(gcs_msg_s, self.vehicle)
-					
+				self.lock.release()
 			# Don't abuse the CPU by running the loop at maximum speed
 			time.sleep(0.001)
 	def handleMsg(self, msg, target):

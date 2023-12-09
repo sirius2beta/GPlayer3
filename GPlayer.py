@@ -220,15 +220,17 @@ class GPlayer:
 				print("[HEARTBEAT]")
 				print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
-					self.P_CLIENT_IP = indata.split()[0]
-					self.P_CLIENT_IP = ip
-					self.primaryNewConnection = True
+					#self.P_CLIENT_IP = indata.split()[0]
+					if self.P_CLIENT_IP != ip:
+						self.P_CLIENT_IP = ip
+						self.primaryNewConnection = True
 					
 				else:
-					self.S_CLIENT_IP = indata.split()[0]
-					self.S_CLIENT_IP = ip
-					#self.toolBox.mavManager.connectGCS(f"udp:{ip}:14550", False)
-					self.secondaryNewConnection = True
+					#self.S_CLIENT_IP = indata.split()[0]
+					if self.S_CLIENT_IP != ip:
+						print(f"S:{self.S_CLIENT_IP}, s:{ip}")
+						self.S_CLIENT_IP = ip
+						self.secondaryNewConnection = True
 				
 
 			elif header == GC.FORMAT[0]:
