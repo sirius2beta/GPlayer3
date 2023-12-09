@@ -15,3 +15,6 @@ sudo systemctl start GPlayer3.service
 sudo cp 79-sir.rules /etc/udev/rules.d/
 sudo cp wpa_supplicant.conf /etc/wpa_supplicant
 
+chmod +x push.sh
+chmod +x update.sh 
+
