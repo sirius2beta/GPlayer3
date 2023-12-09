@@ -1,5 +1,5 @@
 # GPlayer3
 
-## NPU COAST project
+**NPU COAST project**
 Created by Wang Chia Yuan
 
