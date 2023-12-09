@@ -8,5 +8,8 @@ ExecStart=sudo /usr/bin/python3 /home/pi/GPlayer3/demo.py
 WorkingDirectory=/home/pi
 User=pi
 
+StandardOutput=append:/var/log/GPlayer3.log
+StandardError=append:/var/log/GPlayer3.log
+
 [Install]
 WantedBy=multi-user.target

@@ -94,8 +94,10 @@ class MavManager:
 		if msg is None:
 			pass
 		elif msg.get_type() != 'BAD_DATA':
+			#For debug
 			if msg.get_type() == 'HEARTBEAT':
 				print(msg)
+
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
 			msg = fixMAVLinkMessageForForward(msg)
