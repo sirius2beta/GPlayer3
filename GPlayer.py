@@ -8,9 +8,11 @@ import struct
 import GClass as GC
 import VideoFormat as VF
 import DeviceManager as DM
+import MavManager
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
+
 
 
 
@@ -26,7 +28,8 @@ class GPlayer:
 		self.S_CLIENT_IP = '127.0.0.1'
 		self.OUT_PORT = 50008
 		self.IN_PORT = 50006 
-		self.newConnection = True
+		self.primaryNewConnection = False
+		self.secondaryNewConnection = False
 
 		self.pipelinesexist = []
 		self.pipelines = []
@@ -52,10 +55,16 @@ class GPlayer:
 		self.lock = threading.Lock()
 
 		
+
+		
 	def __del__(self):
+		print("------------------------del")
+		self.toolBox.mav_conn.send("x x")
 		self.thread_terminate = True
 		self.thread_cli.join()
 		self.thread_ser.join()
+		
+		self.toolBox.mavManager.join()
 
 	def startLoop(self):
 		self.thread_cli = threading.Thread(target=self.aliveLoop)
@@ -92,27 +101,30 @@ class GPlayer:
 			beat = b'\x10'+chr(self.BOAT_ID).encode()
 			# Send primary heartbeat every 0.5s
 			try:
+				
+				if self.primaryNewConnection:
+					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
+					self.toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
+					
+					self.primaryNewConnection = False
 				self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
 				time.sleep(0.5)
-				if self.newConnection:
-					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
-					#self.toolBox.mavManager.connectGCS(f"udp:192.168.0.99:14450", True)
-					self.newConnection = False
 			except:
-				if self.newConnection:
+				if self.primaryNewConnection:
 					print(f"\n=== Bad connection ===\n -Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.newConnection = False
+					self.primaryNewConnection = False
 			# Send secondary heartbeat every 0.5s
 			try:
 				self.client.sendto(beat,(self.S_CLIENT_IP, self.OUT_PORT))
 				time.sleep(0.5)
-				if self.newConnection:
+				if self.secondaryNewConnection:
 					print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.newConnection = False
+					self.toolBox.mav_conn.send(f"s {self.S_CLIENT_IP}")
+					self.secondaryNewConnection = False
 			except:
-				if self.newConnection:
+				if self.secondaryNewConnection:
 					print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.newConnection = False
+					self.secondaryNewConnection = False
 
 	def createPipelines(self):
 		for i in self.camera_format:
@@ -210,12 +222,13 @@ class GPlayer:
 				if primary == 'P':
 					self.P_CLIENT_IP = indata.split()[0]
 					self.P_CLIENT_IP = ip
+					self.primaryNewConnection = True
 					
 				else:
 					self.S_CLIENT_IP = indata.split()[0]
 					self.S_CLIENT_IP = ip
 					#self.toolBox.mavManager.connectGCS(f"udp:{ip}:14550", False)
-				self.newConnection = True
+					self.secondaryNewConnection = True
 				
 
 			elif header == GC.FORMAT[0]:

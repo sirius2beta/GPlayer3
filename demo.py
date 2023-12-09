@@ -1,11 +1,11 @@
 import GPlayer
 import DeviceManager
 import MavManager
+from multiprocessing import Process
 
 
-
-gplayer = GPlayer.GPlayer()
-gplayer.startLoop()
 if __name__ == '__main__':
+
+
   gplayer = GPlayer.GPlayer()
   gplayer.startLoop()

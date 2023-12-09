@@ -114,7 +114,7 @@ class DeviceManager:
 		for i in self.currentPeriperals:
 			if i.manufacturer == "ArduPilot":
 				print("ardupilot FC")
-				#self.toolBox.mavManager.connectVehicle(i.dev)
+				self.toolBox.mav_conn.send(f"g {i.dev}")
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.manufacturer}, D:{i.dev}, ID:{i.ID}")
 			i.connect()
 		

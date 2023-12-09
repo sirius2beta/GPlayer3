@@ -7,6 +7,25 @@ import time
 # cannot be resent, because they become Python strings (not bytestrings)
 # This converts those messages so your code doesn't crash when
 # you try to send the message again.
+
+def task(conn):
+	mavrouter = MavManager(None)
+	while True:
+		msg = conn.recv() 
+		print(f"============:{msg}")
+		header = msg.split()[0]
+		body = msg.split()[1]
+		if header == "p": 
+			mavrouter.connectGCS(f'udp:{body}:14450',True)
+		elif header == "s": 
+			mavrouter.connectGCS(f'udp:{body}:14550',False)
+		elif header == "g":
+			mavrouter.connectVehicle(body)
+		elif header == "x":
+			break
+		time.sleep(0.01)
+		
+
 def fixMAVLinkMessageForForward(msg):
 	msg_type = msg.get_type()
 	if msg_type in ('PARAM_VALUE', 'PARAM_REQUEST_READ', 'PARAM_SET'):
@@ -34,10 +53,12 @@ class MavManager:
 		if isPrimary:
 			if self.gcs_conn_p != None:
 				self.gcs_conn_p.close()
+				self.gcs_conn_s = None
 			self.gcs_conn_p = mavutil.mavlink_connection(ip, input=False)
 		else:
 			if self.gcs_conn_s != None:
 				self.gcs_conn_s.close()
+				self.gcs_conn_s = None
 			self.gcs_conn_s = mavutil.mavlink_connection(ip, input=False)
 
 	def connectVehicle(self, dev):
