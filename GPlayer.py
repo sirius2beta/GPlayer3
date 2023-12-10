@@ -108,6 +108,8 @@ class GPlayer:
 					
 					self.primaryNewConnection = False
 				self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
+				a = [1]
+				a[3] = 4
 				time.sleep(0.5)
 			except:
 				if self.primaryNewConnection:
