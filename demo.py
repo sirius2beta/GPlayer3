@@ -13,4 +13,7 @@ if __name__ == '__main__':
   print("*********************************")
   print(f"Program started in: {now}")
   gplayer = GPlayer.GPlayer()
+try:
   gplayer.startLoop()
+except Exception as e: 
+  print(e)
