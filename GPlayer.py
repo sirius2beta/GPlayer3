@@ -103,7 +103,7 @@ class GPlayer:
 			try:
 				
 				if self.primaryNewConnection:
-					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
+					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
 					self.toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
 					
 					self.primaryNewConnection = False
