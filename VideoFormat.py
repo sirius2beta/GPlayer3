@@ -44,11 +44,11 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				format = 'BGR'
 			elif format == 'Y1':
 				format = 'UYVY'
-			gstring += ' num-buffers=-1 ! video/x-raw,format={}! videoscale ! videoconvert ! video/x-raw, format=YUY2, width=640,height=480 ! '.format(format)
+			gstring += ' num-buffers=-1 ! video/x-raw,format={}! videoscale ! videoconvert ! videoflip method=counterclockwise ! video/x-raw, format=YUY2, width=640,height=480 ! '.format(format)
 			if mid != 'nan':
 				gstring += (mid+' ! ')
 			if encoder == 'h264':
-				gstring +='videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
+				gstring +='videoconvert ! videoflip method=counterclockwise ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 
 			else:
 				gstring +='jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
