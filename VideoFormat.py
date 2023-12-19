@@ -44,7 +44,7 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				format = 'BGR'
 			elif format == 'Y1':
 				format = 'UYVY'
-			gstring += ' num-buffers=-1 ! video/x-raw,format={}! videoscale ! videoconvert ! videoflip method=counterclockwise ! video/x-raw, format=YUY2, width=640,height=480 ! '.format(format)
+			gstring += ' num-buffers=-1 ! video/x-raw,format={}! videoscale ! videoconvert ! videoflip method=rotate-180 ! video/x-raw, format=YUY2, width=640,height=480 ! '.format(format)
 			if mid != 'nan':
 				gstring += (mid+' ! ')
 			if encoder == 'h264':
