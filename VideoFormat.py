@@ -48,7 +48,7 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 			if mid != 'nan':
 				gstring += (mid+' ! ')
 			if encoder == 'h264':
-				gstring +='videoconvert ! videoflip method=counterclockwise ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
+				gstring +='videoconvert ! videoflip method=none ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 
 			else:
 				gstring +='jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
