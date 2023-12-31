@@ -117,6 +117,7 @@ class DeviceManager:
 				self.toolBox.mav_conn.send(f"g {i.dev}")
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.manufacturer}, D:{i.dev}, ID:{i.ID}")
 			i.connect()
+			break #Only the first FC connect
 		
 	def processCMD(self, dev):
 		print(" --dev: processCMD")
