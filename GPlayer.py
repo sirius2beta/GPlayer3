@@ -214,7 +214,8 @@ class GPlayer:
 
 			if header == GC.HEARTBEAT[0]:
 				indata = indata[1:]
-				ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
+				#ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
+				ip = addr[0]
 				self.BOAT_ID = indata[4]
 				primary = indata[5:].decode()
 				print("[HEARTBEAT]")
@@ -258,7 +259,7 @@ class GPlayer:
 					continue
 				
 				#print(quality, ip, port)
-
+				ip = addr[0]
 				if(' '.join(cformat) not in self.camera_format):
 					print('format error')
 				else:
