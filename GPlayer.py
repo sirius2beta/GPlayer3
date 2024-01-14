@@ -213,11 +213,9 @@ class GPlayer:
 			header = indata[0]
 
 			if header == GC.HEARTBEAT[0]:
-				indata = indata[1:]
-				#ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
 				ip = addr[0]
 				self.BOAT_ID = indata[4]
-				primary = indata[5:].decode()
+				primary = indata[1:].decode()
 				print("[HEARTBEAT]")
 				print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
