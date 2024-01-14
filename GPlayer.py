@@ -253,7 +253,7 @@ class GPlayer:
 
 				print(cformat)
 				try:
-					encoder, mid, quality, ip, port = indata.split()[5:]
+					encoder, mid, quality, port = indata.split()[5:]
 				
 				except:
 					continue
