@@ -216,8 +216,8 @@ class GPlayer:
 				indata = indata[1:]
 				#ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
 				ip = addr[0]
-				self.BOAT_ID = indata[4]
-				primary = indata[5:].decode()
+				self.BOAT_ID = indata[0]
+				primary = indata[1:].decode()
 				print("[HEARTBEAT]")
 				print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
