@@ -8,6 +8,7 @@ import struct
 import GClass as GC
 import VideoFormat as VF
 import DeviceManager as DM
+import GToolBox
 import MavManager
 
 gi.require_version("Gst", "1.0")
@@ -18,7 +19,7 @@ from gi.repository import Gst, GLib, GObject
 
 class GPlayer:
 	def __init__(self):
-		self.toolBox = GC.GToolBox()
+		self.toolBox = GToolBox.GToolBox()
 		self.BOAT_ID = 0
 		self.GROUND_NAME = 'ground1'
 
