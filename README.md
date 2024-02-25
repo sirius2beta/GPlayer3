@@ -8,3 +8,7 @@
 * Support for up to 10 live video channels
 
 
+## Install
+```
+bash install.sh
+```
