@@ -55,6 +55,8 @@ class GPlayer:
 		self.thread_terminate = False
 		self.lock = threading.Lock()
 
+		self.value1 = 0.1
+		self.value2 = 1
 		
 
 		
@@ -100,6 +102,11 @@ class GPlayer:
 				break
 
 			beat = b'\x10'+chr(self.BOAT_ID).encode()
+			sensor_type = 1
+			self.value1 += 0.1
+			self.value2 += 7
+			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<If", sensor_type, self.value1)
+			sns2 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<Ii", 0, self.value2)
 			# Send primary heartbeat every 0.5s
 			try:
 				
@@ -109,6 +116,8 @@ class GPlayer:
 					
 					self.primaryNewConnection = False
 				self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
+				self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
+				self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
 				time.sleep(0.5)
 			except:
 				if self.primaryNewConnection:
