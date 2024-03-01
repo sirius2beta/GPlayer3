@@ -14,21 +14,21 @@ import MavManager
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
 
-
+gSettings = {
+	"BOAT_ID": 0,
+	"PC_IP": '',
+	"SERVER_IP": '',
+	"P_CLIENT_IP" : '127.0.0.1',
+	"S_CLIENT_IP" : '127.0.0.1',
+	"OUT_PORT" : 50008,
+	"IN_PORT" : 50006 
+}
 
 
 class GPlayer:
 	def __init__(self):
-		self.toolBox = GToolBox.GToolBox()
-		self.BOAT_ID = 0
-		self.GROUND_NAME = 'ground1'
+		self.toolBox = GToolBox.GToolBox(self)
 
-		self.PC_IP='10.10.10.205'
-		self.SERVER_IP = ''
-		self.P_CLIENT_IP = '127.0.0.1' #PC IP
-		self.S_CLIENT_IP = '127.0.0.1'
-		self.OUT_PORT = 50008
-		self.IN_PORT = 50006 
 		self.primaryNewConnection = False
 		self.secondaryNewConnection = False
 
@@ -40,7 +40,7 @@ class GPlayer:
 		
 		self._on_setDevice = None
 		
-		self.toolBox.deviceManager.on_message = self.sendMsg
+		#self.toolBox.deviceManager.on_message = self.sendMsg
 
 		GObject.threads_init()
 		Gst.init(None)
@@ -49,7 +49,7 @@ class GPlayer:
 
 		self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-		self.server.bind((self.SERVER_IP, self.IN_PORT))
+		self.server.bind(('', gSettings["IN_PORT"]))
 		self.server.setblocking(0)
 		
 		self.thread_terminate = False
@@ -78,18 +78,18 @@ class GPlayer:
 
 	def sendMsg(self, topic, msg):
 		# Send message from outside
-		msg = topic + bytes(chr(self.BOAT_ID),'ascii') + msg
+		msg = topic + bytes(chr(gSettings["BOAT_ID"]),'ascii') + msg
 		print(f"sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
 		try:
-			self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
+			self.client.sendto(msg,(gSettings["P_CLIENT_IP"],gSettings["OUT_PORT"]))
 
 		except:
-			print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
+			print(f'Primary unreached: {gSettings["P_CLIENT_IP"]}:{gSettings["OUT_PORT"]}')
 		# Send secondary heartbeat every 0.5s
 		try:
-			self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
+			self.client.sendto(msg,(gSettings["S_CLIENT_IP"], gSettings["OUT_PORT"]))
 		except:
-			print(f"Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+			print(f'Secondary unreached: {gSettings["S_CLIENT_IP"]}:{gSettings["OUT_PORT"]}')
 	
 	def aliveLoop(self):
 		print('client started...')
@@ -99,32 +99,32 @@ class GPlayer:
 			if self.thread_terminate is True:
 				break
 
-			beat = b'\x10'+chr(self.BOAT_ID).encode()
+			beat = b'\x10'+chr(gSettings["BOAT_ID"]).encode()
 			# Send primary heartbeat every 0.5s
 			try:
 				
 				if self.primaryNewConnection:
-					print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
-					self.toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
+					print(f'\n=== New connection ===\n -Primary send to: {gSettings["P_CLIENT_IP"]}:{gSettings["OUT_PORT"]}\n', flush=True)
+					self.toolBox.mav_conn.send(f'p {gSettings["P_CLIENT_IP"]}')
 					
 					self.primaryNewConnection = False
-				self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
+				self.client.sendto(beat,(gSettings["P_CLIENT_IP"],gSettings["OUT_PORT"]))
 				time.sleep(0.5)
 			except:
 				if self.primaryNewConnection:
-					print(f"\n=== Bad connection ===\n -Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
+					print(f'\n=== Bad connection ===\n -Primary unreached: {gSettings["P_CLIENT_IP"]}:{gSettings["OUT_PORT"]}\n')
 					self.primaryNewConnection = False
 			# Send secondary heartbeat every 0.5s
 			try:
-				self.client.sendto(beat,(self.S_CLIENT_IP, self.OUT_PORT))
+				self.client.sendto(beat,(gSettings["S_CLIENT_IP"], gSettings["OUT_PORT"]))
 				time.sleep(0.5)
 				if self.secondaryNewConnection:
-					print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.toolBox.mav_conn.send(f"s {self.S_CLIENT_IP}")
+					print(f'\n=== New connection ===\n -Secondarysend to: {gSettings["S_CLIENT_IP"]}:{gSettings["OUT_PORT"]}\n')
+					self.toolBox.mav_conn.send(f's {gSettings["S_CLIENT_IP"]}')
 					self.secondaryNewConnection = False
 			except:
 				if self.secondaryNewConnection:
-					print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
+					print(f'\n=== Bad connection ===\n -Secondary unreached: {gSettings["S_CLIENT_IP"]}:{gSettings["OUT_PORT"]}\n')
 					self.secondaryNewConnection = False
 
 	def createPipelines(self):
@@ -217,32 +217,33 @@ class GPlayer:
 				indata = indata[1:]
 				#ip = f"{indata[3]}.{indata[2]}.{indata[1]}.{indata[0]}"
 				ip = addr[0]
-				self.BOAT_ID = indata[0]
+				gSettings["BOAT_ID"] = indata[0]
 				primary = indata[1:].decode()
 				print("[HEARTBEAT]")
-				print(f" -id:{self.BOAT_ID}, primary:{primary}")
+				kp = 1
+				print(f' -id:{gSettings["BOAT_ID"]}, primary:{primary}')
 				if primary == 'P':
-					#self.P_CLIENT_IP = indata.split()[0]
-					if self.P_CLIENT_IP != ip:
-						self.P_CLIENT_IP = ip
+					#gSettings["P_CLIENT_IP"] = indata.split()[0]
+					if gSettings["P_CLIENT_IP"] != ip:
+						gSettings["P_CLIENT_IP"] = ip
 						self.primaryNewConnection = True
 					
 				else:
-					#self.S_CLIENT_IP = indata.split()[0]
-					if self.S_CLIENT_IP != ip:
-						print(f"S:{self.S_CLIENT_IP}, s:{ip}")
-						self.S_CLIENT_IP = ip
+					#gSettings["S_CLIENT_IP"] = indata.split()[0]
+					if gSettings["S_CLIENT_IP"] != ip:
+						#print(f"S:{gSettings["S_CLIENT_IP"]}, s:{ip}")
+						gSettings["S_CLIENT_IP"] = ip
 						self.secondaryNewConnection = True
 				
 
 			elif header == GC.FORMAT[0]:
 				indata = indata[1:].decode()
 				print("[FORMAT]")
-				msg = chr(self.BOAT_ID)+"\n".join(self.camera_format)
+				msg = chr(gSettings["BOAT_ID"])+"\n".join(self.camera_format)
 				msg = GC.FORMAT + msg.encode()
 
-				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
-				self.client.sendto(msg,(self.S_CLIENT_IP,self.OUT_PORT))
+				self.client.sendto(msg,(gSettings["P_CLIENT_IP"],gSettings["OUT_PORT"]))
+				self.client.sendto(msg,(gSettings["S_CLIENT_IP"],gSettings["OUT_PORT"]))
 
 				
 			elif header == GC.COMMAND[0]:
