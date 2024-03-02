@@ -52,7 +52,7 @@ class SensorReader:
                 continue
             
     def packed_data(self, sensor_type, value):
-        data = struct.pack(">If", sensor_type, value)
+        data = struct.pack("<If", sensor_type, value)
         max_size = 256
         if len(data) > max_size:
             pass 
