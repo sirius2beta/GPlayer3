@@ -47,7 +47,7 @@ class SensorReader:
                 self.humidity = int(value2, 16) / 10
             except:
                 ser = ""
-                # print("COM PORT ERROR Trying to reconnect.") 
+                print("COM PORT ERROR Trying to reconnect.") 
                 time.sleep(1)
                 continue
             
