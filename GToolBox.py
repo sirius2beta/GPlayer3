@@ -3,7 +3,7 @@ import MavManager
 import multiprocessing 
 import sys
 sys.path.append("NPUCO/TemperatureSensorInterface")
-from temp_sensor_interface_V2 import SensorReader, SensorType
+from temp_sensor_interface_V3 import SensorReader
 
 
 
@@ -19,5 +19,6 @@ class GToolBox:
 		#self.mavManager = MavManager.MavManager(self)
 		self.deviceManager = DM.DeviceManager(self)
 		self.sensorReader = SensorReader()
+		self.sensorReader.setSerialPort("/dev/ttyUSB0")
 	def core():
 		return self.core

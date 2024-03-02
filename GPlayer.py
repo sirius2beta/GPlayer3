@@ -12,7 +12,7 @@ import GToolBox
 import MavManager
 import sys
 sys.path.append("NPUCO/TemperatureSensorInterface")
-from temp_sensor_interface_V2 import SensorReader, SensorType
+from temp_sensor_interface_V3 import SensorReader
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
@@ -108,7 +108,7 @@ class GPlayer:
 			self.value1 += 0.1
 			self.value2 += 7
 			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<If", sensor_type, self.value1)+struct.pack("<Ii", 0, self.value2)
-			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value(SensorType.TEMPERATURE)
+			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value("TEMPERATURE")
 			#sns1 = sns1+sns2
 			# Send primary heartbeat every 0.5s
 			try:
