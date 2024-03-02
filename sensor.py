@@ -6,8 +6,8 @@ from enum import Enum
 
 # creat XML reader
 class SensorType(Enum):
-    TEMPERATURE = 1
-    HUMIDITY = 2
+    TEMPERATURE = 0
+    HUMIDITY = 1
 
 class SensorReader:
     # consructor
