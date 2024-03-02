@@ -10,6 +10,7 @@ import VideoFormat as VF
 import DeviceManager as DM
 import GToolBox
 import MavManager
+from sensor import SensorReader, SensorType
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
@@ -19,7 +20,7 @@ from gi.repository import Gst, GLib, GObject
 
 class GPlayer:
 	def __init__(self):
-		self.toolBox = GToolBox.GToolBox()
+		self.toolBox = GToolBox.GToolBox(self)
 		self.BOAT_ID = 0
 		self.GROUND_NAME = 'ground1'
 
@@ -56,8 +57,7 @@ class GPlayer:
 		self.lock = threading.Lock()
 
 		self.value1 = 0.1
-		self.value2 = 1
-		
+		self.value2 = 1		
 
 		
 	def __del__(self):
@@ -105,8 +105,9 @@ class GPlayer:
 			sensor_type = 1
 			self.value1 += 0.1
 			self.value2 += 7
-			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<If", sensor_type, self.value1)
-			sns2 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<Ii", 0, self.value2)
+			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<If", sensor_type, self.value1)+struct.pack("<Ii", 0, self.value2)
+			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value(SensorType.TEMPERATURE)
+			#sns1 = sns1+sns2
 			# Send primary heartbeat every 0.5s
 			try:
 				
@@ -117,7 +118,7 @@ class GPlayer:
 					self.primaryNewConnection = False
 				self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
 				self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
-				self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
+				#self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
 				time.sleep(0.5)
 			except:
 				if self.primaryNewConnection:
