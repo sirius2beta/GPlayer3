@@ -45,6 +45,7 @@ class SensorReader:
                 value2 = data[5] + data[6]
                 self.temperature = int(value1, 16) / 10
                 self.humidity = int(value2, 16) / 10
+                print(self.temperature)
             except:
                 ser = ""
                 print("COM PORT ERROR Trying to reconnect.") 
