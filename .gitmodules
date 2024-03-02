@@ -1,0 +1,3 @@
+[submodule "NPUCO"]
+	path = NPUCO
+	url = https://github.com/sirius2beta/NPUCO.git

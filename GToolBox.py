@@ -1,7 +1,9 @@
 import DeviceManager as DM
 import MavManager
 import multiprocessing 
-from sensor import SensorReader, SensorType
+import sys
+sys.path.append("NPUCO/TemperatureSensorInterface")
+from temp_sensor_interface_V2 import SensorReader, SensorType
 
 
 
@@ -16,6 +18,6 @@ class GToolBox:
 		#self.mav_conn.send("g /dev/PD0")
 		#self.mavManager = MavManager.MavManager(self)
 		self.deviceManager = DM.DeviceManager(self)
-		self.sensorReader = SensorReader(self)
+		self.sensorReader = SensorReader()
 	def core():
 		return self.core

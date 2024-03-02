@@ -10,7 +10,9 @@ import VideoFormat as VF
 import DeviceManager as DM
 import GToolBox
 import MavManager
-from sensor import SensorReader, SensorType
+import sys
+sys.path.append("NPUCO/TemperatureSensorInterface")
+from temp_sensor_interface_V2 import SensorReader, SensorType
 
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
