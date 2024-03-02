@@ -11,7 +11,7 @@ class SensorType(Enum):
 
 class SensorReader:
     # consructor
-    def __init__(self):
+    def __init__(self, toolBox):
         self.temperature = 0.0
         self.humidity = 0.0
         self.comport = "/dev/ttyUSB0" # define comport
