@@ -14,7 +14,7 @@ class SensorReader:
     def __init__(self, toolBox):
         self.temperature = 0.0
         self.humidity = 0.0
-        self.comport = "/dev/ttyACM0" # define comport
+        self.comport = "/dev/ttyAMA0" # define comport
 
         send_thread = threading.Thread(target=self.send)
         send_thread.daemon = True # open deamon thread
