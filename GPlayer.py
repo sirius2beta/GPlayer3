@@ -11,6 +11,7 @@ import DeviceManager as DM
 import GToolBox
 import MavManager
 import sys
+import numpy as np
 sys.path.append("NPUCO/TemperatureSensorInterface")
 from temp_sensor_interface_V3_1 import SensorReader
 
@@ -22,10 +23,12 @@ from gi.repository import Gst, GLib, GObject
 
 class GPlayer:
 	def __init__(self):
+		
 		self.toolBox = GToolBox.GToolBox(self)
 		self.BOAT_ID = 0
 		self.GROUND_NAME = 'ground1'
-
+		
+		
 		self.PC_IP='10.10.10.205'
 		self.SERVER_IP = ''
 		self.P_CLIENT_IP = '127.0.0.1' #PC IP
@@ -103,7 +106,7 @@ class GPlayer:
 			if self.thread_terminate is True:
 				break
 
-			beat = b'\x10'+chr(self.BOAT_ID).encode()
+			beat = struct.pack('<2B', 16,self.BOAT_ID)
 			sensor_type = 1
 			self.value1 += 0.1
 			self.value2 += 7
