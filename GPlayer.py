@@ -61,8 +61,8 @@ class GPlayer:
 		self.thread_terminate = False
 		self.lock = threading.Lock()
 
-		self.value1 = 0.1
-		self.value2 = 1		
+		self.primaryLastHeartBeat = 0
+		self.secondaryLastHeartBeat = 0
 
 		
 	def __del__(self):
@@ -84,19 +84,24 @@ class GPlayer:
 		print(f"called outside: {msg}")
 
 	def sendMsg(self, topic, msg):
+		now = time.time()
 		# Send message from outside
-		msg = topic + bytes(chr(self.BOAT_ID),'ascii') + msg
-		print(f"sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
-		try:
-			self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
+		
+		msg = struct.pack("<2B", topic, self.BOAT_ID) + msg
+		if now-self.primaryLastHeartBeat < 1.5:
+			print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+			try:
+				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
 
-		except:
-			print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
+			except:
+				print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
 		# Send secondary heartbeat every 0.5s
-		try:
-			self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
-		except:
-			print(f"Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+		elif now-self.secondaryLastHeartBeat < 1.5:
+			print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+			try:
+				self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
+			except:
+				print(f"Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
 	
 	def aliveLoop(self):
 		print('client started...')
@@ -107,10 +112,7 @@ class GPlayer:
 				break
 
 			beat = struct.pack('<2B', 16,self.BOAT_ID)
-			sensor_type = 1
-			self.value1 += 0.1
-			self.value2 += 7
-			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+struct.pack("<If", sensor_type, self.value1)+struct.pack("<Ii", 0, self.value2)
+
 			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value("TEMPERATURE")
 			#sns1 = sns1+sns2
 			# Send primary heartbeat every 0.5s
@@ -214,6 +216,7 @@ class GPlayer:
 	def listenLoop(self):
 		print('server started...')
 		run = True
+		
 		while run:
 			if self.thread_terminate is True:
 				break
@@ -222,7 +225,7 @@ class GPlayer:
 				
 			except:
 				continue
-
+			now = time.time()
 			print(f'[GP] => message from: {str(addr)}, data: {indata}')
 			
 			indata = indata
@@ -237,13 +240,13 @@ class GPlayer:
 				print("[HEARTBEAT]")
 				print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
-					#self.P_CLIENT_IP = indata.split()[0]
+					self.primaryLastHeartBeat = now
 					if self.P_CLIENT_IP != ip:
 						self.P_CLIENT_IP = ip
 						self.primaryNewConnection = True
 					
 				else:
-					#self.S_CLIENT_IP = indata.split()[0]
+					self.secondaryLastHeartBeat = now
 					if self.S_CLIENT_IP != ip:
 						print(f"S:{self.S_CLIENT_IP}, s:{ip}")
 						self.S_CLIENT_IP = ip
@@ -253,11 +256,10 @@ class GPlayer:
 			elif header == GC.FORMAT[0]:
 				indata = indata[1:].decode()
 				print("[FORMAT]")
-				msg = chr(self.BOAT_ID)+"\n".join(self.camera_format)
-				msg = GC.FORMAT + msg.encode()
+				msg = "\n".join(self.camera_format)
+				msg = msg.encode()
 
-				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
-				self.client.sendto(msg,(self.S_CLIENT_IP,self.OUT_PORT))
+				self.sendMsg(32, msg)
 
 				
 			elif header == GC.COMMAND[0]:
