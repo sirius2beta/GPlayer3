@@ -110,6 +110,9 @@ class DeviceManager:
 				i.ID = n
 			
 		udev_file.close()
+		cmd = f"sudo udevadm control --reload-rules && sudo udevadm trigger"
+		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
+		
 		print(f"DM::Current device:")
 		for i in self.currentPeriperals:
 			if i.manufacturer == "ArduPilot":

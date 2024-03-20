@@ -43,20 +43,25 @@ class MavManager:
 		self.gcs_conn_p = None
 		self.gcs_conn_s = None
 		self.vehicle = None
+		self.lock = threading.Lock()
+		self.ip = ""
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.start()
-		self.lock = threading.Lock()
+		
 
 	def __del__(self):
 		self.thread_terminate = True
 		self.loop.join()
 	def connectGCS(self, ip, isPrimary):
 		if isPrimary:
+			self.lock.acquire()
+			if self.ip != ip:
 			
-			if self.gcs_conn_p != None:
-				self.gcs_conn_p.close()			
-			self.gcs_conn_p = mavutil.mavlink_connection(ip, input=False)
-			
+				self.ip = ip
+				if self.gcs_conn_p != None:
+					self.gcs_conn_p.close()			
+				self.gcs_conn_p = mavutil.mavlink_connection(ip, input=False)
+			self.lock.release()
 		else:
 			self.lock.acquire()
 			if self.gcs_conn_s != None:

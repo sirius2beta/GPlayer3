@@ -63,7 +63,8 @@ class GPlayer:
 
 		self.primaryLastHeartBeat = 0
 		self.secondaryLastHeartBeat = 0
-
+		self.isSecondaryConnected = False
+		self.isPrimaryConnected = True
 		
 	def __del__(self):
 		print("------------------------del")
@@ -107,15 +108,25 @@ class GPlayer:
 		print('client started...')
 		run = True
 		checkAlive = False
+		
 		while run:
 			if self.thread_terminate is True:
 				break
-
+			now = time.time()
 			beat = struct.pack('<2B', 16,self.BOAT_ID)
 
 			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value("TEMPERATURE")
 			#sns1 = sns1+sns2
 			# Send primary heartbeat every 0.5s
+			if now-self.primaryLastHeartBeat >3:
+				self.toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
+				self.isPrimaryConnected = False
+			else:
+				self.isPrimaryConnected = True
+			if now-self.secondaryLastHeartBeat >3:
+				self.isSecondaryConnected = False
+			else:
+				self.isSecondaryConnected = True
 			try:
 				
 				if self.primaryNewConnection:
@@ -137,7 +148,8 @@ class GPlayer:
 				time.sleep(0.5)
 				if self.secondaryNewConnection:
 					print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
-					self.toolBox.mav_conn.send(f"s {self.S_CLIENT_IP}")
+					if not self.isPrimaryConnected:
+						self.toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
 					self.secondaryNewConnection = False
 			except:
 				if self.secondaryNewConnection:
@@ -226,7 +238,7 @@ class GPlayer:
 			except:
 				continue
 			now = time.time()
-			print(f'[GP] => message from: {str(addr)}, data: {indata}')
+			#print(f'[GP] => message from: {str(addr)}, data: {indata}')
 			
 			indata = indata
 			header = indata[0]
@@ -237,21 +249,20 @@ class GPlayer:
 				ip = addr[0]
 				self.BOAT_ID = indata[0]
 				primary = indata[1:].decode()
-				print("[HEARTBEAT]")
-				print(f" -id:{self.BOAT_ID}, primary:{primary}")
+				#print("[HEARTBEAT]")
+				#print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
-					self.primaryLastHeartBeat = now
-					if self.P_CLIENT_IP != ip:
+					
+					if self.P_CLIENT_IP != ip or now-self.primaryLastHeartBeat > 3:
 						self.P_CLIENT_IP = ip
 						self.primaryNewConnection = True
-					
+					self.primaryLastHeartBeat = now
 				else:
-					self.secondaryLastHeartBeat = now
-					if self.S_CLIENT_IP != ip:
+					if self.S_CLIENT_IP != ip or now-self.secondaryLastHeartBeat > 3:
 						print(f"S:{self.S_CLIENT_IP}, s:{ip}")
 						self.S_CLIENT_IP = ip
 						self.secondaryNewConnection = True
-				
+					self.secondaryLastHeartBeat = now
 
 			elif header == GC.FORMAT[0]:
 				indata = indata[1:].decode()
