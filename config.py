@@ -22,6 +22,14 @@ class Config:
                 index+=1
         return -1
 
+    def getDecoderIndex(self, decoder):
+        if decoder == 'MJPG':
+            return 0
+        elif decoder == 'YUYV':
+            return 1
+        else:
+            return -1
+
 
 
 

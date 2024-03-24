@@ -35,12 +35,14 @@ class GPlayer:
 		self.IN_PORT = 50006 
 		self.primaryNewConnection = False
 		self.secondaryNewConnection = False
+		self.mavLastConnectedIP = ''
 
 		self.pipelinesexist = []
 		self.pipelines = []
 		self.pipelines_state = []
 		self.camera_format = []
 		self.camerFormatIndex = []
+		self.videoFormatList = {}
 		self.get_video_format()
 		
 		self._on_setDevice = None
@@ -88,7 +90,9 @@ class GPlayer:
 		# Send message from outside
 		
 		msg = struct.pack("<2B", topic, self.BOAT_ID) + msg
-		if now-self.primaryLastHeartBeat < 1.5:
+		print(f'primary timeout: {now-self.primaryLastHeartBeat}')
+		print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
+		if now-self.primaryLastHeartBeat < 2:
 			print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
 			try:
 				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
@@ -96,12 +100,18 @@ class GPlayer:
 			except:
 				print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
 		# Send secondary heartbeat every 0.5s
-		elif now-self.secondaryLastHeartBeat < 1.5:
+		elif now-self.secondaryLastHeartBeat < 2:
 			print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
 			try:
 				self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
 			except:
 				print(f"Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+		else:
+			try:
+				self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
+				#self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
+			except:
+				print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
 	
 	def aliveLoop(self):
 		print('Aliveloop started...')
@@ -119,9 +129,9 @@ class GPlayer:
 
 			# Check primary/secondary heartBeat from PC, check if disconnected
 			if now-self.primaryLastHeartBeat >3:
-				if mavLastConnectedIP != 's':
+				if self.mavLastConnectedIP != 's':
 					self.toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
-					mavLastConnectedIP = 's'
+					self.mavLastConnectedIP = 's'
 				self.isPrimaryConnected = False
 			else:
 				self.isPrimaryConnected = True
@@ -134,13 +144,13 @@ class GPlayer:
 			if self.primaryNewConnection:
 				print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
 				self.toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
-				mavLastConnectedIP = 'p'
+				self.mavLastConnectedIP = 'p'
 				self.primaryNewConnection = False
 			if self.secondaryNewConnection:
 				print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
 				if not self.isPrimaryConnected:
 					self.toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
-					mavLastConnectedIP = 's'
+					self.mavLastConnectedIP = 's'
 				self.secondaryNewConnection = False
 			
 			# Send primary heartbeat every 0.5s
@@ -185,7 +195,7 @@ class GPlayer:
 			print(f'system: {sys}')
 		#Check camera device
 		for i in range(0,10):
-			videoXFormat = []
+			newCamera = True
 			try:
 				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
 				returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
@@ -203,13 +213,34 @@ class GPlayer:
 					width, height = size.split('x')
 				elif j.split()[0] == 'Interval:':
 					fps = j.split()[3][1:].split('.')[0]
-					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , fps))
 					index = self.toolBox.config.getVideoFormatIndex(width,height,fps)
-					if  index != -1:
-						videoXFormat.append([index, form])
-						print("index:")
-					print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
-			videoFormatList.append(videoXFormat)
+					if index != -1:
+						if index not in self.videoFormatList:
+							self.videoFormatList[index] = []
+							self.videoFormatList[index].append([i,form])
+						else:
+							video_index = 0
+							add = True
+							for video in self.videoFormatList[index]:
+								if video[0] == i:
+									if form =='MJPG':
+										self.videoFormatList[index].pop(video_index)
+										self.videoFormatList[index].append([i,form])
+										add = False
+									else:
+										add = False
+										break
+								video_index += 1
+							if add == True:
+								self.videoFormatList[index].append([i,form])
+						
+		index = 0
+		for form in self.videoFormatList:
+			for video in self.videoFormatList[form]:
+				print(f"form {index}:  video{video[0]} {video[1]}")
+			index += 1
+		
 
 	def get_video_format_for_diffNx(self):	
 		#Check camera device
@@ -255,6 +286,7 @@ class GPlayer:
 
 			if header == GC.HEARTBEAT[0]:
 				indata = indata[1:]
+				ip = addr[0]
 				self.BOAT_ID = indata[0]
 				primary = indata[1:].decode()
 				#print("[HEARTBEAT]")
@@ -274,8 +306,12 @@ class GPlayer:
 
 			elif header == GC.FORMAT[0]:
 				print("[FORMAT]")
-				msg = "\n".join(self.camera_format)
-				msg = msg.encode()
+				msg = b''
+				for form in self.videoFormatList:
+					for video in self.videoFormatList[form]:
+						videoIndex = video[0]
+						formIndex = self.toolBox.config.getDecoderIndex(video[1])
+						msg += struct.pack("<2B", videoIndex, form)
 				self.sendMsg(32, msg)
 
 				
@@ -314,6 +350,7 @@ class GPlayer:
 						self.pipelines[videoindex] = Gst.parse_launch(gstring)
 						self.pipelines[videoindex].set_state(Gst.State.PLAYING)
 						self.pipelines_state[videoindex] = True
+
 			elif header == GC.SENSOR[0]:
 				print("[SENSOR]")
 				sensorList = [[1,'i']]
