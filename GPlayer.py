@@ -42,6 +42,7 @@ class GPlayer:
 		self.pipelines = []
 		self.pipelines_state = []
 		self.camera_format = []
+		self.camerFormatIndex = []
 		self.get_video_format()
 		
 		self._on_setDevice = None
@@ -182,25 +183,31 @@ class GPlayer:
 			print(f'system: {sys}')
 		#Check camera device
 		for i in range(0,10):
-				try:
-					cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
-					returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
-				except:
+			videoXFormat = []
+			try:
+				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
+				returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
+			except:
+				continue
+			line_list = returned_value.splitlines()
+			new_line_list = list()
+			for j in line_list:
+				if len(j.split()) == 0:
 					continue
-				line_list = returned_value.splitlines()
-				new_line_list = list()
-				for j in line_list:
-					if len(j.split()) == 0:
-						continue
-					elif j.split()[0][0] =='[':
-						form = j.split()[1][1:-1]
-					elif j.split()[0] =='Size:':
-						size = j.split()[2]
-						width, height = size.split('x')
-					elif j.split()[0] == 'Interval:':
-						self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
-						print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
-	
+				elif j.split()[0][0] =='[':
+					form = j.split()[1][1:-1]
+				elif j.split()[0] =='Size:':
+					size = j.split()[2]
+					width, height = size.split('x')
+				elif j.split()[0] == 'Interval:':
+					fps = j.split()[3][1:].split('.')[0]
+					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+					index = self.toolBox.config.getVideoFormatIndex(width,height,fps)
+					if  index != -1:
+						videoXFormat.append([index, form])
+						print("index:")
+					print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+			videoFormatList.append(videoXFormat)
 	def get_video_format_for_diffNx(self):	
 		#Check camera device
 		for i in range(0,10):
