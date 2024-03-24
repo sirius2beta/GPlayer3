@@ -1,5 +1,6 @@
 import DeviceManager as DM
 import MavManager
+from config import Config
 import multiprocessing 
 import sys
 sys.path.append("NPUCO/TemperatureSensorInterface")
@@ -9,6 +10,7 @@ from temp_sensor_interface_V3_1 import SensorReader
 
 class GToolBox:
 	def __init__(self, core):
+		self.config = Config(self)
 		self.core = core
 		self.mav_conn, child_conn = multiprocessing.Pipe()
 		self.p = multiprocessing.Process(target = MavManager.task, args = (child_conn,)) 
