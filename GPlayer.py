@@ -170,15 +170,20 @@ class GPlayer:
 
 
 	def createPipelines(self):
-		for i in self.camera_format:
-			j = int(i.split()[0][5]);
-			if(j not in self.pipelinesexist):
-				pipeline = Gst.Pipeline()
-				self.pipelines.append(pipeline)
-				self.pipelinesexist.append(j)
-		for i in self.pipelines:
+		for i in range(0, 10):
+			pipeline = Gst.Pipeline()
+			self.pipelines.append(pipeline)
+			self.pipelinesexist.append(i)
 			self.pipelines_state.append(False)
-		print(self.pipelinesexist)
+		#for i in self.camera_format:
+		#	j = int(i.split()[0][5]);
+		#	if(j not in self.pipelinesexist):
+		#		pipeline = Gst.Pipeline()
+		#		self.pipelines.append(pipeline)
+		#		self.pipelinesexist.append(j)
+		#for i in self.pipelines:
+		#	self.pipelines_state.append(False)
+		#print(self.pipelinesexist)
 	
 
 	#get video format from existing camera devices
@@ -307,49 +312,65 @@ class GPlayer:
 			elif header == GC.FORMAT[0]:
 				print("[FORMAT]")
 				msg = b''
-				for form in self.videoFormatList:
-					for video in self.videoFormatList[form]:
-						videoIndex = video[0]
-						formIndex = self.toolBox.config.getDecoderIndex(video[1])
-						msg += struct.pack("<2B", videoIndex, form)
-				self.sendMsg(32, msg)
+				if len(self.videoFormatList) == 0:
+					continue
+				else:
+					for form in self.videoFormatList:
+						for video in self.videoFormatList[form]:
+							videoIndex = video[0]
+							msg += struct.pack("<2B", videoIndex, form)
+					
+					self.sendMsg(32, msg)
 
 				
 			elif header == GC.COMMAND[0]:
-				indata = indata[1:].decode()
+				indata = indata[1:]
 				print("[COMMAND]")
 				print(indata)
-				cformat = indata.split()[:5]
-
-
-				print(cformat)
-				try:
-					encoder, mid, quality, port = indata.split()[5:]
 				
-				except:
+				if len(indata)<2:
 					continue
+
+				videoNo = int(indata[0])
+				formatIndex = int(indata[1])
+				encoder = int(indata[2])
+				if encoder == 0:
+					encoder = 'h264'
+				else:
+					encoder = 'mjpeg'
+				#port = int(np.fromstring(indata[2:], dtype='<u4'))
+				port = int.from_bytes(indata[3:], 'little')
+				print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}")
+
+				if formatIndex not in self.videoFormatList:
+					print('format error')
+					continue
+				for formatpair in self.videoFormatList[formatIndex]:
+					if formatpair[0] == videoNo:
+						formatStr = formatpair[1]
+				ip = addr[0]
+				
+				formatInfo = self.toolBox.config.getFormatInfo(formatIndex)
+				print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
 				
 				#print(quality, ip, port)
-				ip = addr[0]
-				if(' '.join(cformat) not in self.camera_format):
-					print('format error')
+				
+
+				gstring = VF.getFormatCMD('buster', videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
+				
+				videoindex = self.pipelinesexist.index(videoNo)
+				print(gstring)
+
+
+				if self.pipelines_state[videoNo] == True:
+					self.pipelines[videoNo].set_state(Gst.State.NULL)
+					self.pipelines[videoNo] = Gst.parse_launch(gstring)
+					self.pipelines[videoNo].set_state(Gst.State.PLAYING)
+
 				else:
-					gstring = VF.getFormatCMD('buster', cformat[0], cformat[1], cformat[2].split('=')[1], cformat[3].split('=')[1],cformat[4].split('=')[1], encoder, ip, port)
-					print(gstring)
-					print(cformat[1])
-					print(cformat[1][5:])
-					videoindex = self.pipelinesexist.index(int(cformat[0][5:]))
-
-
-					if self.pipelines_state[videoindex] == True:
-						self.pipelines[videoindex].set_state(Gst.State.NULL)
-						self.pipelines[videoindex] = Gst.parse_launch(gstring)
-						self.pipelines[videoindex].set_state(Gst.State.PLAYING)
-
-					else:
-						self.pipelines[videoindex] = Gst.parse_launch(gstring)
-						self.pipelines[videoindex].set_state(Gst.State.PLAYING)
-						self.pipelines_state[videoindex] = True
+					self.pipelines[videoNo] = Gst.parse_launch(gstring)
+					self.pipelines[videoNo].set_state(Gst.State.PLAYING)
+					self.pipelines_state[videoNo] = True
 
 			elif header == GC.SENSOR[0]:
 				print("[SENSOR]")
@@ -397,8 +418,8 @@ class GPlayer:
 				video = int(indata[6:].decode())
 				if video in self.pipelinesexist:
 					videoindex = self.pipelinesexist.index(video)
-					self.pipelines[videoindex].set_state(Gst.State.NULL)
-					self.pipelines_state[videoindex] = False
+					self.pipelines[video].set_state(Gst.State.NULL)
+					self.pipelines_state[video] = False
 					print("  -quit : video"+str(video))
 
 	@property

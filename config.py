@@ -21,6 +21,10 @@ class Config:
             else:
                 index+=1
         return -1
+    
+    def getFormatInfo(self, index):
+        #return width, height, fps
+        return [self.videoFormatList[index][0], self.videoFormatList[index][1], self.videoFormatList[index][2]]
 
     def getDecoderIndex(self, decoder):
         if decoder == 'MJPG':

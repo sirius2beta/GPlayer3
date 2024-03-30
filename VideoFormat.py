@@ -1,5 +1,5 @@
 def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
-		gstring = 'v4l2src device=/dev/'+cam
+		gstring = 'v4l2src device=/dev/video'+str(cam)
 		mid = 'nan'
 		if format == 'YUYV':
 			format = 'YUY2'
