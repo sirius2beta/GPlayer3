@@ -1,8 +1,20 @@
-<config>
+<?xml version="1.0" encoding="UTF-8"?>
+<marinelink>
     <enum name="VIDEO_FORMAT">
 		<entry value="0" name = "1920 1080 30"></entry>
 		<entry value="1" name = "1280 720 30"></entry>
 		<entry value="2" name = "640 480 30"></entry>
 		<entry value="3" name = "320 240 30"></entry>
 	</enum>
-</config>
+    <enum name="SENSOR_TYPE">
+        <entry value="0" name="TEMPERATURE" type="float"></entry>
+        <entry value="1" name="HUMIDITY" type="float"></entry>
+    </enum>
+    <enum name="MESSAGE_TYPE">
+        <entry value="0" name="HEARTBEAT"></entry>
+        <entry value="1" name="FORMAT"></entry>
+        <entry value="2" name="COMMAND"></entry>
+        <entry value="3" name="QUIT"></entry>
+        <entry value="4" name="SENSOR"></entry>
+    </enum>
+</marinelink>

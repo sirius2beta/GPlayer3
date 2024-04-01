@@ -9,7 +9,7 @@ import time
 # you try to send the message again.
 
 def task(conn):
-	mavrouter = MavManager(None)
+	mavrouter = MavManager(None, conn)
 	while True:
 		msg = conn.recv() 
 		print(f"  MavManager receive msg:{msg}")
@@ -37,11 +37,11 @@ def fixMAVLinkMessageForForward(msg):
 	return msg
 
 class MavManager:
-	def __init__(self, toolBox):
+	def __init__(self, toolBox, conn):
 		self.toolBox = toolBox
+		self._conn = conn
 		self.thread_terminate = False
 		self.gcs_conn_p = None
-		self.gcs_conn_s = None
 		self.vehicle = None
 		self.lock = threading.Lock()
 		self.ip = ""
@@ -83,15 +83,12 @@ class MavManager:
 				vcl_msg = self.vehicle.recv_match(blocking=False)
 				
 				gcs_msg_p = ''
-				gcs_msg_s = ''
+
 				if self.gcs_conn_p != None:
 					gcs_msg_p = self.gcs_conn_p.recv_match(blocking=False)
 					self.handleMsg(vcl_msg, self.gcs_conn_p)
 					self.handleMsg(gcs_msg_p, self.vehicle)
-				if self.gcs_conn_s != None:
-					gcs_msg_s = self.gcs_conn_s.recv_match(blocking=False)
-					self.handleMsg(vcl_msg, self.gcs_conn_s)
-					self.handleMsg(gcs_msg_s, self.vehicle)
+				
 				self.lock.release()
 			# Don't abuse the CPU by running the loop at maximum speed
 			time.sleep(0.001)
@@ -101,7 +98,7 @@ class MavManager:
 		elif msg.get_type() != 'BAD_DATA':
 			#For debug
 			if msg.get_type() == 'HEARTBEAT':
-				print(msg)
+				self._conn.send(msg)
 
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send

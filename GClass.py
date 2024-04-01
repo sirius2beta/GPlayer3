@@ -1,9 +1,9 @@
 
-HEARTBEAT = b'\x10'
-FORMAT = b'\x20'
-COMMAND = b'\x30'
-QUIT = b'\x40'
-SENSOR = b'\x50'
+HEARTBEAT = b'\x00'
+FORMAT = b'\x01'
+COMMAND = b'\x02'
+QUIT = b'\x03'
+SENSOR = b'\x04'
 
 import serial
 import anrot_module

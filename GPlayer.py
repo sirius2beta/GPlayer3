@@ -18,7 +18,11 @@ from temp_sensor_interface_V3_1 import SensorReader
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
 
-
+HEARTBEAT = b'\x00'
+FORMAT = b'\x01'
+COMMAND = b'\x02'
+QUIT = b'\x03'
+SENSOR = b'\x04'
 
 
 class GPlayer:
@@ -44,6 +48,7 @@ class GPlayer:
 		self.camerFormatIndex = []
 		self.videoFormatList = {}
 		self.get_video_format()
+		self.portOccupied = {} # {port, videoNo}
 		
 		self._on_setDevice = None
 		
@@ -89,7 +94,7 @@ class GPlayer:
 		now = time.time()
 		# Send message from outside
 		
-		msg = struct.pack("<2B", topic, self.BOAT_ID) + msg
+		msg = topic + chr(self.BOAT_ID).encode() + msg
 		print(f'primary timeout: {now-self.primaryLastHeartBeat}')
 		print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
 		if now-self.primaryLastHeartBeat < 2:
@@ -123,10 +128,13 @@ class GPlayer:
 			if self.thread_terminate is True:
 				break
 			now = time.time()
-			beat = struct.pack('<2B', 16,self.BOAT_ID)
+			beat = HEARTBEAT + chr(self.BOAT_ID).encode()
 			#=================deprecated
-			sns1 = b'\x50'+chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value("TEMPERATURE")
-
+			sns1 = SENSOR + chr(self.BOAT_ID).encode()+self.toolBox.sensorReader.read_value("TEMPERATURE")
+			if self.toolBox.mav_conn.poll():
+				print("xx")
+				mavdata = self.toolBox.mav_conn.recv()
+				print(mavdata)
 			# Check primary/secondary heartBeat from PC, check if disconnected
 			if now-self.primaryLastHeartBeat >3:
 				if self.mavLastConnectedIP != 's':
@@ -284,18 +292,18 @@ class GPlayer:
 			except:
 				continue
 			now = time.time()
-			#print(f'[GP] => message from: {str(addr)}, data: {indata}')
+			print(f'[GP] => message from: {str(addr)}, data: {indata}')
 			
 			indata = indata
 			header = indata[0]
 
-			if header == GC.HEARTBEAT[0]:
+			if header == HEARTBEAT[0]:
 				indata = indata[1:]
 				ip = addr[0]
 				self.BOAT_ID = indata[0]
 				primary = indata[1:].decode()
-				#print("[HEARTBEAT]")
-				#print(f" -id:{self.BOAT_ID}, primary:{primary}")
+				print("[HEARTBEAT]")
+				print(f" -id:{self.BOAT_ID}, primary:{primary}")
 				if primary == 'P':
 					
 					if self.P_CLIENT_IP != ip or now-self.primaryLastHeartBeat > 3:
@@ -309,7 +317,7 @@ class GPlayer:
 						self.secondaryNewConnection = True
 					self.secondaryLastHeartBeat = now
 
-			elif header == GC.FORMAT[0]:
+			elif header == FORMAT[0]:
 				print("[FORMAT]")
 				msg = b''
 				if len(self.videoFormatList) == 0:
@@ -320,10 +328,10 @@ class GPlayer:
 							videoIndex = video[0]
 							msg += struct.pack("<2B", videoIndex, form)
 					
-					self.sendMsg(32, msg)
+					self.sendMsg(FORMAT, msg)
 
 				
-			elif header == GC.COMMAND[0]:
+			elif header == COMMAND[0]:
 				indata = indata[1:]
 				print("[COMMAND]")
 				print(indata)
@@ -360,8 +368,13 @@ class GPlayer:
 				
 				videoindex = self.pipelinesexist.index(videoNo)
 				print(gstring)
-
-
+				
+				if port in self.portOccupied:
+					videoToStop = self.portOccupied[port]
+					self.pipelines[videoToStop].set_state(Gst.State.NULL)
+					self.pipelines_state[videoToStop] = False
+					print("  -quit occupied: video"+str(videoToStop))
+				self.portOccupied[port] = videoNo
 				if self.pipelines_state[videoNo] == True:
 					self.pipelines[videoNo].set_state(Gst.State.NULL)
 					self.pipelines[videoNo] = Gst.parse_launch(gstring)
@@ -372,7 +385,7 @@ class GPlayer:
 					self.pipelines[videoNo].set_state(Gst.State.PLAYING)
 					self.pipelines_state[videoNo] = True
 
-			elif header == GC.SENSOR[0]:
+			elif header == SENSOR[0]:
 				print("[SENSOR]")
 				sensorList = [[1,'i']]
 				indata = indata[1:].decode()
@@ -413,14 +426,12 @@ class GPlayer:
 					dev.type = int(metaList[3])
 					dev.settings = metaList[4].split()
 					self.toolBox.deviceManager.processCMD(dev)
-			elif header == GC.QUIT[0]:
+			elif header == QUIT:
 				print("[QUIT]")
 				video = int(indata[6:].decode())
-				if video in self.pipelinesexist:
-					videoindex = self.pipelinesexist.index(video)
-					self.pipelines[video].set_state(Gst.State.NULL)
-					self.pipelines_state[video] = False
-					print("  -quit : video"+str(video))
+				self.pipelines[video].set_state(Gst.State.NULL)
+				self.pipelines_state[video] = False
+				print("  -quit : video"+str(video))
 
 	@property
 	def on_setDevice(self):

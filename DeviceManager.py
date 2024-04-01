@@ -46,11 +46,14 @@ class DeviceManager:
 			returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
 			dlist = returncode.split('\n')
 			count = 0
+
 			for j in dlist:
+
 				word = j.split("==")
 				#print(f"------: {word[0]}")
 				if word[0].find("KERNELS") != -1: # not used
 					kernals = word[1]
+					count = 0
 				elif word[0].find("idProduct") != -1:
 					idProduct = word[1]
 					count += 1
@@ -112,6 +115,13 @@ class DeviceManager:
 		udev_file.close()
 		cmd = f"sudo udevadm control --reload-rules && sudo udevadm trigger"
 		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
+
+		cmd = "ls /dev/PD*"
+		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
+		print(returncode)
+
+
+
 		
 		print(f"DM::Current device:")
 		for i in self.currentPeriperals:
