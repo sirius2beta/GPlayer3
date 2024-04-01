@@ -5,16 +5,17 @@ import serial
 import GClass as GC
 import GClass
 
+from GTool import GTool
+
 SENSOR = b'\x50'
-class DeviceManager:
-	
-		
+
+class DeviceManager(GTool):	
 	def __init__(self, toolBox):
-		self.toolBox = toolBox
+		super().__init__(toolBox)
 		self.ready = False
 		self.savedPeripherals = []
-		self.currentPeriperals = []
-		self.registeredPeriphrals = []
+		self.currentPeriperals = []  # 目前連在pi上的裝置
+		self.registeredPeriphrals = [] # 之前登錄的裝置，之後可能直接把我們xml定義的裝置寫在檔案裡，開機直接就可以用symlink
 		self.devices = []
 
 		self._on_message = None
@@ -70,7 +71,7 @@ class DeviceManager:
 		udev_file = open('/etc/udev/rules.d/79-sir.rules','r+')
 		lines = udev_file.readlines()
 
-		
+		# 以上和這段code登錄現有的裝置進去/etc/udev/rules.d/79-sir.rules，之後如果先寫好，就不需要這兩段code
 		# generate registerd dev list
 		id_exist = [] # specific number for PD that exist, e.g PD0, PD1, PD5...
 		for line in lines:
@@ -92,7 +93,7 @@ class DeviceManager:
 		print(f"DM::Registered device:")
 		for i in self.savedPeripherals:
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.ID}")
-		
+		# 開啟/etc/udev/rules.d/79-sir.rules，略過之前登錄過的裝置，登錄新裝置
 		# compare exist and added device
 		for i in self.currentPeriperals:
 			add = True
@@ -113,26 +114,24 @@ class DeviceManager:
 				i.ID = n
 			
 		udev_file.close()
+		#重新load udevadm，接著裝置就可以用symlink開啟, ex. /dev/PD*
+		# PS PD為peripheral device的縮寫
 		cmd = f"sudo udevadm control --reload-rules && sudo udevadm trigger"
 		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-
-		cmd = "ls /dev/PD*"
-		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-		print(returncode)
-
-
 
 		
 		print(f"DM::Current device:")
 		for i in self.currentPeriperals:
+			#如果是ardupilot，交給mavmanager處理
 			if i.manufacturer == "ArduPilot":
 				print("ardupilot FC")
-				self.toolBox.mav_conn.send(f"g {i.dev}")
+				self._toolBox.mav_conn.send(f"g {i.dev}")
 			print(f" -P:{i.idProduct}, V:{i.idVendor}, M:{i.manufacturer}, D:{i.dev}, ID:{i.ID}")
 			i.connect()
 			break #Only the first FC connect
 		
 	def processCMD(self, dev):
+		#之前寫的控制規則，我們可以重新開發
 		print(" --dev: processCMD")
 		for peri in self.currentPeriperals:
 			print(f"  - peri.ID:{peri.ID}, dev.periID:{dev.periID}")
@@ -149,7 +148,10 @@ class DeviceManager:
 	def __del__(self):
 		self.thread_terminate = True
 		self.thread_sensor.join()
-
+	###########################################
+	# 後面是實驗性的code，不一定要照著開發
+	# 
+	###########################################
 	def get_dev_info(self):
 		sensorMsg = b""
 		sensorMsg += bytes('r', 'ascii')

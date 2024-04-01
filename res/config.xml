@@ -17,4 +17,9 @@
         <entry value="3" name="QUIT"></entry>
         <entry value="4" name="SENSOR"></entry>
     </enum>
+	<enum>
+		<entry value="0" name="Arduno/node" id="1d6b:0002"></entry>
+		<entry value="1" name="ESP32_BT" id="1d6b:0002"></entry>
+		<entry value="2" name="Pixhawk" id="1d6b:0002"></entry>
+	</enum>
 </marinelink>
