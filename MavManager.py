@@ -28,6 +28,7 @@ def task(conn):
 
 def fixMAVLinkMessageForForward(msg):
 	msg_type = msg.get_type()
+
 	if msg_type in ('PARAM_VALUE', 'PARAM_REQUEST_READ', 'PARAM_SET'):
 		if type(msg.param_id) == str:
 			msg.param_id = msg.param_id.encode()
@@ -93,7 +94,11 @@ class MavManager:
 			# Don't abuse the CPU by running the loop at maximum speed
 			time.sleep(0.001)
 	def handleMsg(self, msg, target):
+		
 		if msg is None:
+			pass
+		elif msg.get_type() == "":
+			print("*** Fatal MavManager: Mavlink_message base type")
 			pass
 		elif msg.get_type() != 'BAD_DATA':
 			#For debug

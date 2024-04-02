@@ -10,7 +10,6 @@ import numpy as np
 sys.path.append("NPUCO/TemperatureSensorInterface")
 
 from temp_sensor_interface_V3_1 import SensorReader
-import GClass as GC
 import VideoFormat as VF
 
 import GToolBox
@@ -238,63 +237,11 @@ class NetworkManager(GTool):
                 gstring = VF.getFormatCMD('buster', videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 print(gstring)
                 
-                if port in self.portOccupied:
-                    videoToStop = self.portOccupied[port]
-                    self.pipelines[videoToStop].set_state(Gst.State.NULL)
-                    self.pipelines_state[videoToStop] = False
-                    print("  -quit occupied: video"+str(videoToStop))
-                self.portOccupied[port] = videoNo
-                if self.pipelines_state[videoNo] == True:
-                    self.pipelines[videoNo].set_state(Gst.State.NULL)
-                    self.pipelines[videoNo] = Gst.parse_launch(gstring)
-                    self.pipelines[videoNo].set_state(Gst.State.PLAYING)
-
-                else:
-                    self.pipelines[videoNo] = Gst.parse_launch(gstring)
-                    self.pipelines[videoNo].set_state(Gst.State.PLAYING)
-                    self.pipelines_state[videoNo] = True
+                
 
             elif header == SENSOR[0]:
                 print("[SENSOR]")
-                sensorList = [[1,'i']]
-                indata = indata[1:].decode()
-                action = indata[0]
-                if action == 'd': # get device info
-                    self._toolBox.deviceManager.get_dev_info()
-
-                if action == 'm': # device pin mapping and setting
-                    indata = indata[1:]
-                    print("Dev mapping:")
-                    deviceList = indata.split("\n")
-                    newDev = GC.Device()
-                    for i in deviceList:
-                        operation = indata[0]
-                        metaList = indata[1:].split(',')
-
-                        newDev.ID = int(metaList[0])
-                        newDev.periID = int(metaList[1])
-                        newDev.pinIDList = list(map(int,metaList[2].split()))
-                        newDev.type = int(metaList[3])
-                        newDev.settings = metaList[4].split()
-                        newDev.dataBuffer = ""
-                        print(f' -ID:{newDev.ID}')
-                        for j in newDev.pinIDList:
-                            print(f' -Device Pin:{j}')
-                        print(f' -type:{newDev.type}')
-                        print(f' -settings:{newDev.settings}')
-                        self._toolBox.deviceManager.addDevice(newDev)
-                if action == 'c':
-                    indata = indata[1:]
-                    print("Dev command:")
-                    task = indata[0]
-                    dev = GC.Device()
-                    metaList = indata[1:].split(",")
-                    dev.ID = int(metaList[0])
-                    dev.periID = int(metaList[1])
-                    dev.pinIDList = list(map(int, metaList[2].split()))
-                    dev.type = int(metaList[3])
-                    dev.settings = metaList[4].split()
-                    self._toolBox.deviceManager.processCMD(dev)
+                
             elif header == QUIT:
                 print("[QUIT]")
                 video = int(indata[6:].decode())

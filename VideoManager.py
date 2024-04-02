@@ -5,6 +5,7 @@ from gi.repository import Gst, GLib, GObject
 
 import GToolBox
 from GTool import GTool
+import VideoFormat
 
 class VideoManager(GTool):
 	def __init__(self, toolbox):
@@ -117,7 +118,7 @@ class VideoManager(GTool):
 						print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
-		gstring = VF.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
+		gstring = VideoFormat.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
 		print(gstring)
 		
 		if port in self.portOccupied:
@@ -125,13 +126,14 @@ class VideoManager(GTool):
 			self.pipelines[videoToStop].set_state(Gst.State.NULL)
 			self.pipelines_state[videoToStop] = False
 			print("  -quit occupied: video"+str(videoToStop))
-		self.portOccupied[port] = videoNo
-		if self.pipelines_state[videoNo] == True:
-			self.pipelines[videoNo].set_state(Gst.State.NULL)
-			self.pipelines[videoNo] = Gst.parse_launch(gstring)
-			self.pipelines[videoNo].set_state(Gst.State.PLAYING)
+
+		self.portOccupied[port] = cam
+		if self.pipelines_state[cam] == True:
+			self.pipelines[cam].set_state(Gst.State.NULL)
+			self.pipelines[cam] = Gst.parse_launch(gstring)
+			self.pipelines[cam].set_state(Gst.State.PLAYING)
 
 		else:
-			self.pipelines[videoNo] = Gst.parse_launch(gstring)
-			self.pipelines[videoNo].set_state(Gst.State.PLAYING)
-			self.pipelines_state[videoNo] = True
+			self.pipelines[cam] = Gst.parse_launch(gstring)
+			self.pipelines[cam].set_state(Gst.State.PLAYING)
+			self.pipelines_state[cam] = True
