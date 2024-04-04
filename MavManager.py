@@ -45,9 +45,14 @@ class MavManager:
 		self.gcs_conn_p = None
 		self.vehicle = None
 		self.lock = threading.Lock()
+		self.lock2 = threading.Lock()
 		self.ip = ""
+		self.data = ""
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.start()
+		self.loop2 = threading.Thread(target=self.processLoop)
+		self.loop2.start()
+		
 		
 
 	def __del__(self):
@@ -92,18 +97,21 @@ class MavManager:
 				
 				self.lock.release()
 			# Don't abuse the CPU by running the loop at maximum speed
-			time.sleep(0.001)
+			time.sleep(0.0001)
 	def handleMsg(self, msg, target):
 		
 		if msg is None:
 			pass
-		elif msg.get_type() == "":
+		elif msg.get_type == '':
 			print("*** Fatal MavManager: Mavlink_message base type")
 			pass
 		elif msg.get_type() != 'BAD_DATA':
 			#For debug
+			
 			if msg.get_type() == 'HEARTBEAT':
-				self._conn.send(msg)
+				self.lock2.acquire()
+				self.data =msg
+				self.lock2.release()
 
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
@@ -117,6 +125,17 @@ class MavManager:
 			# Only now is it safe to send the message
 			target.mav.send(msg)
 
+	def processLoop(self):
+		while True:
+			self.lock2.acquire()
+			msg = self.data
+			self.data = ""
+			self.lock2.release()
+			if self.thread_terminate is True:
+				break
+			if msg != "":
+				self._conn.send(msg)
+				time.sleep(1)
 
 
 

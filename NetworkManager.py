@@ -37,6 +37,9 @@ class NetworkManager(GTool):
         self.secondaryNewConnection = False
         self.mavLastConnectedIP = ''
 
+        self.mavPre = time.time()
+        self.mavCurrent = self.mavPre
+
         self.primaryLastHeartBeat = 0
         self.secondaryLastHeartBeat = 0
         self.isSecondaryConnected = False
@@ -102,12 +105,18 @@ class NetworkManager(GTool):
                 break
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
+
+            self.mavCurrent = time.time()
+            if self.mavCurrent - self.mavPre > 5:
+                self.mavPre = self.mavCurrent
+                self._toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
+
             #=================deprecated
             sns1 = SENSOR + chr(self.BOAT_ID).encode() + self._toolBox.sensorReader.read_value("TEMPERATURE")
-            #if self._toolBox.mav_conn.poll():
+            if self._toolBox.mav_conn.poll():
             #    print("xx")
-            #    mavdata = self._toolBox.mav_conn.recv()
-            #    print(mavdata)
+                mavdata = self._toolBox.mav_conn.recv()
+                print(mavdata)
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
                 if self.mavLastConnectedIP != 's':
@@ -172,8 +181,8 @@ class NetworkManager(GTool):
                 ip = addr[0]
                 self.BOAT_ID = indata[0]
                 primary = indata[1:].decode()
-                print("[HEARTBEAT]")
-                print(f" -id:{self.BOAT_ID}, primary:{primary}")
+                #print("[HEARTBEAT]")
+                #print(f" -id:{self.BOAT_ID}, primary:{primary}")
                 if primary == 'P':
                     
                     if self.P_CLIENT_IP != ip or now-self.primaryLastHeartBeat > 3:
