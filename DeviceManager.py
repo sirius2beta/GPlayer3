@@ -6,9 +6,7 @@ import GClass as GC
 import GClass
 
 SENSOR = b'\x50'
-class DeviceManager:
-	
-		
+class DeviceManager:	
 	def __init__(self, toolBox):
 		self.toolBox = toolBox
 		self.ready = False
@@ -131,8 +129,7 @@ class DeviceManager:
 						print("  -stepper cmd--")
 						peri.write(f"s,{dev.type},0,{dev.pinIDList[0]} {dev.pinIDList[1]} {dev.settings[0]} {dev.settings[1]}")
 						peri.write(f"c,{dev.type},{dev.pinIDList[0]},{dev.settings[2]}")
-		
-		
+			
 	def __del__(self):
 		self.thread_terminate = True
 		self.thread_sensor.join()
@@ -202,7 +199,6 @@ class DeviceManager:
 			if self.thread_terminate is True:
 				break
 			
-	
 	def setDevice(self, slist):
 		self._deviceList = slist
 		#for sensor in self._deviceList:

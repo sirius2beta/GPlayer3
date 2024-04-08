@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<marinelink>
+    <enum name="SENSOR_TYPE">
+        <entry value="0" name="TEMPERATURE" type="float"></entry>
+        <entry value="1" name="HUMIDITY" type="float"></entry>
+    </enum>
+    <enum name="AQUA_SENSOR_TYPE">
+        <entry value="0" name="TEMPERATURE" type="float"></entry>
+        <entry value="1" name="PRESSURE" type="float"></entry>
+        <entry value="2" name="DEPTH" type="float"></entry>
+        <entry value="3" name="LEVEL_DEPTH_TO_WATER" type="float"></entry>
+        <entry value="4" name="LEVEL_SURFACE_ELEVATION" type="float"></entry>
+        <entry value="5" name="ACTUAL_CONDUCTIVITY" type="float"></entry>
+        <entry value="6" name="SPECIFIC_CONDUCTIVITY" type="float"></entry>
+        <entry value="7" name="RESISTIVITY" type="float"></entry>
+        <entry value="8" name="SALINITY" type="float"></entry>
+        <entry value="9" name="TOTAL_DISSOLVED_SOLIDS" type="float"></entry>
+        <entry value="10" name="DENSITY_OF_WATER" type="float"></entry>
+        <entry value="11" name="BAROMETRIC_PRESSURE" type="float"></entry>
+        <entry value="12" name="PH" type="float"></entry>
+        <entry value="13" name="PH_MV" type="float"></entry>
+        <entry value="14" name="ORP" type="float"></entry>
+        <entry value="15" name="DISSOLVED_OXYGEN_CONCENTRATION" type="float"></entry>
+        <entry value="16" name="DISSOLVED_OXYGEN_SATURATION" type="float"></entry>
+        <entry value="17" name="OXYGEN_PARTIAL_PRESSURE" type="float"></entry>
+        <entry value="18" name="EXTERNAL_VOLTAGE" type="float"></entry>
+        <entry value="19" name="BATTERY_CAPACITY_REMAINING" type="float"></entry>
+    </enum>
+    <enum name="MESSAGE_TYPE">
+        <entry value="0" name="TEMPERATURE" type="int"></entry>
+        <entry value="1" name="VOLTAGE" type="float"></entry>
+    </enum>
+</marinelink>
