@@ -199,6 +199,7 @@ class DeviceManager:
 			if self.thread_terminate is True:
 				break
 			
+	
 	def setDevice(self, slist):
 		self._deviceList = slist
 		#for sensor in self._deviceList:
