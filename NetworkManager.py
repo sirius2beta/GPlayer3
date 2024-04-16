@@ -106,20 +106,15 @@ class NetworkManager(GTool):
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
 
-            self.mavCurrent = time.time()
-            if self.mavCurrent - self.mavPre > 5:
-                self.mavPre = self.mavCurrent
-                self._toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
-
-            #=================deprecated
-            sns1 = SENSOR + chr(self.BOAT_ID).encode() + self._toolBox.sensorReader.read_value("TEMPERATURE")
             if self._toolBox.mav_conn.poll():
             #    print("xx")
                 mavdata = self._toolBox.mav_conn.recv()
-                print(mavdata)
+                if mavdata == "HEARTBEAT" and not self._toolBox.mavManager.mav_connected:
+                    self._toolBox.mavManager.mav_connected = True
+                    print("MavManager: connected")
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
-                if self.mavLastConnectedIP != 's':
+                if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:
                     self._toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
                     self.mavLastConnectedIP = 's'
                 self.isPrimaryConnected = False
@@ -146,7 +141,7 @@ class NetworkManager(GTool):
             # Send primary heartbeat every 0.5s
             try:
                 self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
-                self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
+                #self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
                 #self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
                 time.sleep(0.5)
             except:

@@ -1,29 +1,35 @@
 from pymavlink import mavutil
 import threading
 import time
+import multiprocessing 
 
-
+from GTool import GTool
 # PyMAVLink has an issue that received messages which contain strings
 # cannot be resent, because they become Python strings (not bytestrings)
 # This converts those messages so your code doesn't crash when
 # you try to send the message again.
-
-def task(conn):
-	mavrouter = MavManager(None, conn)
-	while True:
-		msg = conn.recv() 
-		print(f"  MavManager receive msg:{msg}")
-		header = msg.split()[0]
-		body = msg.split()[1]
-		if header == "p": 
-			mavrouter.connectGCS(f'udp:{body}:14450',True)
-		elif header == "s": 
-			mavrouter.connectGCS(f'udp:{body}:14550',False)
-		elif header == "g":
-			mavrouter.connectVehicle(body)
-		elif header == "x":
-			break
-		time.sleep(0.01)
+class MavManager(GTool):
+	def __init__(self, toolbox):
+		super().__init__(toolbox)
+		self.mav_connected = False
+		self.p = multiprocessing.Process(target =self.mav_worker, args = (self._toolBox.child_conn,)) 
+		self.p.start()
+	def mav_worker(self, conn):
+		mavrouter = MavWorker(None, conn)
+		while True:
+			msg = conn.recv() 
+			print(f"  MavManager receive msg:{msg}")
+			header = msg.split()[0]
+			body = msg.split()[1]
+			if header == "p": 
+				mavrouter.connectGCS(f'udp:{body}:14450',True)
+			elif header == "s": 
+				mavrouter.connectGCS(f'udp:{body}:14550',False)
+			elif header == "g":
+				mavrouter.connectVehicle(body)
+			elif header == "x":
+				break
+			time.sleep(0.01)
 		
 
 def fixMAVLinkMessageForForward(msg):
@@ -37,7 +43,7 @@ def fixMAVLinkMessageForForward(msg):
 			msg.text = msg.text.encode()
 	return msg
 
-class MavManager:
+class MavWorker:
 	def __init__(self, toolBox, conn):
 		self.toolBox = toolBox
 		self._conn = conn
@@ -110,7 +116,7 @@ class MavManager:
 			
 			if msg.get_type() == 'HEARTBEAT':
 				self.lock2.acquire()
-				self.data =msg
+				self.data ='HEARTBEAT'
 				self.lock2.release()
 
 			# We now have a message we want to forward. Now we need to
@@ -133,9 +139,9 @@ class MavManager:
 			self.lock2.release()
 			if self.thread_terminate is True:
 				break
-			if msg != "":
+			if msg == 'HEARTBEAT':
 				self._conn.send(msg)
-				time.sleep(1)
+				time.sleep(0.1)
 
 
 
