@@ -63,13 +63,8 @@ class DeviceManager(GTool):
 				
 		print(f"DM::Current device:")
 		for i in self.device_list:
-			#如果是ardupilot，交給mavmanager處理
-			#if i.manufacturer == "ArduPilot":
-			#	
 			print(f" - dev:: devtype:{i.device_type}, , Path:{i.dev_path}")
-			#i.connect()
-			#break #Only the first FC connect
-		
+
 
 	def processCMD(self, devID, cmd):
 		print(" --dev: processCMD")
@@ -81,6 +76,7 @@ class DeviceManager(GTool):
 					#print("  -stepper cmd--")
 					#d.write(f"s,{dev.type},0,{dev.pinIDList[0]} {dev.pinIDList[1]} {dev.settings[0]} {dev.settings[1]}")
 					#d.write(f"c,{dev.type},{dev.pinIDList[0]},{dev.settings[2]}")
+
 	def _deviceFactory(self, idVendor, idProduct, dev_path):
 		# Pixhawk
 		if idVendor == "1209" and idProduct == "5740": 
@@ -93,7 +89,7 @@ class DeviceManager(GTool):
 			dev.isOpened = True
 			self._toolBox.mav_conn.send(f"g {dev_path}")
 			self.Pixhawk_exist = True
-			return None
+			return dev
 		elif idVendor == "2341" and idProduct == "8037": 
 			# 暫時性用arduino作為範例測試
 			print("Devicefactory create Arduino")
