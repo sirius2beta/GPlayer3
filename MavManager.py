@@ -28,8 +28,9 @@ class MavManager(GTool):
 			elif header == "g":
 				mavrouter.connectVehicle(body)
 			elif header == "x":
+				del mavrouter
 				break
-			time.sleep(0.01)
+			time.sleep(0.1)
 		
 
 def fixMAVLinkMessageForForward(msg):
@@ -55,8 +56,10 @@ class MavWorker:
 		self.ip = ""
 		self.data = ""
 		self.loop = threading.Thread(target=self.loopFunction)
+		self.loop.daemon = True
 		self.loop.start()
 		self.loop2 = threading.Thread(target=self.processLoop)
+		self.loop2.daemon = True
 		self.loop2.start()
 		
 		
@@ -64,6 +67,7 @@ class MavWorker:
 	def __del__(self):
 		self.thread_terminate = True
 		self.loop.join()
+		self.loop2.join()
 	def connectGCS(self, ip, isPrimary):
 		if isPrimary:
 			self.lock.acquire()
@@ -141,7 +145,7 @@ class MavWorker:
 				break
 			if msg == 'HEARTBEAT':
 				self._conn.send(msg)
-				time.sleep(0.1)
+				time.sleep(1)
 
 
 
