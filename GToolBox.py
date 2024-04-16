@@ -15,9 +15,9 @@ class GToolBox:
 		self.core = core
 		self.mav_conn, self.child_conn = multiprocessing.Pipe()
 
+		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)		
 		self.videoManager = VideoManager(self)
-		self.networkManager = NetworkManager(self)
 		self.deviceManager = DeviceManager(self)
 
 		self.networkManager.startLoop()

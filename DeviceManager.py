@@ -5,6 +5,7 @@ import serial
 
 from GTool import GTool
 from Device import Device
+from TestDevice import TestDevice
 
 SENSOR = b'\x50'
 
@@ -86,7 +87,10 @@ class DeviceManager(GTool):
 			if self.Pixhawk_exist == True:
 				return None
 			print("Devicefactory create ardupilot FC")
-			# Pixhawk device don't need Device class
+			device_type = 0
+			dev = Device(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			# Pixhawk device don't need to start loop
+			dev.isOpened = True
 			self._toolBox.mav_conn.send(f"g {dev_path}")
 			self.Pixhawk_exist = True
 			return None
@@ -94,19 +98,22 @@ class DeviceManager(GTool):
 			# 暫時性用arduino作為範例測試
 			print("Devicefactory create Arduino")
 			device_type = 1
-			dev = Device(device_type , dev_path, self.sensor_group_list)
+			dev = TestDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
 			dev.isOpened = True
 			return dev
 		elif idVendor == "1d6b" and idProduct == "0002": 
 			print("Devicefactory create ESP32BT")
 			device_type = 2
-			dev = Device(davice_type, dev_path, self.sensor_group_list)
+			dev = Device(davice_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
 			dev.isOpened = True
 			return dev
 		elif idVendor == "10c4" and idProduct == "ea60": 
 			print("Devicefactory create Node MCU")
 			device_type = 3
-			dev = Device(device_type, dev_path, self.sensor_group_list)
+			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
 			dev.isOpened = True
 			return dev
 		else:

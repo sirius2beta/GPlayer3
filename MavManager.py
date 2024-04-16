@@ -145,7 +145,7 @@ class MavWorker:
 				break
 			if msg == 'HEARTBEAT':
 				self._conn.send(msg)
-				time.sleep(1)
+				time.sleep(0.1)
 
 
 
