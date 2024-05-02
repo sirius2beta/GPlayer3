@@ -5,7 +5,7 @@ Description=GPlayer3
 [Service]
 Type=idle
 ExecStart=sudo /usr/bin/python3 /home/pi/GPlayer3/demo.py
-WorkingDirectory=/home/pi
+WorkingDirectory=/home/pi/GPlayer3
 User=pi
 
 StandardOutput=append:/var/log/GPlayer3.log
