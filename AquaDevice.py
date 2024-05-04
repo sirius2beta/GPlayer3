@@ -33,30 +33,6 @@ class AquaDevice(Device):
             ['01', '03', '16', '23', '00', '07', 'F1', '8A'],
             ['01', '03', '16', '2A', '00', '07', '21', '88'],
         ]
-        self.parameter_names = [  
-            "wake_up",
-            "temperature",
-            "pressure",
-            "depth",
-            "level_depth_to_water",
-            "level_surface_elevation",
-            "actual_conductivity",
-            "specific_conductivity",
-            "resistivity",
-            "salinity",
-            "total_dissolved_solids",
-            "density_of_water",
-            "barometric_pressure",
-            "pH",
-            "pH_mv",
-            "orp",
-            "dissolved_oxygen_concentration",
-            "dissolved_oxygen_percent_saturation",
-            "turbidity",
-            "oxygen_partial_pressure",
-            "external_voltage",
-            "battery_capacity_remaining"
-        ]
         self.data_list = [0.0] * 22
 
     def start_loop(self):
@@ -73,7 +49,7 @@ class AquaDevice(Device):
     def Reader(self):
         try:
             ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3) 
-            for i in range(len(self.parameter_names)):
+            for i in range(len(self.command_set)):
                 data = self.send(ser = ser, command = self.command_set[i]) # send command to device
                 if(i != 0 and i != 13 and i != 14 and i != 15 and i != 18): # skip the first data
                     # print(self.parameter_names[i], end = ":") # print the parameter name
@@ -93,7 +69,7 @@ class AquaDevice(Device):
             self.Reader() # read the data
             for i in range((len(self.data_list)-1)): # loop through the data list
                 #print("i:", i, "data:", self.data_list[i])
-                self.sensor_group_list[self.device_type].get_sensor(i).data = self.data_list[i+1] # store the data
+                self.sensor_group_list[1].get_sensor(i).data = self.data_list[i+1] # store the data
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data
             time.sleep(1)
             """
