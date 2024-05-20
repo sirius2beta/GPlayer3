@@ -6,6 +6,8 @@ import serial
 from GTool import GTool
 from Device import Device
 from TestDevice import TestDevice
+from AquaDevice import AquaDevice
+from RS485Device import RS485Device
 
 SENSOR = b'\x50'
 
@@ -90,18 +92,18 @@ class DeviceManager(GTool):
 			self._toolBox.mav_conn.send(f"g {dev_path}")
 			self.Pixhawk_exist = True
 			return dev
-		elif idVendor == "2341" and idProduct == "8037": 
-			# 暫時性用arduino作為範例測試
-			print("Devicefactory create Arduino")
+		
+		elif idVendor == "1d6b" and idProduct == "3431": # AT600 device 
+			print("Devicefactory create AT600")
 			device_type = 1
-			dev = TestDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
 		elif idVendor == "1d6b" and idProduct == "0002": 
 			print("Devicefactory create ESP32BT")
 			device_type = 2
-			dev = Device(davice_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
@@ -112,6 +114,18 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
+		elif idVendor == "0403" and idProduct == "6001": # RS485 device
+			print("Devicefactory create RS485Module")
+			device_type = 4
+			dev = RS485Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
+			dev.isOpened = True
+			return dev
+		elif idVendor == "2341" and idProduct == "8037": # 暫時性用arduino作為範例測試
+			
+			print("Devicefactory create Arduino")
+			device_type = 5
+			dev = TestDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 		else:
 			return None
 	def __del__(self):

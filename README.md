@@ -10,3 +10,7 @@
 ## Info
 * Competable with dnapi v2.0, denovo main
 
+## Install
+```
+bash install.sh
+```

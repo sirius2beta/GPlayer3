@@ -38,7 +38,9 @@ class SensorGroup:
           
 
     def get_all(self): # get _sensors
+        
         return self._sensors
+    
     def pack(self):
         data = b''
         # Data: sensor_group_index + sensor_type + sensor_data
