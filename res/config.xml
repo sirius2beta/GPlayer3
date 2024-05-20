@@ -29,9 +29,16 @@
             <sensor value="14" name="ORP" type="float"></sensor>
             <sensor value="15" name="DISSOLVED_OXYGEN_CONCENTRATION" type="float"></sensor>
             <sensor value="16" name="DISSOLVED_OXYGEN_SATURATION" type="float"></sensor>
-            <sensor value="17" name="OXYGEN_PARTIAL_PRESSURE" type="float"></sensor>
-            <sensor value="18" name="EXTERNAL_VOLTAGE" type="float"></sensor>
-            <sensor value="19" name="BATTERY_CAPACITY_REMAINING" type="float"></sensor>
+            <sensor value="17" name="TURBIDITY" type="float"></sensor>
+            <sensor value="18" name="OXYGEN_PARTIAL_PRESSURE" type="float"></sensor>
+            <sensor value="19" name="EXTERNAL_VOLTAGE" type="float"></sensor>
+            <sensor value="20" name="BATTERY_CAPACITY_REMAINING" type="float"></sensor>
+        </sensorgroup>
+        <sensorgroup value="2" name="BATTERY0">
+            <sensor value="0" name="TOTAL_VOLTAGE" type="float"></sensor>
+            <sensor value="1" name="CURRENT" type="float"></sensor>
+            <sensor value="2" name="CAPACITY" type="float"></sensor>
+            <sensor value="3" name="TEMPERATURE" type="float"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
@@ -45,9 +52,12 @@
         <entry value="4" name="SENSOR"></entry>
     </enum>
     <enum name="DEVICE_TYPE">
-        <entry value="0" name="Arduno/node" idVendor="1d6b" idProduct="0002" ></entry>
-        <entry value="1" name="ESP32_BT" idVendor="1d6b" idProduct="0002"></entry>
-        <entry value="2" name="Pixhawk" idVendor="1d6b" idProduct="0002"></entry>
+        <entry value="0" name="Pixhawk" idVendor="1209" idProduct="5740" ></entry>
+        <entry value="1" name="AT600" idVendor="1d6b" idProduct="3431"></entry>
+        <entry value="2" name="ESP32BT" idVendor="1d6b" idProduct="0002"></entry>
+        <entry value="3" name="NodeMCU" idVendor="10c4" idProduct="ea60"></entry>
+        <entry value="4" name="RS485Module" idVendor="0403" idProduct="6001"></entry> 
+        <entry value="5" name="TestDev" idVendor="2341" idProduct="8037"></entry>
     </enum>
     <enum name="CONTROL_TYPE">
         <entry value="0" name="WINCH"></entry>

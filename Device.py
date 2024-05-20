@@ -7,7 +7,6 @@ class Device():
         self.dev_path = dev_path
         self.isOpened = False
         self.device_type = device_type
-        self.isOpened = False
         self.sensor_group_list = sensor_group_list
 
     def start_loop(self):
@@ -22,11 +21,11 @@ class Device():
     # setter
     def set(self):
         pass
+    
     def _io_loop(self):
         time.sleep(1)
 
+    """
     def __str__(self):
         return f'DeviceType:{self.device_type}'
-    
-        
-    
+    """
