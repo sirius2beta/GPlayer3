@@ -6,6 +6,7 @@ import serial
 from GTool import GTool
 from Device import Device
 from AquaDevice import AquaDevice
+from RS485Device import RS485Device
 
 SENSOR = b'\x50'
 
@@ -111,10 +112,10 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "0403" and idProduct == "6001":
+		elif idVendor == "0403" and idProduct == "6001": # RS485 device
 			print("Devicefactory create RS485Module")
 			device_type = 4
-			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev = RS485Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
