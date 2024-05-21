@@ -126,6 +126,8 @@ class DeviceManager(GTool):
 			print("Devicefactory create Arduino")
 			device_type = 5
 			dev = TestDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.isOpened = True
+			dev.start_loop()
 		else:
 			return None
 	def __del__(self):

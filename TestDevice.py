@@ -21,7 +21,7 @@ class TestDevice(Device):
     def _io_loop(self):
         self.sensor_group_list[0].get_sensor(0).data = 1.1
         while True:
-            self.sensor_group_list[0].get_sensor(0).data += 1.1
+            self.sensor_group_list[0].get_sensor(0).data += 1
             time.sleep(1)
             print(f"sensor: {self.sensor_group_list[0].get_sensor(0).sensor_type} {self.sensor_group_list[0].get_sensor(0).data}")
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[0].pack())

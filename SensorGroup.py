@@ -44,7 +44,7 @@ class SensorGroup:
     def pack(self):
         data = b''
         # Data: sensor_group_index + sensor_type + sensor_data
-        data += self.index.to_bytes(1, "big") # sensorgroup index
+        data += self.index.to_bytes(1, "little") # sensorgroup index
         for sensor in self._sensors:
             data += sensor.pack()
         return data
