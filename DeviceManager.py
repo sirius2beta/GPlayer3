@@ -121,7 +121,7 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "2341" and idProduct == "8037": # 暫時性用arduino作為範例測試
+		elif idVendor == "2341" and idProduct == "8037": # 保留arduino做為測試用
 			
 			print("Devicefactory create Arduino")
 			device_type = 5

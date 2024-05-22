@@ -12,7 +12,7 @@ class Sensor:
         self.data = data # EX : 23.5, 7.2, 60, 50
         self.data_type = data_type # EX : INT, FLOAT, STRING 
     def pack(self):
-        data = self.sensor_type.to_bytes(1, "little")
+        data = self.sensor_type.to_bytes(1, "big")
         if self.data_type == 'int':
             data += struct.pack("<i", self.data)
         elif self.data_type == 'float':
