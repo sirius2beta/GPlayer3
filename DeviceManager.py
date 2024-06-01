@@ -8,6 +8,7 @@ from Device import Device
 from TestDevice import TestDevice
 from AquaDevice import AquaDevice
 from RS485Device import RS485Device
+from WinchDevice import WinchDevice
 
 SENSOR = b'\x50'
 
@@ -66,6 +67,10 @@ class DeviceManager(GTool):
 		print(f"DM::Current device:")
 		for i in self.device_list:
 			print(f" - dev:: devtype:{i.device_type}, , Path:{i.dev_path}")
+	def processControl(self, control_type, cmd):
+		command_type = int(cmd[0])
+		for d in self.device_list:
+			d.processCMD(control_type, cmd)
 
 
 	def processCMD(self, devID, cmd):
@@ -125,9 +130,10 @@ class DeviceManager(GTool):
 			
 			print("Devicefactory create Arduino")
 			device_type = 5
-			dev = TestDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.isOpened = True
 			dev.start_loop()
+			return dev
 		else:
 			return None
 	def __del__(self):

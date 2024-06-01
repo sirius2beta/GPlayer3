@@ -21,6 +21,7 @@ FORMAT = b'\x01'
 COMMAND = b'\x02'
 QUIT = b'\x03'
 SENSOR = b'\x04'
+CONTROL = b'\x05'
 
 class NetworkManager(GTool):
     def __init__(self, toolbox):
@@ -253,3 +254,11 @@ class NetworkManager(GTool):
                 self.pipelines_state[video] = False
                 print("  -quit : video"+str(video))
 
+            elif header == CONTROL[0]:
+                indata = indata[1:]
+                print("[CONTROL]")
+                boat_id = int(indata[0])
+                control_type = int(indata[1])
+                self._toolBox.deviceManager.processControl(control_type, indata[2:])
+                
+                
