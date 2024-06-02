@@ -107,17 +107,11 @@ class NetworkManager(GTool):
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
 
-            if self._toolBox.mav_conn.poll():
-                
-            #    print("xx")
-                mavdata = self._toolBox.mav_conn.recv()
-                if mavdata == "HEARTBEAT" and not self._toolBox.mavManager.mav_connected:
-                    self._toolBox.mavManager.mav_connected = True
-                    print("MavManager: connected")
+            
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
                 if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:
-                    self._toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
+                    self._toolBox.MavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.isPrimaryConnected = False
             else:
@@ -130,13 +124,13 @@ class NetworkManager(GTool):
             # Check newConnection 
             if self.primaryNewConnection:
                 print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
-                self._toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
+                self._toolBox.mavManager.connectGCS(self.P_CLIENT_IP)
                 self.mavLastConnectedIP = 'p'
                 self.primaryNewConnection = False
             if self.secondaryNewConnection:
                 print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
                 if not self.isPrimaryConnected:
-                    self._toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
+                    self._toolBox.mavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.secondaryNewConnection = False
             

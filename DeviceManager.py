@@ -5,10 +5,10 @@ import serial
 
 from GTool import GTool
 from Device import Device
-from TestDevice import TestDevice
-from AquaDevice import AquaDevice
-from RS485Device import RS485Device
-from WinchDevice import WinchDevice
+from Dev.TestDevice import TestDevice
+from Dev.AquaDevice import AquaDevice
+from Dev.RS485Device import RS485Device
+from Dev.WinchDevice import WinchDevice
 
 SENSOR = b'\x50'
 
@@ -58,7 +58,7 @@ class DeviceManager(GTool):
 					count += 1
 				if count == 3:
 					device = self._deviceFactory(idVendor, idProduct, i)
-					print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
+					#print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
 					if device != None:
 						self.device_list.append(device)
 					break
@@ -94,7 +94,7 @@ class DeviceManager(GTool):
 			dev = Device(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			# Pixhawk device don't need to start loop
 			dev.isOpened = True
-			self._toolBox.mav_conn.send(f"g {dev_path}")
+			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev
 		
