@@ -8,6 +8,7 @@ from VideoManager import VideoManager
 from DeviceManager import DeviceManager
 from MavManager import MavManager
 from config import Config
+from OakCam import OakCam
 
 class GToolBox:
 	def __init__(self, core):
@@ -19,6 +20,7 @@ class GToolBox:
 		self.mavManager = MavManager(self)		
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
+		self.oakCam = OakCam(self)
 
 		self.networkManager.startLoop()
 		
