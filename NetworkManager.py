@@ -108,6 +108,7 @@ class NetworkManager(GTool):
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
 
             if self._toolBox.mav_conn.poll():
+                
             #    print("xx")
                 mavdata = self._toolBox.mav_conn.recv()
                 if mavdata == "HEARTBEAT" and not self._toolBox.mavManager.mav_connected:

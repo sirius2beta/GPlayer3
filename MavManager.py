@@ -17,19 +17,7 @@ class MavManager(GTool):
 	def mav_worker(self, conn):
 		mavrouter = MavWorker(None, conn)
 		while True:
-			msg = conn.recv() 
-			print(f"  MavManager receive msg:{msg}")
-			header = msg.split()[0]
-			body = msg.split()[1]
-			if header == "p": 
-				mavrouter.connectGCS(f'udp:{body}:14450',True)
-			elif header == "s": 
-				mavrouter.connectGCS(f'udp:{body}:14550',False)
-			elif header == "g":
-				mavrouter.connectVehicle(body)
-			elif header == "x":
-				del mavrouter
-				break
+			
 			time.sleep(0.1)
 		
 
@@ -138,16 +126,60 @@ class MavWorker:
 	def processLoop(self):
 		while True:
 			self.lock2.acquire()
-			msg = self.data
+			out_msg = self.data
 			self.data = ""
 			self.lock2.release()
 			if self.thread_terminate is True:
 				break
+			msg = self._conn.recv() 
+			print(f"  MavManager receive msg:{msg}")
+			header = msg.split()[0]
+			body = msg.split()[1]
+			if header == "p": 
+				self.connectGCS(f'udp:{body}:14450',True)
+			elif header == "s": 
+				self.connectGCS(f'udp:{body}:14550',False)
+			elif header == "g":
+				self.connectVehicle(body)
+			else:
+				print(msg)
+				self.send_distance_sensor_data()
+			time.sleep(0.1)
+
 			if msg == 'HEARTBEAT':
-				self._conn.send(msg)
+				self._conn.send(out_msg)
 				time.sleep(0.1)
 
+	def send_distance_sensor_data(self):
+		try:
+			distance = 500  # 固定距离值，单位为厘米（5米 = 500厘米）
+			min_distance = 20   # 最小检测距离，单位为厘米
+			max_distance = 1000 # 最大检测距离，单位为厘米
+			current_time = 0  # 当前时间，单位为毫秒
+			sensor_type = 0  # 传感器类型
+			sensor_id = 0  # 传感器ID
+			orientation = 0  # 方向，0表示正前方
+			covariance = 0  # 协方差，0表示测量无误差
+			
 
+			
+			# 调用距离传感器编码函数
+			msg = self.vehicle.mav.distance_sensor_encode(
+				current_time,
+				min_distance,
+				max_distance,
+				distance,
+				sensor_type,
+				sensor_id,
+				orientation,
+				covariance,
+				)
+
+			# 发送消息
+			self.vehicle.mav.send(msg)
+			#print("Distance data sent")
+		except Exception as e:
+			print(f"Error sending distance data: {e}")
 
 
 
