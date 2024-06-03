@@ -7,11 +7,8 @@ import socket
 import struct
 import sys
 import numpy as np
-sys.path.append("NPUCO/TemperatureSensorInterface")
 
-from temp_sensor_interface_V3_1 import SensorReader
 import VideoFormat as VF
-
 import GToolBox
 import MavManager
 from GTool import GTool
@@ -37,9 +34,6 @@ class NetworkManager(GTool):
         self.primaryNewConnection = False
         self.secondaryNewConnection = False
         self.mavLastConnectedIP = ''
-
-        self.mavPre = time.time()
-        self.mavCurrent = self.mavPre
 
         self.primaryLastHeartBeat = 0
         self.secondaryLastHeartBeat = 0
