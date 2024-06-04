@@ -36,6 +36,8 @@ class OakCam(GTool):
     def loop(self):
         out = cv2.VideoWriter(f'appsrc ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5201'
         , cv2.CAP_GSTREAMER, 0, 30, (int(640),int(400)), True)
+        out2 = cv2.VideoWriter(f'appsrc ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5202'
+        , cv2.CAP_GSTREAMER, 0, 30, (int(640),int(400)), True)
         # Create pipeline
         pipeline = dai.Pipeline()
 
@@ -140,5 +142,6 @@ class OakCam(GTool):
                         cv2.putText(rgbFrame, "{:.1f}m".format(distance/1000), (xmin + 10, ymin + 20), fontType, 0.6, color)
                     # Show the frame
                     out.write(rgbFrame)
+                    out2.write(depthFrameColor)
         except Exception as e:
             print(f"Error: {e}")
