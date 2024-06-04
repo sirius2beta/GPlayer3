@@ -18,7 +18,7 @@ class DeviceManager(GTool):
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  # 目前連在pi上的裝置
 		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
-
+		self.SITL_connect = False # 如果要測試SITL，此值為True
 		# get all tty* device (ACM, USB..)
 		cmd = "ls /dev/tty*"
 		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
@@ -62,11 +62,17 @@ class DeviceManager(GTool):
 					if device != None:
 						self.device_list.append(device)
 					break
-		
+
+		if self.SITL_connect == True:
+			self._toolBox.mavManager.connectVehicle("udp:127.0.0.1:14550")
+			print("Running SITL..")	
 				
 		print(f"DM::Current device:")
 		for i in self.device_list:
 			print(f" - dev:: devtype:{i.device_type}, , Path:{i.dev_path}")
+	
+	
+	
 	def processControl(self, control_type, cmd):
 		command_type = int(cmd[0])
 		for d in self.device_list:
@@ -87,6 +93,8 @@ class DeviceManager(GTool):
 	def _deviceFactory(self, idVendor, idProduct, dev_path):
 		# Pixhawk
 		if idVendor == "1209" and idProduct == "5740": 
+			if self.SITL_connect == True:
+				return None
 			if self.Pixhawk_exist == True:
 				return None
 			print("Devicefactory create ardupilot FC")
@@ -134,6 +142,7 @@ class DeviceManager(GTool):
 			dev.isOpened = True
 			dev.start_loop()
 			return dev
+		
 		else:
 			return None
 	def __del__(self):

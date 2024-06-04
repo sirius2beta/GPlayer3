@@ -9,6 +9,7 @@ import sys
 import numpy as np
 
 import VideoFormat as VF
+
 import GToolBox
 import MavManager
 from GTool import GTool
@@ -34,6 +35,9 @@ class NetworkManager(GTool):
         self.primaryNewConnection = False
         self.secondaryNewConnection = False
         self.mavLastConnectedIP = ''
+
+        self.mavPre = time.time()
+        self.mavCurrent = self.mavPre
 
         self.primaryLastHeartBeat = 0
         self.secondaryLastHeartBeat = 0
@@ -131,6 +135,7 @@ class NetworkManager(GTool):
             # Send primary heartbeat every 0.5s
             try:
                 self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
+                #self._toolBox.mavManager.send_distance_sensor_data()
                 #self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
                 #self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
                 time.sleep(0.5)

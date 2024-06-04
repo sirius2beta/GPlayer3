@@ -119,21 +119,21 @@ class MavManager(GTool):
 				self._conn.send(out_msg)
 				time.sleep(0.1)
 
-	def send_distance_sensor_data(self):
+	def send_distance_sensor_data(self, direction = 0, d = 0):
 		try:
-			distance = 500  # 固定距离值，单位为厘米（5米 = 500厘米）
+			distance = int(d/10)  # 固定距离值，单位为厘米（5米 = 500厘米）
 			min_distance = 20   # 最小检测距离，单位为厘米
 			max_distance = 1000 # 最大检测距离，单位为厘米
 			current_time = 0  # 当前时间，单位为毫秒
 			sensor_type = 0  # 传感器类型
 			sensor_id = 0  # 传感器ID
-			orientation = 0  # 方向，0表示正前方
+			orientation = direction  # 方向，0表示正前方
 			covariance = 0  # 协方差，0表示测量无误差
-			
+			#print(distance)
 
 			
 			# 调用距离传感器编码函数
-			msg = self.vehicle.mav.distance_sensor_encode(
+			msg = self.vehicle_conn.mav.distance_sensor_encode(
 				current_time,
 				min_distance,
 				max_distance,

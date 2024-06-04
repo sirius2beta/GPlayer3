@@ -5,16 +5,33 @@ import depthai as dai
 import math
 import numpy as np
 import threading
+import time
 from GTool import GTool
 
 
 class OakCam(GTool):
     def __init__(self, toolBox):
         super().__init__(toolBox)
-
+        self.distances = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        self.lock = threading.Lock() # lock for internect communication
         self.loop = threading.Thread(target=self.loop)
         self.loop.daemon = True
         self.loop.start()
+        self.loop2 = threading.Thread(target=self.loop2)
+        self.loop2.daemon = True
+        self.loop2.start()
+        
+        
+    def loop2(self):
+        while  True:
+            self.lock.acquire()
+            distances = self.distances
+            self.lock.release()
+            self.toolBox().mavManager.send_distance_sensor_data(7, int(min(distances[:3])))
+            self.toolBox().mavManager.send_distance_sensor_data(0, int(min(distances[3:6])))
+            self.toolBox().mavManager.send_distance_sensor_data(1, int(min(distances[6:])))
+            time.sleep(0.5)
+
 
     def loop(self):
         out = cv2.VideoWriter(f'appsrc ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5201'
@@ -70,48 +87,58 @@ class OakCam(GTool):
 
         spatialLocationCalculator.out.link(xoutSpatialData.input)
         xinSpatialCalcConfig.out.link(spatialLocationCalculator.inputConfig)
+        try:
+            # Connect to device and start pipeline
+            with dai.Device(pipeline) as device:
+                device.setIrLaserDotProjectorBrightness(1000)
 
-        # Connect to device and start pipeline
-        with dai.Device(pipeline) as device:
-            device.setIrLaserDotProjectorBrightness(1000)
+                # Output queue will be used to get the depth frames from the outputs defined above
+                rgbQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
+                depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
+                spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
+                color = (0,200,40)
+                fontType = cv2.FONT_HERSHEY_TRIPLEX
 
-            # Output queue will be used to get the depth frames from the outputs defined above
-            rgbQueue = device.getOutputQueue(name="rgb", maxSize=4, blocking=False)
-            depthQueue = device.getOutputQueue(name="depth", maxSize=4, blocking=False)
-            spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
-            color = (0,200,40)
-            fontType = cv2.FONT_HERSHEY_TRIPLEX
+                while True:
+                    inRGB = rgbQueue.get()
+                    inDepth = depthQueue.get() # Blocking call, will wait until a new data has arrived
 
-            while True:
-                inRGB = rgbQueue.get()
-                inDepth = depthQueue.get() # Blocking call, will wait until a new data has arrived
+                    rgbFrame = inRGB.getCvFrame()
+                    depthFrame = inDepth.getFrame() # depthFrame values are in millimeters
 
-                rgbFrame = inRGB.getCvFrame()
-                depthFrame = inDepth.getFrame() # depthFrame values are in millimeters
+                    depth_downscaled = depthFrame[::4]
+                    if np.all(depth_downscaled == 0):
+                        min_depth = 0  # Set a default minimum depth value when all elements are zero
+                    else:
+                        min_depth = np.percentile(depth_downscaled[depth_downscaled != 0], 1)
+                    max_depth = np.percentile(depth_downscaled, 99)
+                    depthFrameColor = np.interp(depthFrame, (min_depth, max_depth), (0, 255)).astype(np.uint8)
+                    depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
 
-                depth_downscaled = depthFrame[::4]
-                if np.all(depth_downscaled == 0):
-                    min_depth = 0  # Set a default minimum depth value when all elements are zero
-                else:
-                    min_depth = np.percentile(depth_downscaled[depth_downscaled != 0], 1)
-                max_depth = np.percentile(depth_downscaled, 99)
-                depthFrameColor = np.interp(depthFrame, (min_depth, max_depth), (0, 255)).astype(np.uint8)
-                depthFrameColor = cv2.applyColorMap(depthFrameColor, cv2.COLORMAP_HOT)
+                    spatialData = spatialCalcQueue.get().getSpatialLocations()
+                    direction = 0
 
-                spatialData = spatialCalcQueue.get().getSpatialLocations()
-                for depthData in spatialData:
-                    roi = depthData.config.roi
-                    roi = roi.denormalize(width=depthFrameColor.shape[1], height=depthFrameColor.shape[0])
+                    
+                    for depthData in spatialData:
+                        roi = depthData.config.roi
+                        roi = roi.denormalize(width=depthFrameColor.shape[1], height=depthFrameColor.shape[0])
 
-                    xmin = int(roi.topLeft().x)
-                    ymin = int(roi.topLeft().y)
-                    xmax = int(roi.bottomRight().x)
-                    ymax = int(roi.bottomRight().y)
+                        xmin = int(roi.topLeft().x)
+                        ymin = int(roi.topLeft().y)
+                        xmax = int(roi.bottomRight().x)
+                        ymax = int(roi.bottomRight().y)
 
-                    coords = depthData.spatialCoordinates
-                    distance = math.sqrt(coords.x ** 2 + coords.y ** 2 + coords.z ** 2)
-
-                    cv2.rectangle(depthFrameColor, (xmin, ymin), (xmax, ymax), color, thickness=2)
-                    cv2.putText(depthFrameColor, "{:.1f}m".format(distance/1000), (xmin + 10, ymin + 20), fontType, 0.6, color)
-                # Show the frame
-                out.write(rgbFrame)
+                        coords = depthData.spatialCoordinates
+                        distance = math.sqrt(coords.x ** 2 + coords.y ** 2 + coords.z ** 2)
+                        
+                        self.lock.acquire()
+                        self.distances[direction] = distance
+                        self.lock.release()
+                        
+                        direction = direction + 1
+                        cv2.rectangle(rgbFrame, (xmin, ymin), (xmax, ymax), color, thickness=2)
+                        cv2.putText(rgbFrame, "{:.1f}m".format(distance/1000), (xmin + 10, ymin + 20), fontType, 0.6, color)
+                    # Show the frame
+                    out.write(rgbFrame)
+        except Exception as e:
+            print(f"Error: {e}")
