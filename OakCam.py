@@ -15,6 +15,7 @@ class OakCam(GTool):
         self.distances = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.lock = threading.Lock() # lock for internect communication
         self.loop = threading.Thread(target=self.loop)
+        self.hasCamera = False
         self.loop.daemon = True
         self.loop.start()
         self.loop2 = threading.Thread(target=self.loop2)
@@ -23,7 +24,7 @@ class OakCam(GTool):
         
         
     def loop2(self):
-        while  True:
+        while self.hasCamera:
             self.lock.acquire()
             distances = self.distances
             self.lock.release()
@@ -92,6 +93,7 @@ class OakCam(GTool):
         try:
             # Connect to device and start pipeline
             with dai.Device(pipeline) as device:
+                self.hasCamera = True
                 device.setIrLaserDotProjectorBrightness(1000)
 
                 # Output queue will be used to get the depth frames from the outputs defined above
