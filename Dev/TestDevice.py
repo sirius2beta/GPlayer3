@@ -1,5 +1,8 @@
 import time
+
 from Device import Device
+
+# This is a test device, it will send fake sensor data
 
 SENSOR = b'\x04'
 
