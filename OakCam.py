@@ -103,7 +103,7 @@ class OakCam(GTool):
                 spatialCalcQueue = device.getOutputQueue(name="spatialData", maxSize=4, blocking=False)
                 color = (0,200,40)
                 fontType = cv2.FONT_HERSHEY_TRIPLEX
-
+                print(f"[o]  OakCam: connected")
                 while True:
                     inRGB = rgbQueue.get()
                     inDepth = depthQueue.get() # Blocking call, will wait until a new data has arrived

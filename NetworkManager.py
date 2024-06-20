@@ -53,9 +53,6 @@ class NetworkManager(GTool):
 
     def __del__(self):
         print("------------------------del")
-        #self.thread_terminate = True
-        #self.thread_cli.join()
-        #self.thread_ser.join()
 
     # startLoop need to be called to start internet communication
     def startLoop(self):
@@ -65,6 +62,7 @@ class NetworkManager(GTool):
         self.thread_ser.daemon = True
         self.thread_cli.start()
         self.thread_ser.start()
+        print("[o]  NetworkManager started")
 
     # send message with topic
     def sendMsg(self, topic, msg):
@@ -96,16 +94,10 @@ class NetworkManager(GTool):
                 print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
     
     # sending heartbeat to ground control station
-    def aliveLoop(self):
-        checkAlive = False
-        mavLastConnected = ''
-        
+    def aliveLoop(self):        
         while True:
-            if self.thread_terminate is True:
-                break
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
-
             
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
@@ -150,23 +142,18 @@ class NetworkManager(GTool):
                 print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
 
     # handle all incomming traffic, sending them to corresponding module for processing
-    def listenLoop(self):
-        run = True
-        
-        while run:
-            if self.thread_terminate is True:
-                break
+    def listenLoop(self):        
+        while True:
             try:
-                indata, addr = self.server.recvfrom(1024)
-                
+                indata, addr = self.server.recvfrom(1024) 
             except:
                 continue
+
             now = time.time()
             #print(f'[GP] => message from: {str(addr)}, data: {indata}')
             
             indata = indata
             header = indata[0]
-
             if header == HEARTBEAT[0]:
                 indata = indata[1:]
                 ip = addr[0]
