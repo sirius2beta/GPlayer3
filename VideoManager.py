@@ -31,7 +31,7 @@ class VideoManager(GTool):
 			print("      - no camera connected")
 		for form in self.videoFormatList:
 			for video in self.videoFormatList[form]:
-				print(f"form {index}:  video{video[0]} {video[1]}")
+				print(f"      - {index}:  video{video[0]} {video[1]}")
 			index += 1
 
 	def createPipelines(self):

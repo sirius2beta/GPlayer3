@@ -68,7 +68,7 @@ class DeviceManager(GTool):
 			print("Running SITL..")	
 				
 		print(f"[o]  DeviceManager: started, current device:")
-		if len(i) == 0:
+		if len(self.device_list) == 0:
 			print("      - no device found")
 		for i in self.device_list:
 			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
