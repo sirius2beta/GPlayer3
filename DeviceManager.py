@@ -67,7 +67,7 @@ class DeviceManager(GTool):
 			self._toolBox.mavManager.connectVehicle("udp:127.0.0.1:14550")
 			print("Running SITL..")	
 				
-		print(f"[o]  DeviceManager: started, current device:")
+		print(f"[o] DeviceManager: started, current device:")
 		if len(self.device_list) == 0:
 			print("      - no device found")
 		for i in self.device_list:
