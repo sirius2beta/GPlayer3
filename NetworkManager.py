@@ -9,11 +9,10 @@ import sys
 import numpy as np
 
 import VideoFormat as VF
-
-import GToolBox
 import MavManager
 from GTool import GTool
 
+# definition of all the headers
 HEARTBEAT = b'\x00'
 FORMAT = b'\x01'
 COMMAND = b'\x02'
@@ -21,11 +20,11 @@ QUIT = b'\x03'
 SENSOR = b'\x04'
 CONTROL = b'\x05'
 
+# For dual ip auto switching mechanism, all internet traffics are going through NetworkManager
 class NetworkManager(GTool):
     def __init__(self, toolbox):
         super().__init__(toolbox)  
         self.BOAT_ID = 0
-		
         self.PC_IP='10.10.10.205'
         self.SERVER_IP = ''
         self.P_CLIENT_IP = '127.0.0.1' #PC IP
@@ -58,6 +57,7 @@ class NetworkManager(GTool):
         self.thread_cli.join()
         self.thread_ser.join()
 
+    # startLoop need to be called to start internet communication
     def startLoop(self):
         self.thread_cli = threading.Thread(target=self.aliveLoop)
         self.thread_ser = threading.Thread(target=self.listenLoop)
@@ -66,6 +66,7 @@ class NetworkManager(GTool):
         self.thread_cli.start()
         self.thread_ser.start()
 
+    # send message with topic
     def sendMsg(self, topic, msg):
         now = time.time()
         # Send message from outside
@@ -93,6 +94,8 @@ class NetworkManager(GTool):
                 #self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
             except:
                 print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+    
+    # sending heartbeat to ground control station
     def aliveLoop(self):
         print('Aliveloop started...')
         run = True
@@ -148,6 +151,7 @@ class NetworkManager(GTool):
             except:
                 print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
 
+    # handle all incomming traffic, sending them to corresponding module for processing
     def listenLoop(self):
         print('server started...')
         run = True
