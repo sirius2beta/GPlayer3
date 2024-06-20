@@ -15,11 +15,13 @@ class GToolBox:
 		self.mav_conn, self.child_conn = multiprocessing.Pipe() #Pipe for modules with multiprocess
 
 		# Initialize all modules here
+		print("GPlayer initializing...")
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)		
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
+		print("GPlayer initialized!")
 
 		# networkManager is not started until after everything is ready
 		self.networkManager.startLoop()

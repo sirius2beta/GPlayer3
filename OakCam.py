@@ -22,6 +22,14 @@ class OakCam(GTool):
         self.outputLoop = threading.Thread(target=self.OutputLoop)
         self.outputLoop.daemon = True
         self.outputLoop.start()
+        self.initialized = False
+        timeout = 0
+        while timeout<10:
+            if not self.initialized:
+                time.sleep(1)
+                timeout += 1
+            else:
+                break
         
         
     def OutputLoop(self): # Thread that send data to the networkmanager

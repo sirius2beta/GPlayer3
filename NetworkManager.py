@@ -62,7 +62,7 @@ class NetworkManager(GTool):
         self.thread_ser.daemon = True
         self.thread_cli.start()
         self.thread_ser.start()
-        print("[o]  NetworkManager started")
+        print("[o] NetworkManager started")
 
     # send message with topic
     def sendMsg(self, topic, msg):
