@@ -25,6 +25,14 @@ class VideoManager(GTool):
 		Gst.init(None)
 
 		self.createPipelines()
+		print("[o] VideoManager: started")
+		index = 0
+		if len(self.videoFormatList) == 0:
+			print("      - no camera connected")
+		for form in self.videoFormatList:
+			for video in self.videoFormatList[form]:
+				print(f"form {index}:  video{video[0]} {video[1]}")
+			index += 1
 
 	def createPipelines(self):
 		for i in range(0, 10):
@@ -88,11 +96,7 @@ class VideoManager(GTool):
 							if add == True:
 								self.videoFormatList[index].append([i,form])
 						
-		index = 0
-		for form in self.videoFormatList:
-			for video in self.videoFormatList[form]:
-				print(f"form {index}:  video{video[0]} {video[1]}")
-			index += 1
+		
 		
 
 	def get_video_format_for_diffNx(self):	
