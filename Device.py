@@ -21,6 +21,10 @@ class Device():
     # setter
     def set(self):
         pass
+
+    # process command for control
+    def processCMD(self, control_type, cmd):
+        pass
     
     def _io_loop(self):
         time.sleep(1)

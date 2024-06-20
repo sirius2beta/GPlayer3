@@ -8,31 +8,6 @@ from GTool import GTool
 # cannot be resent, because they become Python strings (not bytestrings)
 # This converts those messages so your code doesn't crash when
 # you try to send the message again.
-class MavManager(GTool):
-	def __init__(self, toolbox):
-		super().__init__(toolbox)
-		self.mav_connected = False
-		self.p = multiprocessing.Process(target =self.mav_worker, args = (self._toolBox.child_conn,)) 
-		self.p.start()
-	def mav_worker(self, conn):
-		mavrouter = MavWorker(None, conn)
-		while True:
-			msg = conn.recv() 
-			print(f"  MavManager receive msg:{msg}")
-			header = msg.split()[0]
-			body = msg.split()[1]
-			if header == "p": 
-				mavrouter.connectGCS(f'udp:{body}:14450',True)
-			elif header == "s": 
-				mavrouter.connectGCS(f'udp:{body}:14550',False)
-			elif header == "g":
-				mavrouter.connectVehicle(body)
-			elif header == "x":
-				del mavrouter
-				break
-			time.sleep(0.1)
-		
-
 def fixMAVLinkMessageForForward(msg):
 	msg_type = msg.get_type()
 
@@ -43,67 +18,65 @@ def fixMAVLinkMessageForForward(msg):
 		if type(msg.text) == str:
 			msg.text = msg.text.encode()
 	return msg
-
-class MavWorker:
-	def __init__(self, toolBox, conn):
-		self.toolBox = toolBox
-		self._conn = conn
+	
+class MavManager(GTool):
+	def __init__(self, toolbox):
+		super().__init__(toolbox)
+		self.mav_connected = False
+		self.GCS_connected = False
+		self.FC_connected = False
+		self.toolBox = toolbox
+		self._conn = toolbox.child_conn
 		self.thread_terminate = False
-		self.gcs_conn_p = None
-		self.vehicle = None
-		self.lock = threading.Lock()
-		self.lock2 = threading.Lock()
-		self.ip = ""
-		self.data = ""
+		self.gcs_conn = None
+		self.vehicle_conn = None
+		self.lock = threading.Lock() # lock for internect communication
+		self.lock2 = threading.Lock() # lock for temporary data(self.data) access
+		self.ip = "" # Ground Control Station(GCS) ip
+		self.data = "" # data from Pixhawk, temporary store here, can be access by other thread
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.daemon = True
 		self.loop.start()
-		self.loop2 = threading.Thread(target=self.processLoop)
+		self.loop2 = threading.Thread(target=self.processLoop) # process data with processLoop to prevent timeout from main loop function
 		self.loop2.daemon = True
 		self.loop2.start()
 		
+	# connect to Ground Control Station(GCS) with udp
+	def connectGCS(self, ip):
+		self.lock.acquire()
+		if self.ip != ip:
+			self.ip = ip
+			if self.gcs_conn != None:
+				self.gcs_conn.close()			
+			self.gcs_conn = mavutil.mavlink_connection(f'udp:{ip}:14450', input=False)
+			self.GCS_connected = True
+			print(f"MavManager: GCS connected to {ip}")
+		self.lock.release()
 		
-
-	def __del__(self):
-		self.thread_terminate = True
-		self.loop.join()
-		self.loop2.join()
-	def connectGCS(self, ip, isPrimary):
-		if isPrimary:
-			self.lock.acquire()
-			if self.ip != ip:
-			
-				self.ip = ip
-				if self.gcs_conn_p != None:
-					self.gcs_conn_p.close()			
-				self.gcs_conn_p = mavutil.mavlink_connection(ip, input=False)
-			self.lock.release()
-		else:
-			self.lock.acquire()
-			if self.gcs_conn_s != None:
-				self.gcs_conn_s.close()
-			self.gcs_conn_s = mavutil.mavlink_connection(ip, input=False)
-			self.lock.release()
+	# connect to pixhawk board with usb
 	def connectVehicle(self, dev):
-		if self.vehicle != None:
-				self.vehicle.close()
-		self.vehicle = mavutil.mavlink_connection(dev, baud=57600)
+		if self.vehicle_conn != None:
+				self.vehicle_conn.close()
+		self.vehicle_conn = mavutil.mavlink_connection(dev, baud=57600)
+		self.FC_connected = True
+		print(f"MavManager: FC connected to {dev}")
+
 	def loopFunction(self):
 		while True:
 			if self.thread_terminate is True:
 				break
             # Don't block for a GCS message - we have messages
             # from the vehicle to get too
-			if self.vehicle != None:
+			if self.vehicle_conn != None:
 				self.lock.acquire()
-				vcl_msg = self.vehicle.recv_match(blocking=False)
+				vcl_msg = self.vehicle_conn.recv_match(blocking=False)
 				
 				gcs_msg_p = ''
 
-				if self.gcs_conn_p != None:
-					gcs_msg_p = self.gcs_conn_p.recv_match(blocking=False)
-					self.handleMsg(vcl_msg, self.gcs_conn_p)
-					self.handleMsg(gcs_msg_p, self.vehicle)
+				if self.gcs_conn != None:
+					gcs_msg_p = self.gcs_conn.recv_match(blocking=False)
+					self.handleMsg(vcl_msg, self.gcs_conn)
+					self.handleMsg(gcs_msg_p, self.vehicle_conn)
 				
 				self.lock.release()
 			# Don't abuse the CPU by running the loop at maximum speed
@@ -138,16 +111,44 @@ class MavWorker:
 	def processLoop(self):
 		while True:
 			self.lock2.acquire()
-			msg = self.data
+			out_msg = self.data
 			self.data = ""
 			self.lock2.release()
-			if self.thread_terminate is True:
-				break
-			if msg == 'HEARTBEAT':
-				self._conn.send(msg)
+			
+			if out_msg == 'HEARTBEAT':
+				self._conn.send(out_msg)
 				time.sleep(0.1)
 
+	def send_distance_sensor_data(self, direction = 0, d = 0):
+		try:
+			distance = int(d/10)  # 固定距离值，单位为厘米（5米 = 500厘米）
+			min_distance = 20   # 最小检测距离，单位为厘米
+			max_distance = 1000 # 最大检测距离，单位为厘米
+			current_time = 0  # 当前时间，单位为毫秒
+			sensor_type = 0  # 传感器类型
+			sensor_id = 0  # 传感器ID
+			orientation = direction  # 方向，0表示正前方
+			covariance = 0  # 协方差，0表示测量无误差
+			#print(distance)
 
+			
+			# 调用距离传感器编码函数
+			msg = self.vehicle_conn.mav.distance_sensor_encode(
+				current_time,
+				min_distance,
+				max_distance,
+				distance,
+				sensor_type,
+				sensor_id,
+				orientation,
+				covariance,
+				)
+
+			# 发送消息
+			self.vehicle_conn.mav.send(msg)
+			#print("Distance data sent")
+		except Exception as e:
+			print(f"Error sending distance data: {e}")
 
 
 

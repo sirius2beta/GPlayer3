@@ -7,26 +7,24 @@ import socket
 import struct
 import sys
 import numpy as np
-sys.path.append("NPUCO/TemperatureSensorInterface")
 
-from temp_sensor_interface_V3_1 import SensorReader
 import VideoFormat as VF
-
-import GToolBox
 import MavManager
 from GTool import GTool
 
+# definition of all the headers
 HEARTBEAT = b'\x00'
 FORMAT = b'\x01'
 COMMAND = b'\x02'
 QUIT = b'\x03'
 SENSOR = b'\x04'
+CONTROL = b'\x05'
 
+# For dual ip auto switching mechanism, all internet traffics are going through NetworkManager
 class NetworkManager(GTool):
     def __init__(self, toolbox):
         super().__init__(toolbox)  
         self.BOAT_ID = 0
-		
         self.PC_IP='10.10.10.205'
         self.SERVER_IP = ''
         self.P_CLIENT_IP = '127.0.0.1' #PC IP
@@ -59,6 +57,7 @@ class NetworkManager(GTool):
         self.thread_cli.join()
         self.thread_ser.join()
 
+    # startLoop need to be called to start internet communication
     def startLoop(self):
         self.thread_cli = threading.Thread(target=self.aliveLoop)
         self.thread_ser = threading.Thread(target=self.listenLoop)
@@ -67,6 +66,7 @@ class NetworkManager(GTool):
         self.thread_cli.start()
         self.thread_ser.start()
 
+    # send message with topic
     def sendMsg(self, topic, msg):
         now = time.time()
         # Send message from outside
@@ -94,6 +94,8 @@ class NetworkManager(GTool):
                 #self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
             except:
                 print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+    
+    # sending heartbeat to ground control station
     def aliveLoop(self):
         print('Aliveloop started...')
         run = True
@@ -106,16 +108,11 @@ class NetworkManager(GTool):
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
 
-            if self._toolBox.mav_conn.poll():
-            #    print("xx")
-                mavdata = self._toolBox.mav_conn.recv()
-                if mavdata == "HEARTBEAT" and not self._toolBox.mavManager.mav_connected:
-                    self._toolBox.mavManager.mav_connected = True
-                    print("MavManager: connected")
+            
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
                 if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:
-                    self._toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
+                    self._toolBox.MavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.isPrimaryConnected = False
             else:
@@ -128,19 +125,20 @@ class NetworkManager(GTool):
             # Check newConnection 
             if self.primaryNewConnection:
                 print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
-                self._toolBox.mav_conn.send(f"p {self.P_CLIENT_IP}")
+                self._toolBox.mavManager.connectGCS(self.P_CLIENT_IP)
                 self.mavLastConnectedIP = 'p'
                 self.primaryNewConnection = False
             if self.secondaryNewConnection:
                 print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
                 if not self.isPrimaryConnected:
-                    self._toolBox.mav_conn.send(f"p {self.S_CLIENT_IP}")
+                    self._toolBox.mavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.secondaryNewConnection = False
             
             # Send primary heartbeat every 0.5s
             try:
                 self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
+                #self._toolBox.mavManager.send_distance_sensor_data()
                 #self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
                 #self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
                 time.sleep(0.5)
@@ -153,6 +151,7 @@ class NetworkManager(GTool):
             except:
                 print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
 
+    # handle all incomming traffic, sending them to corresponding module for processing
     def listenLoop(self):
         print('server started...')
         run = True
@@ -253,3 +252,11 @@ class NetworkManager(GTool):
                 self.pipelines_state[video] = False
                 print("  -quit : video"+str(video))
 
+            elif header == CONTROL[0]:
+                indata = indata[1:]
+                print("[CONTROL]")
+                boat_id = int(indata[0])
+                control_type = int(indata[1])
+                self._toolBox.deviceManager.processControl(control_type, indata[2:])
+                
+                
