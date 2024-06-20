@@ -8,22 +8,23 @@ import threading
 import time
 from GTool import GTool
 
+# Open up connection with oak-D S2 camera for depth detection
 
 class OakCam(GTool):
     def __init__(self, toolBox):
         super().__init__(toolBox)
         self.distances = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
         self.lock = threading.Lock() # lock for internect communication
-        self.loop = threading.Thread(target=self.loop)
+        self.inputLoop = threading.Thread(target=self.InputLoop)
         self.hasCamera = False
-        self.loop.daemon = True
-        self.loop.start()
-        self.loop2 = threading.Thread(target=self.loop2)
-        self.loop2.daemon = True
-        self.loop2.start()
+        self.inputLoop.daemon = True
+        self.inputLoop.start()
+        self.outputLoop = threading.Thread(target=self.OutputLoop)
+        self.outputLoop.daemon = True
+        self.outputLoop.start()
         
         
-    def loop2(self):
+    def OutputLoop(self): # Thread that send data to the networkmanager
         while self.hasCamera:
             self.lock.acquire()
             distances = self.distances
@@ -34,7 +35,7 @@ class OakCam(GTool):
             time.sleep(0.5)
 
 
-    def loop(self):
+    def InputLoop(self): # Thread that read data from oak camera
         out = cv2.VideoWriter(f'appsrc ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5201'
         , cv2.CAP_GSTREAMER, 0, 30, (int(640),int(400)), True)
         out2 = cv2.VideoWriter(f'appsrc ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5202'

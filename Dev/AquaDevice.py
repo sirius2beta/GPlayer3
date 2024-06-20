@@ -110,15 +110,4 @@ class AquaDevice(Device):
             for i in range((len(self.data_list)-1)):
                 print(f"{self.sensor_group_list[self.device_type].get_sensor(i).data}")  
             print(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
-            """ """
-            # self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager                         
-
-if __name__ == "__main__":
-    cf = CF(toolBox = None)
-    dev = AquaDevice(device_type = 1, dev_path = "COM19", sensor_group_list = cf.sensor_group_list) 
-    dev.start_loop()
-
-    time.sleep(12)
-    dev.read_all = True # 設定為讀取所有資料
-    dev.send_interval = 1 # 設定傳送資料的間隔時間
-    time.sleep(30)
+            #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager                         
