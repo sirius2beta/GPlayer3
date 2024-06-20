@@ -8,7 +8,6 @@ class GPlayer:
 		self.mainLoop()	# keep main thread alive
 
 	def mainLoop(self):
-		print('GPlayer started...')
 		# keep main GPlayer alive
 		while True:
 			time.sleep(10)
