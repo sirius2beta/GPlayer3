@@ -147,4 +147,4 @@ class OakCam(GTool):
                     out.write(rgbFrame)
                     out2.write(depthFrameColor)
         except Exception as e:
-            print(f"Error: {e}")
+            print(f"[*]  OakCam: not connected: {e}")

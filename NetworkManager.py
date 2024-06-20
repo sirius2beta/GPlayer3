@@ -53,9 +53,9 @@ class NetworkManager(GTool):
 
     def __del__(self):
         print("------------------------del")
-        self.thread_terminate = True
-        self.thread_cli.join()
-        self.thread_ser.join()
+        #self.thread_terminate = True
+        #self.thread_cli.join()
+        #self.thread_ser.join()
 
     # startLoop need to be called to start internet communication
     def startLoop(self):
@@ -97,12 +97,10 @@ class NetworkManager(GTool):
     
     # sending heartbeat to ground control station
     def aliveLoop(self):
-        print('Aliveloop started...')
-        run = True
         checkAlive = False
         mavLastConnected = ''
         
-        while run:
+        while True:
             if self.thread_terminate is True:
                 break
             now = time.time()
@@ -153,7 +151,6 @@ class NetworkManager(GTool):
 
     # handle all incomming traffic, sending them to corresponding module for processing
     def listenLoop(self):
-        print('server started...')
         run = True
         
         while run:
