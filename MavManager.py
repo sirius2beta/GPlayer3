@@ -37,7 +37,7 @@ class MavManager(GTool):
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.daemon = True
 		self.loop.start()
-		self.loop2 = threading.Thread(target=self.processLoop)
+		self.loop2 = threading.Thread(target=self.processLoop) # process data with processLoop to prevent timeout from main loop function
 		self.loop2.daemon = True
 		self.loop2.start()
 		

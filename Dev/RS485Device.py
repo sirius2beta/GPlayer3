@@ -95,9 +95,3 @@ class RS485Device(Device):
             #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[0].pack())
             #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[2].pack())
             time.sleep(1)
-
-if __name__ == "__main__":
-    cf = CF(toolBox = None)
-    dev = RS485Device(device_type = 4, dev_path = "COM21", sensor_group_list = cf.sensor_group_list) 
-    dev.start_loop()
-    time.sleep(60)
