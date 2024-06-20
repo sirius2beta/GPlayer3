@@ -2,6 +2,9 @@
 
 **NPU COAST project**
 
+## Update
+* current updated to V2.0 branch
+
 ## Features
 * Automatic switching between two internet interfaces for communication
 * Routing Mavlink messages from the onboard flight controller to the ground control station
