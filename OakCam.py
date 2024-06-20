@@ -112,6 +112,7 @@ class OakCam(GTool):
                 color = (0,200,40)
                 fontType = cv2.FONT_HERSHEY_TRIPLEX
                 print(f"[o] OakCam: connected")
+                self.initialized = True
                 while True:
                     inRGB = rgbQueue.get()
                     inDepth = depthQueue.get() # Blocking call, will wait until a new data has arrived
@@ -156,3 +157,4 @@ class OakCam(GTool):
                     out2.write(depthFrameColor)
         except Exception as e:
             print(f"[*] OakCam: not connected: {e}")
+            self.initialized = True

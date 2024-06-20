@@ -21,10 +21,12 @@ class GToolBox:
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
-		print("GPlayer initialized!")
+		
 
 		# networkManager is not started until after everything is ready
 		self.networkManager.startLoop()
+
+		print("GPlayer initialized!")
 		
 	def core(self):
 		return self.core
