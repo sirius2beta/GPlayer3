@@ -1,26 +1,32 @@
 import multiprocessing 
-import sys
-sys.path.append("NPUCO/TemperatureSensorInterface")
 
-from temp_sensor_interface_V3_1 import SensorReader
 from NetworkManager import NetworkManager
 from VideoManager import VideoManager
 from DeviceManager import DeviceManager
 from MavManager import MavManager
 from config import Config
+from OakCam import OakCam
 
+# GToolBox stores all the modules and initialize them
 class GToolBox:
 	def __init__(self, core):
 		self.config = Config(self)
-		self.core = core
-		self.mav_conn, self.child_conn = multiprocessing.Pipe()
+		self.core = core # core is GPlayer main function itself
+		self.mav_conn, self.child_conn = multiprocessing.Pipe() #Pipe for modules with multiprocess
 
+		# Initialize all modules here
+		print("GPlayer initializing...")
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)		
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
-
-		self.networkManager.startLoop()
+		self.oakCam = OakCam(self)
 		
-	def core():
+
+		# networkManager is not started until after everything is ready
+		self.networkManager.startLoop()
+
+		print("GPlayer initialized!")
+		
+	def core(self):
 		return self.core

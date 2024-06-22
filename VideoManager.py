@@ -25,6 +25,14 @@ class VideoManager(GTool):
 		Gst.init(None)
 
 		self.createPipelines()
+		print("[o] VideoManager: started")
+		index = 0
+		if len(self.videoFormatList) == 0:
+			print("      - no camera connected")
+		for form in self.videoFormatList:
+			for video in self.videoFormatList[form]:
+				print(f"      - {index}:  video{video[0]} {video[1]}")
+			index += 1
 
 	def createPipelines(self):
 		for i in range(0, 10):
@@ -37,7 +45,7 @@ class VideoManager(GTool):
 	def get_video_format(self):
 		try:
 			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
-			returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8") 
+			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL,stdout=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
 		except:
 			returned_value = '0'
 		if len(returned_value) > 1:
@@ -51,7 +59,7 @@ class VideoManager(GTool):
 			newCamera = True
 			try:
 				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
-				returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
+				returned_value = subprocess.check_output(cmd,shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
 			except:
 				continue
 			line_list = returned_value.splitlines()
@@ -88,11 +96,7 @@ class VideoManager(GTool):
 							if add == True:
 								self.videoFormatList[index].append([i,form])
 						
-		index = 0
-		for form in self.videoFormatList:
-			for video in self.videoFormatList[form]:
-				print(f"form {index}:  video{video[0]} {video[1]}")
-			index += 1
+		
 		
 
 	def get_video_format_for_diffNx(self):	

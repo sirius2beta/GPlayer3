@@ -57,6 +57,7 @@
         <entry value="2" name="ESP32BT" idVendor="1d6b" idProduct="0002"></entry>
         <entry value="3" name="NodeMCU" idVendor="10c4" idProduct="ea60"></entry>
         <entry value="4" name="RS485Module" idVendor="0403" idProduct="6001"></entry> 
+        <entry value="5" name="TestDev" idVendor="2341" idProduct="8037"></entry>
     </enum>
     <enum name="CONTROL_TYPE">
         <entry value="0" name="WINCH"></entry>
