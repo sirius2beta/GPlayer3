@@ -108,7 +108,7 @@ class DeviceManager(GTool):
 			self.Pixhawk_exist = True
 			return dev
 		
-		elif idVendor == "1d6b" and idProduct == "3431": # AT600 device 
+		elif idVendor == "0403" and idProduct == "6001": # AT600 device 
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
@@ -129,7 +129,7 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "0403" and idProduct == "6001": # RS485Module
+		elif idVendor == "067b" and idProduct == "2303": # RS485Module
 			print("      ...Devicefactory create RS485Module")
 			device_type = 4
 			dev = RS485Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)

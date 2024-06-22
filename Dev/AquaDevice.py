@@ -107,7 +107,9 @@ class AquaDevice(Device):
                 self.sensor_group_list[1].get_sensor(i).data = self.data_list[i+1] # store the data
             
             # print the data to the console, for testing
+            """
             for i in range((len(self.data_list)-1)):
                 print(f"{self.sensor_group_list[self.device_type].get_sensor(i).data}")  
             print(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
-            #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager                         
+            """
+            self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager                         

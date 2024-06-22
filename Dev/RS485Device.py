@@ -71,7 +71,7 @@ class RS485Device(Device):
     def _io_loop(self):
         while(True):
             self.Reader()
-            """
+            
             self.sensor_group_list[0].get_sensor(0).data = self.cabin_temp
             self.sensor_group_list[0].get_sensor(1).data = self.cabin_hum
 
@@ -80,7 +80,6 @@ class RS485Device(Device):
             self.sensor_group_list[2].get_sensor(2).data = self.capacity
             self.sensor_group_list[2].get_sensor(3).data = self.battery_temp
             """
-            
             print(f"self.sensor_group_list[0].get_sensor(0).data:{self.sensor_group_list[0].get_sensor(0).data}")  
             print(f"self.sensor_group_list[0].get_sensor(1).data:{self.sensor_group_list[0].get_sensor(1).data}") 
 
@@ -91,7 +90,7 @@ class RS485Device(Device):
 
             print(f"pack:{SENSOR, self.sensor_group_list[0].pack()}")
             print(f"pack:{SENSOR, self.sensor_group_list[2].pack()}")
-
-            #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[0].pack())
-            #self.networkManager.sendMsg(SENSOR, self.sensor_group_list[2].pack())
+            """
+            self.networkManager.sendMsg(SENSOR, self.sensor_group_list[0].pack())
+            self.networkManager.sendMsg(SENSOR, self.sensor_group_list[2].pack())
             time.sleep(1)
