@@ -96,6 +96,9 @@ class MavManager(GTool):
 				self.data ='HEARTBEAT'
 				self.lock2.release()
 
+			if msg.get_type() == 'GPS_RAW_INT':
+				print(msg.time_usec)
+
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
 			msg = fixMAVLinkMessageForForward(msg)
