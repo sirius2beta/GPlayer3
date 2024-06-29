@@ -42,6 +42,9 @@ class AquaDevice(Device):
         
         self.wake_up() # wake up the AT600
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
+    
+    def aqua_data(self):
+        return self.data_list
 
     def send(self, command): # send command to device and get response, command is a list of hex values.
         command = bytes([int(x, 16) for x in command]) # commnad to bytes
