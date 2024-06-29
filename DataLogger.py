@@ -8,8 +8,7 @@ from GToolBox import GToolBox
 class DataLogger:
     def __init__(self, toolbox):
         self._toolBox = toolbox 
-
-        self.log_directory = os.path.expanduser("~/GPlayerLog") # 設定log存放路徑
+        self.log_directory = os.path.expanduser("/home/pi/GPlayerLog") # 設定log存放路徑
         if(not os.path.exists(self.log_directory)): # 如果路徑不存在，則建立
             os.makedirs(self.log_directory) # 建立路徑
         self.log_file = self._create_log_file() # 建立log檔案
@@ -17,7 +16,7 @@ class DataLogger:
 
     def _create_log_file(self):
         current_time = datetime.now() # 取得目前時間
-        file_name = f"aqua_{current_time.strftime('%Y%m%d_%H%M')}.log" # 設定檔案名稱
+        file_name = f"aqua_{current_time.strftime('%Y%m%d_%H%M')}.txt" # 設定檔案名稱
         return os.path.join(self.log_directory, file_name) # 回傳檔案路徑
 
     def log_gps_data(self):
@@ -35,11 +34,6 @@ class DataLogger:
 
     def looper(self):
         while(True):
-            self._create_log_file()
+            self.log_file = self._create_log_file()
             self.log_gps_data()
-            time.sleep(1)
-
-if __name__ == "__main__":
-    toolbox = GToolBox(None)
-    logger = DataLogger(toolbox)
-    logger.log_gps_data()
+            time.sleep(5)
