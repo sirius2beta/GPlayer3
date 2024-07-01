@@ -15,7 +15,7 @@ SENSOR = b'\x50'
 class DeviceManager(GTool):	
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
-		self.aqua_device = None
+		# self.aqua_device = None
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  # 目前連在pi上的裝置
 		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
