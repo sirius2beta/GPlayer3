@@ -25,11 +25,16 @@ class DataLogger(GTool):
         gps_data = {"time_usec": 0, "fix_type": 0, "lat": 0, "lon": 0, "alt": 0, "HDOP": 0, "VDOP": 0}
         aqua_data = []
         
-        if(not (self._toolBox.mavManager is None)):
+        try:
             gps_data = self._toolBox.mavManager.gps_data()
-        if(not (self._toolBox.deviceManager.aqua_device is None)):
+        except Exception as e:
+            pass
+            
+        try:
             aqua_data = self._toolBox.deviceManager.device_list[1].aqua_data()
-        
+        except Exception as e:
+            pass
+            
         with open(self.log_file, 'a') as log:
             log_entry = f"{gps_data['time_usec']}, {gps_data['fix_type']}, {gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, {gps_data['HDOP']}, {gps_data['VDOP']}, {aqua_data}\n"
             log.write(log_entry)
