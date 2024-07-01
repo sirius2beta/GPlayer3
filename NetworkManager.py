@@ -98,7 +98,7 @@ class NetworkManager(GTool):
         while True:
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
-            
+                        
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
                 if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:

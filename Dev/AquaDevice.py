@@ -37,11 +37,14 @@ class AquaDevice(Device):
         ]
         self.data_list = [0.0] * 22 # sensor data list
         self.send_interval = 5 # every 5 seconds send data to the network manager
-        self.read_all = False # initialize read_all as False, only read depth data.
+        self.read_all = True # initialize read_all as False, only read depth data.
         self.ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 3)
         
         self.wake_up() # wake up the AT600
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
+    
+    def aqua_data(self):
+        return self.data_list
 
     def send(self, command): # send command to device and get response, command is a list of hex values.
         command = bytes([int(x, 16) for x in command]) # commnad to bytes

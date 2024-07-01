@@ -1,7 +1,13 @@
+import os
+
+os.environ['MAVLINK20'] = '1'
+os.environ['MAVLINK_DIALECT'] = 'ardupilotmega'
+
 from pymavlink import mavutil
 import threading
 import time
-import multiprocessing 
+import multiprocessing
+
 
 from GTool import GTool
 # PyMAVLink has an issue that received messages which contain strings
@@ -21,7 +27,17 @@ def fixMAVLinkMessageForForward(msg):
 	
 class MavManager(GTool):
 	def __init__(self, toolbox):
+        
 		super().__init__(toolbox)
+		self.gps_raw = {
+                'time_usec': '0',
+                'fix_type': '0',
+                'lat': '0',
+                'lon': '0',
+                'alt': '0',
+                'HDOP': '0',
+                'VDOP': '0'
+        }
 		self.mav_connected = False
 		self.GCS_connected = False
 		self.FC_connected = False
@@ -41,6 +57,7 @@ class MavManager(GTool):
 		self.loop2.daemon = True
 		self.loop2.start()
 		
+		
 	# connect to Ground Control Station(GCS) with udp
 	def connectGCS(self, ip):
 		self.lock.acquire()
@@ -59,6 +76,15 @@ class MavManager(GTool):
 				self.vehicle_conn.close()
 		self.vehicle_conn = mavutil.mavlink_connection(dev, baud=57600)
 		self.FC_connected = True
+		
+		msg = self.vehicle_conn.mav.request_data_stream_encode(
+                0,
+                0,
+				24, # massage ID
+                1, # rate(Hz)
+                1, # Turn on
+				)
+		self.vehicle_conn.mav.send(msg)
 		print(f"MavManager: FC connected to {dev}")
 
 	def loopFunction(self):
@@ -96,6 +122,20 @@ class MavManager(GTool):
 				self.data ='HEARTBEAT'
 				self.lock2.release()
 
+			if msg.get_type() == 'GPS_RAW_INT':
+				self.lock2.acquire()
+				self.gps_raw['time_usec'] = msg.time_usec
+				self.gps_raw['fix_type'] = msg.fix_type
+				self.gps_raw['lon'] = msg.lon
+				self.gps_raw['lat'] = msg.lat
+				self.gps_raw['alt'] = msg.alt
+				self.gps_raw['HDOP'] = msg.eph
+				self.gps_raw['VDOP'] = msg.epv
+				self.lock2.release()
+				#print(f"GPS: time_usec:{msg.time_usec}, lat:{msg.lat}, lon:{msg.lon}, alt:{msg.alt}")
+				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
+
+
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
 			msg = fixMAVLinkMessageForForward(msg)
@@ -111,6 +151,7 @@ class MavManager(GTool):
 	def processLoop(self):
 		while True:
 			self.lock2.acquire()
+			
 			out_msg = self.data
 			self.data = ""
 			self.lock2.release()
@@ -118,7 +159,13 @@ class MavManager(GTool):
 			if out_msg == 'HEARTBEAT':
 				self._conn.send(out_msg)
 				time.sleep(0.1)
-
+				
+	def gps_data(self):
+		self.lock2.acquire()
+		gdata = self.gps_raw
+		self.lock2.release()
+		return gdata
+	
 	def send_distance_sensor_data(self, direction = 0, d = 0):
 		try:
 			distance = int(d/10)  # 固定距离值，单位为厘米（5米 = 500厘米）
