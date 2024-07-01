@@ -113,7 +113,7 @@ class DeviceManager(GTool):
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			self.aqua_device = dev
+			# self.aqua_device = dev
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
