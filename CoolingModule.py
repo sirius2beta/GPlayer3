@@ -7,6 +7,7 @@ class CoolingModule():
     def __init__(self):
         self.release_rfcomm_connections() # 先釋放所有 rfcomm 連接
         bluetooth_devices_list = self.get_paired_bluetooth_devices() # 取得已配對的藍牙裝置
+        self.stop_event = threading.Event()  # 用於停止 listener 執行緒
         for device in bluetooth_devices_list: # 逐一檢查配對裝置
             addr, name = device['address'], device['name'] # 取得裝置的地址和名稱
             if(name == "CoolingModule"): # 如果名稱是 AutoFeeder
