@@ -7,6 +7,7 @@ from MavManager import MavManager
 from config import Config
 from OakCam import OakCam
 from DataLogger import DataLogger
+from CoolingModule import CoolingModule
 
 # GToolBox stores all the modules and initialize them
 class GToolBox:
@@ -23,6 +24,9 @@ class GToolBox:
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
+
+		# 預計新增CoolingModule在這邊
+		self.coolingModule = CoolingModule(self)
 		
 
 		# networkManager is not started until after everything is ready
