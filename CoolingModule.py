@@ -9,15 +9,16 @@ class CoolingModule():
         bluetooth_devices_list = self.get_paired_bluetooth_devices() # 取得已配對的藍牙裝置
         for device in bluetooth_devices_list: # 逐一檢查配對裝置
             addr, name = device['address'], device['name'] # 取得裝置的地址和名稱
-            if(name == "AutoFeeder"): # 如果名稱是 AutoFeeder
-                print("\t識別到自動餵食器...")
+            if(name == "CoolingModule"): # 如果名稱是 AutoFeeder
+                print("      ...Devicefactory create CoolingModule...")
                 self.bind_rfcomm(0, addr) # 綁定到 rfcomm 0
                 time.sleep(1)
                 self.ser = serial.Serial(port = "/dev/rfcomm0", baudrate = 115200, timeout = 5)
-                threading.Thread(target=self.listener)
+                threading.Thread(target=self.listener, daemon = True).start()
                 print("\t啟動 CoolingModule.py")
     
     def listener(self): # 監聽ESP32的回傳
+        print("open listener")
         while(True):
             response = self.ser.readline()
             print(f"response: {response.decode('utf-8')}")
@@ -68,6 +69,10 @@ class CoolingModule():
 
 if __name__ == "__main__":
     cm = CoolingModule()
+    cm.transmitter("open")
+    time.sleep(3)
+    cm.transmitter("close")
+    cm = None
     
 
 
