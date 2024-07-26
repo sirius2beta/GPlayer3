@@ -77,7 +77,7 @@ if __name__ == "__main__":
     cm.transmitter("open")
     time.sleep(3)
     cm.transmitter("close")
-    cm = None
+    cm.stop_listener()
     
 
 
