@@ -14,12 +14,12 @@ class CoolingModule():
                 self.bind_rfcomm(0, addr) # 綁定到 rfcomm 0
                 time.sleep(1)
                 self.ser = serial.Serial(port = "/dev/rfcomm0", baudrate = 115200, timeout = 5)
-                threading.Thread(target=self.listener, daemon = True).start()
+                threading.Thread(target=self.listener).start()
                 print("\t啟動 CoolingModule.py")
     
     def listener(self): # 監聽ESP32的回傳
         print("open listener")
-        while(True):
+        while(not self.stop_event.is_set()):
             response = self.ser.readline()
             print(f"response: {response.decode('utf-8')}")
     
@@ -65,6 +65,11 @@ class CoolingModule():
             # print(f"綁定 {device_address} 到 RFCOMM channel {channel}")
         except subprocess.CalledProcessError as e:
             print(f"綁定失敗: {e}")
+
+    def stop_listener(self):  # 停止 listener 執行緒
+        self.stop_event.set()
+        self.listener_thread.join()
+        self.ser.close()
         
 
 if __name__ == "__main__":
