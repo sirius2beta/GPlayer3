@@ -15,10 +15,9 @@ class VideoManager(GTool):
 		self.pipelines = []
 		self.pipelines_state = []
 		self.camera_format = []
-		self.camerFormatIndex = []
 		self.videoFormatList = {}
 		
-		self.get_video_format()
+		self.get_video_format() # save existing camera to videoFormatList
 		self.portOccupied = {} # {port, videoNo}
 
 		GObject.threads_init()
