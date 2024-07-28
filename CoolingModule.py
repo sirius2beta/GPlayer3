@@ -7,34 +7,28 @@ class CoolingModule():
     def __init__(self):
         self.release_rfcomm_connections()  # 先釋放所有 rfcomm 連接
         bluetooth_devices_list = self.get_paired_bluetooth_devices()  # 取得已配對的藍牙裝置
-        self.stop_event = threading.Event()  # 用於停止 listener 執行緒
+
+
         for device in bluetooth_devices_list:  # 逐一檢查配對裝置
             addr, name = device['address'], device['name']  # 取得裝置的地址和名稱
-            if name == "CoolingModule":  # 如果名稱是 CoolingModule
-                print("      ...Devicefactory create CoolingModule...")
+            
+            if(name == "CoolingModule"):  # 如果名稱是 CoolingModule
+                self.is_open  = False # 定義散熱模組現在的狀態
+                self.is_leaking =  False # 定義是否有漏水的情況發生
+                
                 self.bind_rfcomm(0, addr)  # 綁定到 rfcomm 0
                 time.sleep(1)
                 self.ser = serial.Serial(port="/dev/rfcomm0", baudrate=115200, timeout=5)
                 self.listener_thread = threading.Thread(target=self.listener)
                 self.listener_thread.start()
-                print("\t啟動 CoolingModule.py")
-    
-    def listener(self):  # 監聽ESP32的回傳
-        print("open listener")
-        while not self.stop_event.is_set():
-            response = self.ser.readline()
-            if response:
-                print(f"response: {response.decode('utf-8')}")
-    
-    def transmitter(self, command):  # 傳送指令給ESP32
-        if command == "open":
-            self.ser.write('1'.encode('utf-8'))
-        elif command == "close":
-            self.ser.write('0'.encode('utf-8'))
+                print("      ...Devicefactory create CoolingModule...")
+            elif():
+                # other bluetooth device
+                pass
     
     def release_rfcomm_connections(self):  # 釋放所有 rfcomm 連接
-        result = subprocess.run(['rfcomm'], stdout=subprocess.PIPE)
-        output = result.stdout.decode('utf-8')
+        result = subprocess.run(['rfcomm'], stdout=subprocess.PIPE) 
+        output = result.stdout.decode('utf-8') 
         connections = []
 
         for line in output.split('\n'):
@@ -49,7 +43,7 @@ class CoolingModule():
     def get_paired_bluetooth_devices(self):  # 取得已配對的藍牙裝置
         process = subprocess.Popen(['bluetoothctl'], stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout, stderr = process.communicate(input=b'devices\nexit\n')
-        
+
         devices = []
         for line in stdout.decode('utf-8').split('\n'):
             if 'Device' in line:
@@ -66,14 +60,44 @@ class CoolingModule():
         except subprocess.CalledProcessError as e:
             print(f"綁定失敗: {e}")
 
-    def stop_listener(self):  # 停止 listener 執行緒
-        self.stop_event.set()
-        self.listener_thread.join()
-        self.ser.close()
+    def listener(self):  # 監聽ESP32的回傳
+        # print("open listener")
+        while(True):
+            response = self.ser.readline().decode('utf-8')
+            # print(response)
+            if(response == "warning: water leaking"):
+                self.is_open = False
+                self.is_leaking = True
+                print("warning: water leaking")
+            elif(response == "open"):
+                self.is_open = True
+                self.is_leaking = False
+                print("open")
+            elif(response == "close"):
+                self.is_open = False
+                print("close")
+    
+    def transmitter(self, command):  # 傳送指令給ESP32
+        if command == "open":
+            self.ser.write('1'.encode('utf-8'))
+        elif command == "close":
+            self.ser.write('0'.encode('utf-8'))
 
 if __name__ == "__main__":
-    cm = CoolingModule()
-    cm.transmitter("open")
+    cooling_module = CoolingModule()
+    print(f"1: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
+    
+    cooling_module.transmitter("open")
+    print(f"2: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
+    time.sleep(5)
+    
+    cooling_module.transmitter("close")
+    print(f"3: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
     time.sleep(3)
-    cm.transmitter("close")
-    cm.stop_listener()
+
+    cooling_module.transmitter("open")
+    print(f"4: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
+    time.sleep(3)
+
+    # 強制短路測試 liquid sensor
+    print(f"5: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
