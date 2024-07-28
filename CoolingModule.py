@@ -63,8 +63,8 @@ class CoolingModule():
     def listener(self):  # 監聽ESP32的回傳
         # print("open listener")
         while(True):
-            response = self.ser.readline().decode('utf-8')
-            # print(response)
+            response = self.ser.readline().decode('utf-8').replace('\n', '').strip()
+            # print(f"{response}")
             if(response == "warning: water leaking"):
                 self.is_open = False
                 self.is_leaking = True
@@ -88,16 +88,12 @@ if __name__ == "__main__":
     print(f"1: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
     
     cooling_module.transmitter("open")
+    time.sleep(2)
     print(f"2: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
     time.sleep(5)
     
     cooling_module.transmitter("close")
+    time.sleep(2)
     print(f"3: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
-    time.sleep(3)
-
-    cooling_module.transmitter("open")
-    print(f"4: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
-    time.sleep(3)
-
-    # 強制短路測試 liquid sensor
-    print(f"5: isopen:{cooling_module.is_open}, isleaking:{cooling_module.is_leaking}")
+    time.sleep(5)
+    
