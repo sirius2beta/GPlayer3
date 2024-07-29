@@ -15,10 +15,9 @@ class VideoManager(GTool):
 		self.pipelines = []
 		self.pipelines_state = []
 		self.camera_format = []
-		self.camerFormatIndex = []
 		self.videoFormatList = {}
 		
-		self.get_video_format()
+		self.get_video_format() # save existing camera to videoFormatList
 		self.portOccupied = {} # {port, videoNo}
 
 		GObject.threads_init()
@@ -45,7 +44,7 @@ class VideoManager(GTool):
 	def get_video_format(self):
 		try:
 			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
-			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL,stdout=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
+			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
 		except:
 			returned_value = '0'
 		if len(returned_value) > 1:
@@ -59,7 +58,7 @@ class VideoManager(GTool):
 			newCamera = True
 			try:
 				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
-				returned_value = subprocess.check_output(cmd,shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
+				returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
 			except:
 				continue
 			line_list = returned_value.splitlines()
@@ -104,7 +103,7 @@ class VideoManager(GTool):
 		for i in range(0,10):
 				try:
 					cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
-					returned_value = subprocess.check_output(cmd,shell=True).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
+					returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
 				except:
 					continue
 				line_list = returned_value.splitlines()
