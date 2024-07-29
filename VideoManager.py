@@ -58,7 +58,7 @@ class VideoManager(GTool):
 		for i in range(0,10):
 			newCamera = True
 			try:
-				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
+				cmd = f"v4l2-ctl -d /dev/video{i} --list-formats-ext"
 				returned_value = subprocess.check_output(cmd,shell=True, stderr=subprocess.DEVNULL, stdout=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
 			except:
 				continue
