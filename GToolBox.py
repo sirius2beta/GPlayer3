@@ -26,7 +26,7 @@ class GToolBox:
 		self.dataLogger = DataLogger(self)
 
 		# 預計新增CoolingModule在這邊
-		self.coolingModule = CoolingModule(self)
+		# self.coolingModule = CoolingModule(self)
 		
 
 		# networkManager is not started until after everything is ready
