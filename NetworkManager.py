@@ -102,7 +102,7 @@ class NetworkManager(GTool):
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:
                 if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:
-                    self._toolBox.MavManager.connectGCS(self.S_CLIENT_IP)
+                    self._toolBox.mavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.isPrimaryConnected = False
             else:
