@@ -29,6 +29,7 @@ class MavManager(GTool):
 	def __init__(self, toolbox):
         
 		super().__init__(toolbox)
+		# 暫存資料初始化
 		self.gps_raw = {
                 'time_usec': '0',
                 'fix_type': '0',
@@ -38,6 +39,8 @@ class MavManager(GTool):
                 'HDOP': '0',
                 'VDOP': '0'
         }
+		self.depth = 0
+		
 		self.mav_connected = False
 		self.GCS_connected = False
 		self.FC_connected = False
@@ -124,6 +127,7 @@ class MavManager(GTool):
 
 			if msg.get_type() == 'GPS_RAW_INT':
 				self.lock2.acquire()
+				self.data ='GPS_RAW_INT'
 				self.gps_raw['time_usec'] = msg.time_usec
 				self.gps_raw['fix_type'] = msg.fix_type
 				self.gps_raw['lon'] = msg.lon
@@ -134,6 +138,12 @@ class MavManager(GTool):
 				self.lock2.release()
 				#print(f"GPS: time_usec:{msg.time_usec}, lat:{msg.lat}, lon:{msg.lon}, alt:{msg.alt}")
 				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
+
+			if msg.get_type() == 'DISTANCE_SENSOR':
+				self.lock2.acquire()
+				self.data ='DISTANCE_SENSOR'
+				self.depth = msg.current_distance
+				self.lock2.release()
 
 
 			# We now have a message we want to forward. Now we need to
@@ -158,7 +168,20 @@ class MavManager(GTool):
 			
 			if out_msg == 'HEARTBEAT':
 				self._conn.send(out_msg)
-				time.sleep(0.1)
+				#time.sleep(0.1)
+			elif: out_msg = 'GPS_RAW_INT':
+				self.lock2.acquire()
+				self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
+				self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
+				self.sensor_group_list[4].get_sensor(2).data = self.gps_raw['lat']
+				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
+				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
+				self.lock2.release()
+			elif: out_msg = 'DISTANCE_SENSOR':
+				self.lock2.acquire()
+				self.sensor_group_list[3].get_sensor(0).data = self.depth
+				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
+				self.lock2.release()
 				
 	def gps_data(self):
 		self.lock2.acquire()
