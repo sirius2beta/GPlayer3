@@ -37,6 +37,12 @@
         <sensorgroup value="3" name="MAV0">
             <sensor value="0" name="DEPTH" type="float"></sensor>
         </sensorgroup>
+        <sensorgroup value="4" name="MAV1">
+            <sensor value="0" name="FIX_TYPE" type="int"></sensor>
+            <sensor value="1" name="LON" type="float"></sensor>
+            <sensor value="2" name="LAT" type="float"></sensor>
+            <sensor value="3" name="ALT" type="float"></sensor>
+        </sensorgroup>
     </enum>
     <enum name="CONTROL">
         <entry value="0" name="WINCH"></entry>
