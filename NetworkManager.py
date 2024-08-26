@@ -209,9 +209,12 @@ class NetworkManager(GTool):
                 if formatIndex not in self._toolBox.videoManager.videoFormatList:
                     print('format error')
                     continue
+                formatStr = ""
                 for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
                     if formatpair[0] == videoNo:
                         formatStr = formatpair[1]
+                if formatStr == "":
+                    continue
                 ip = addr[0]
                 
                 formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
