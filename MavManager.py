@@ -169,7 +169,7 @@ class MavManager(GTool):
 			if out_msg == 'HEARTBEAT':
 				self._conn.send(out_msg)
 				#time.sleep(0.1)
-			elif out_msg = 'GPS_RAW_INT':
+			elif out_msg == 'GPS_RAW_INT':
 				self.lock2.acquire()
 				self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
 				self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
@@ -177,7 +177,7 @@ class MavManager(GTool):
 				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
 				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
 				self.lock2.release()
-			elif out_msg = 'DISTANCE_SENSOR':
+			elif out_msg == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
 				self.sensor_group_list[3].get_sensor(0).data = self.depth
 				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
