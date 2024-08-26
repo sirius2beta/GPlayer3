@@ -34,14 +34,20 @@
             <sensor value="19" name="EXTERNAL_VOLTAGE" type="float"></sensor>
             <sensor value="20" name="BATTERY_CAPACITY_REMAINING" type="float"></sensor>
         </sensorgroup>
+        <sensorgroup value="2" name="BATTERY0">
+            <sensor value="0" name="TOTAL_VOLTAGE" type="float"></sensor>
+            <sensor value="1" name="CURRENT" type="float"></sensor>
+            <sensor value="2" name="CAPACITY" type="float"></sensor>
+            <sensor value="3" name="TEMPERATURE" type="float"></sensor>
+        </sensorgroup>
         <sensorgroup value="3" name="MAV0">
             <sensor value="0" name="DEPTH" type="float"></sensor>
         </sensorgroup>
         <sensorgroup value="4" name="MAV1">
             <sensor value="0" name="FIX_TYPE" type="int"></sensor>
-            <sensor value="1" name="LON" type="float"></sensor>
-            <sensor value="2" name="LAT" type="float"></sensor>
-            <sensor value="3" name="ALT" type="float"></sensor>
+            <sensor value="1" name="LON" type="int"></sensor>
+            <sensor value="2" name="LAT" type="int"></sensor>
+            <sensor value="3" name="ALT" type="int"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">

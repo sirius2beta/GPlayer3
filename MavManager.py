@@ -7,7 +7,7 @@ from pymavlink import mavutil
 import threading
 import time
 import multiprocessing
-
+SENSOR = b'\x04'
 
 from GTool import GTool
 # PyMAVLink has an issue that received messages which contain strings
@@ -60,7 +60,8 @@ class MavManager(GTool):
 		self.loop2.daemon = True
 		self.loop2.start()
 		
-		
+	def setSensorGroupList(self, sgl):
+		self.sensor_group_list = sgl
 	# connect to Ground Control Station(GCS) with udp
 	def connectGCS(self, ip):
 		self.lock.acquire()
@@ -166,22 +167,23 @@ class MavManager(GTool):
 			self.data = ""
 			self.lock2.release()
 			
-			if out_msg == 'HEARTBEAT':
-				self._conn.send(out_msg)
-				#time.sleep(0.1)
-			elif out_msg == 'GPS_RAW_INT':
+
+			if out_msg == 'GPS_RAW_INT':
 				self.lock2.acquire()
 				self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
 				self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
 				self.sensor_group_list[4].get_sensor(2).data = self.gps_raw['lat']
 				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
-				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
 				self.lock2.release()
+				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
+				
 			elif out_msg == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
 				self.sensor_group_list[3].get_sensor(0).data = self.depth
-				self.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
 				self.lock2.release()
+				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
+			
+			time.sleep(0.1)
 				
 	def gps_data(self):
 		self.lock2.acquire()
