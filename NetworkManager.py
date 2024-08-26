@@ -232,8 +232,7 @@ class NetworkManager(GTool):
             elif header == QUIT[0]:
                 print("[QUIT]")
                 video = int(indata[6:].decode())
-                self.pipelines[video].set_state(Gst.State.NULL)
-                self.pipelines_state[video] = False
+                self._toolBox.videoManager.stop(video)
                 print("  -quit : video"+str(video))
 
             elif header == CONTROL[0]:
