@@ -229,7 +229,7 @@ class NetworkManager(GTool):
             elif header == SENSOR[0]:
                 print("[SENSOR]")
                 
-            elif header == QUIT:
+            elif header == QUIT[0]:
                 print("[QUIT]")
                 video = int(indata[6:].decode())
                 self.pipelines[video].set_state(Gst.State.NULL)
