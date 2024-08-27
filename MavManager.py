@@ -39,6 +39,10 @@ class MavManager(GTool):
                 'HDOP': '0',
                 'VDOP': '0'
         }
+		self.sys_status = {
+                'voltage_battery': '0',
+                'current_battery': '0'
+        }
 		self.depth = 0
 		
 		self.mav_connected = False
@@ -146,6 +150,12 @@ class MavManager(GTool):
 				self.depth = msg.current_distance
 				self.lock2.release()
 
+			if msg.get_type() == 'SYS_STATUS':
+				self.lock2.acquire()
+				self.data ='SYS_STATUS'
+				self.sys_status['voltage_battery'] = msg.voltage_battery
+				self.sys_status['current_battery'] = msg.current_battery
+				self.lock2.release()
 
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
@@ -160,7 +170,6 @@ class MavManager(GTool):
 			target.mav.send(msg)
 
 	def processLoop(self):
-		dp = 10
 		while True:
 			self.lock2.acquire()
 			
@@ -177,12 +186,20 @@ class MavManager(GTool):
 				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
 				self.lock2.release()
 				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
-				dp += 1
-				self.send_distance_sensor_data(direction=25, d = dp)
+				#測試用
+				#self.depth += 10
+				#self.send_distance_sensor_data(direction=25, d = self.depth)
 				
 			elif out_msg == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
 				self.sensor_group_list[3].get_sensor(0).data = self.depth
+				self.lock2.release()
+				#self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
+			
+			elif out_msg == 'SYS_STATUS':
+				self.lock2.acquire()
+				self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
+				self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
 				self.lock2.release()
 				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
 			
