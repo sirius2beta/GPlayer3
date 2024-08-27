@@ -13,8 +13,20 @@ class Sensor:
         self.data_type = data_type # EX : INT, FLOAT, STRING 
     def pack(self):
         data = self.sensor_type.to_bytes(1, "big")
-        if self.data_type == 'int':
+        if self.data_type == 'uint_8':
+            data += struct.pack("<B", self.data)
+        elif self.data_type == 'int_8':
+            data += struct.pack("<b", self.data)
+        elif self.data_type == 'uint_16':
+            data += struct.pack("<H", self.data)
+        elif self.data_type == 'int_16':
+            data += struct.pack("<j", self.data)
+        elif self.data_type == 'uint_32':
+            data += struct.pack("<I", self.data)
+        elif self.data_type == 'int_32':
             data += struct.pack("<i", self.data)
+        elif self.data_type == 'double':
+            data += struct.pack("<d", self.data)
         elif self.data_type == 'float':
             data += struct.pack("<f", self.data)
         else:

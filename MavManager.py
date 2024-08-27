@@ -160,6 +160,7 @@ class MavManager(GTool):
 			target.mav.send(msg)
 
 	def processLoop(self):
+		dp = 10
 		while True:
 			self.lock2.acquire()
 			
@@ -176,6 +177,8 @@ class MavManager(GTool):
 				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
 				self.lock2.release()
 				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
+				dp += 1
+				self.send_distance_sensor_data(direction=25, d = dp)
 				
 			elif out_msg == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
@@ -198,7 +201,7 @@ class MavManager(GTool):
 			max_distance = 1000 # 最大检测距离，单位为厘米
 			current_time = 0  # 当前时间，单位为毫秒
 			sensor_type = 0  # 传感器类型
-			sensor_id = 0  # 传感器ID
+			sensor_id = 1  # 传感器ID
 			orientation = direction  # 方向，0表示正前方
 			covariance = 0  # 协方差，0表示测量无误差
 			#print(distance)
