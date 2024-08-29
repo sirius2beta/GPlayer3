@@ -155,6 +155,8 @@ class MavManager(GTool):
 				self.data ='SYS_STATUS'
 				self.sys_status['voltage_battery'] = msg.voltage_battery
 				self.sys_status['current_battery'] = msg.current_battery
+				self.sys_status['battery_remaining'] = msg.battery_remaining
+				
 				self.lock2.release()
 
 			# We now have a message we want to forward. Now we need to
@@ -200,6 +202,7 @@ class MavManager(GTool):
 				self.lock2.acquire()
 				self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
 				self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
+				self.sensor_group_list[3].get_sensor(3).data = self.sys_status['battery_remaining']
 				self.lock2.release()
 				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
 			

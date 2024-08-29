@@ -44,6 +44,8 @@
             <sensor value="0" name="DEPTH" type="float"></sensor>
             <sensor value="1" name="BATTERY_VOLTAGE" type="float"></sensor>
             <sensor value="2" name="BATTERY_CURRENT" type="float"></sensor>
+            <sensor value="3" name="BATTERY_REMAINING" type="int8_t"></sensor>
+            <sensor value="4" name="COMM_DROP_RATE" type="uint16_t"></sensor>
         </sensorgroup>
         <sensorgroup value="4" name="MAV1">
             <sensor value="0" name="FIX_TYPE" type="uint_32"></sensor>
