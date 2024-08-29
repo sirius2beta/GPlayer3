@@ -73,7 +73,7 @@ class NetworkManager(GTool):
         #print(f'primary timeout: {now-self.primaryLastHeartBeat}')
         #print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
         if now-self.primaryLastHeartBeat < 2:
-            print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+            #print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
             try:
                 self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
 
@@ -81,7 +81,7 @@ class NetworkManager(GTool):
                 print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
         # Send secondary heartbeat every 0.5s
         elif now-self.secondaryLastHeartBeat < 2:
-            print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+            #print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
             try:
                 self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
             except:

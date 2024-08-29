@@ -30,18 +30,26 @@ class MavManager(GTool):
         
 		super().__init__(toolbox)
 		# 暫存資料初始化
+		self.attitude = {
+			'pitch': 0.0,
+			'roll': 0.0
+		}
+		self.gps = {
+			'yaw': 0
+		}
 		self.gps_raw = {
-                'time_usec': '0',
-                'fix_type': '0',
-                'lat': '0',
-                'lon': '0',
-                'alt': '0',
-                'HDOP': '0',
-                'VDOP': '0'
+                'time_usec': 0,
+                'fix_type': 0,
+                'lat': 0,
+                'lon': 0,
+                'alt': 0,
+                'HDOP': 0,
+                'VDOP': 0
         }
 		self.sys_status = {
-                'voltage_battery': '0',
-                'current_battery': '0'
+                'voltage_battery': 0,
+                'current_battery': 0,
+				'battery_remaining': 0
         }
 		self.depth = 0
 		
@@ -55,6 +63,7 @@ class MavManager(GTool):
 		self.vehicle_conn = None
 		self.lock = threading.Lock() # lock for internect communication
 		self.lock2 = threading.Lock() # lock for temporary data(self.data) access
+		
 		self.ip = "" # Ground Control Station(GCS) ip
 		self.data = "" # data from Pixhawk, temporary store here, can be access by other thread
 		self.loop = threading.Thread(target=self.loopFunction)
@@ -125,10 +134,20 @@ class MavManager(GTool):
 		elif msg.get_type() != 'BAD_DATA':
 			#For debug
 			
-			if msg.get_type() == 'HEARTBEAT':
+			if msg.get_type() == 'GLOBAL_POSITION_INT':
 				self.lock2.acquire()
-				self.data ='HEARTBEAT'
+				self.data ='GLOBAL_POSITION_INT'
+				self.gps['yaw'] = msg.hdg
 				self.lock2.release()
+
+			if msg.get_type() == 'ATTITUDE':
+				self.lock2.acquire()
+				self.data ='ATTITUDE'
+				self.attitude['pitch'] = msg.pitch
+				self.attitude['roll'] = msg.roll
+				self.lock2.release()
+
+
 
 			if msg.get_type() == 'GPS_RAW_INT':
 				self.lock2.acquire()
@@ -140,7 +159,9 @@ class MavManager(GTool):
 				self.gps_raw['alt'] = msg.alt
 				self.gps_raw['HDOP'] = msg.eph
 				self.gps_raw['VDOP'] = msg.epv
+				self.gps_raw['yaw'] = msg.yaw
 				self.lock2.release()
+
 				#print(f"GPS: time_usec:{msg.time_usec}, lat:{msg.lat}, lon:{msg.lon}, alt:{msg.alt}")
 				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
 
@@ -178,35 +199,27 @@ class MavManager(GTool):
 			out_msg = self.data
 			self.data = ""
 			self.lock2.release()
+			if out_msg == "":
+				continue
 			
 
-			if out_msg == 'GPS_RAW_INT':
-				self.lock2.acquire()
-				self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
-				self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
-				self.sensor_group_list[4].get_sensor(2).data = self.gps_raw['lat']
-				self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
-				self.lock2.release()
-				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
-				#測試用
-				#self.depth += 10
-				#self.send_distance_sensor_data(direction=25, d = self.depth)
-				
-			elif out_msg == 'DISTANCE_SENSOR':
-				self.lock2.acquire()
-				self.sensor_group_list[3].get_sensor(0).data = self.depth
-				self.lock2.release()
-				#self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
+			self.lock2.acquire()
+			self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
+			self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
+			self.sensor_group_list[4].get_sensor(2).data = self.gps_raw['lat']
+			self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
+			self.sensor_group_list[4].get_sensor(4).data = self.gps['yaw']
+			self.sensor_group_list[4].get_sensor(5).data = self.attitude['pitch']
+			self.sensor_group_list[4].get_sensor(6).data = self.attitude['roll']
+			self.sensor_group_list[3].get_sensor(0).data = self.depth
+			self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
+			self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
+			self.sensor_group_list[3].get_sensor(3).data = self.sys_status['battery_remaining']
+			self.lock2.release()
+			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
+			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
 			
-			elif out_msg == 'SYS_STATUS':
-				self.lock2.acquire()
-				self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
-				self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
-				self.sensor_group_list[3].get_sensor(3).data = self.sys_status['battery_remaining']
-				self.lock2.release()
-				self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
-			
-			time.sleep(0.1)
+			time.sleep(0.3)
 				
 	def gps_data(self):
 		self.lock2.acquire()

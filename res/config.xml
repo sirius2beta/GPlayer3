@@ -52,6 +52,9 @@
             <sensor value="1" name="LON" type="int_32"></sensor>
             <sensor value="2" name="LAT" type="int_32"></sensor>
             <sensor value="3" name="ALT" type="int_32"></sensor>
+            <sensor value="4" name="YAW" type="uint_16"></sensor>
+            <sensor value="5" name="PITCH" type="float"></sensor>
+            <sensor value="6" name="ROLL" type="float"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
