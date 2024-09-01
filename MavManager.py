@@ -51,6 +51,9 @@ class MavManager(GTool):
                 'current_battery': 0,
 				'battery_remaining': 0
         }
+		self.vfr_hud = {
+			'groundspeed' : 0
+		}
 		self.depth = 0
 		
 		self.mav_connected = False
@@ -140,7 +143,7 @@ class MavManager(GTool):
 				self.gps['yaw'] = msg.hdg
 				self.lock2.release()
 
-			if msg.get_type() == 'ATTITUDE':
+			elif msg.get_type() == 'ATTITUDE':
 				self.lock2.acquire()
 				self.data ='ATTITUDE'
 				self.attitude['pitch'] = msg.pitch
@@ -149,7 +152,7 @@ class MavManager(GTool):
 
 
 
-			if msg.get_type() == 'GPS_RAW_INT':
+			elif msg.get_type() == 'GPS_RAW_INT':
 				self.lock2.acquire()
 				self.data ='GPS_RAW_INT'
 				self.gps_raw['time_usec'] = msg.time_usec
@@ -165,18 +168,25 @@ class MavManager(GTool):
 				#print(f"GPS: time_usec:{msg.time_usec}, lat:{msg.lat}, lon:{msg.lon}, alt:{msg.alt}")
 				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
 
-			if msg.get_type() == 'DISTANCE_SENSOR':
+			elif msg.get_type() == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
 				self.data ='DISTANCE_SENSOR'
 				self.depth = msg.current_distance
 				self.lock2.release()
 
-			if msg.get_type() == 'SYS_STATUS':
+			elif msg.get_type() == 'SYS_STATUS':
 				self.lock2.acquire()
 				self.data ='SYS_STATUS'
 				self.sys_status['voltage_battery'] = msg.voltage_battery
 				self.sys_status['current_battery'] = msg.current_battery
 				self.sys_status['battery_remaining'] = msg.battery_remaining
+				
+				self.lock2.release()
+			
+			elif msg.get_type() == 'VFR_HUD':
+				self.lock2.acquire()
+				self.data ='VFR_HUD'
+				self.vfr_hud['groundspeed'] = msg.groundspeed
 				
 				self.lock2.release()
 
@@ -211,6 +221,8 @@ class MavManager(GTool):
 			self.sensor_group_list[4].get_sensor(4).data = self.gps['yaw']
 			self.sensor_group_list[4].get_sensor(5).data = self.attitude['pitch']
 			self.sensor_group_list[4].get_sensor(6).data = self.attitude['roll']
+			self.sensor_group_list[4].get_sensor(7).data = self.vfr_hud['groundspeed']
+
 			self.sensor_group_list[3].get_sensor(0).data = self.depth
 			self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
 			self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
@@ -218,7 +230,7 @@ class MavManager(GTool):
 			self.lock2.release()
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
-			
+			self.send_distance_sensor_data(25,10)
 			time.sleep(0.3)
 				
 	def gps_data(self):

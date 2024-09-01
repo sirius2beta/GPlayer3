@@ -55,6 +55,7 @@
             <sensor value="4" name="YAW" type="uint_16"></sensor>
             <sensor value="5" name="PITCH" type="float"></sensor>
             <sensor value="6" name="ROLL" type="float"></sensor>
+            <sensor value="7" name="GROUNDSPEED" type="float"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
