@@ -17,12 +17,11 @@ class GToolBox:
 		# Initialize all modules here
 		print("GPlayer initializing...")
 		self.networkManager = NetworkManager(self)
-		self.mavManager = MavManager(self)		
+		self.mavManager = MavManager(self)
+		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
-		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
-		
 
 		# networkManager is not started until after everything is ready
 		self.networkManager.startLoop()
