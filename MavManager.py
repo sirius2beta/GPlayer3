@@ -230,7 +230,7 @@ class MavManager(GTool):
 			self.lock2.release()
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
-			self.send_distance_sensor_data(25,10)
+			#self.send_distance_sensor_data(25,10)
 			time.sleep(0.3)
 				
 	def gps_data(self):
