@@ -71,11 +71,13 @@ class MavManager(GTool):
 		self.data = "" # data from Pixhawk, temporary store here, can be access by other thread
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.daemon = True
-		self.loop.start()
+		
 		self.loop2 = threading.Thread(target=self.processLoop) # process data with processLoop to prevent timeout from main loop function
 		self.loop2.daemon = True
-		self.loop2.start()
 		
+	def startLoop(self):
+		self.loop.start()
+		self.loop2.start()
 	def setSensorGroupList(self, sgl):
 		self.sensor_group_list = sgl
 	# connect to Ground Control Station(GCS) with udp
