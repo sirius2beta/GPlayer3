@@ -80,6 +80,7 @@ class MavManager(GTool):
 		self.loop2.start()
 	def setSensorGroupList(self, sgl):
 		self.sensor_group_list = sgl
+		print(f"sensor_group_list set")
 	# connect to Ground Control Station(GCS) with udp
 	def connectGCS(self, ip):
 		self.lock.acquire()
@@ -207,6 +208,8 @@ class MavManager(GTool):
 	def processLoop(self):
 		while True:
 			self.lock2.acquire()
+			if not hasattr(self, 'sensor_group_list'):
+				continue
 			
 			out_msg = self.data
 			self.data = ""
