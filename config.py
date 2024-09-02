@@ -46,7 +46,7 @@ class Config:
             sensor_group_name = sensorgroup.get('name')
             sensor_group_index = sensorgroup.get('value')
             sensor_group = SensorGroup(index = int(sensor_group_index), name = sensor_group_name)
-            # print(f"Sensor group: {sensor_group_name}, {sensor_group_index}")
+            #print(f"Sensor group: {sensor_group_name}, {sensor_group_index}")
             for sensor in sensorgroup.findall('sensor'):
                 
                 value = int(sensor.get('value'))
@@ -54,7 +54,7 @@ class Config:
                 dtype = sensor.get('type')
                 s = Sensor(sensor_type = value, name = name, data_type = dtype)
                 sensor_group.add_sensor(s)
-                # print(f"  -Sensor: {name}, {value}, {dtype}")
+                #print(f"  -Sensor: {name}, {value}, {dtype}")
             self.sensor_group_list.append(sensor_group)
 
 if __name__ == "__main__":

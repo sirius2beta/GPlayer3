@@ -140,3 +140,7 @@ class VideoManager(GTool):
 			self.pipelines[cam] = Gst.parse_launch(gstring)
 			self.pipelines[cam].set_state(Gst.State.PLAYING)
 			self.pipelines_state[cam] = True
+	def stop(self, video):
+		if self.pipelines_state[video] == True:
+			self.pipelines[video].set_state(Gst.State.NULL)
+			self.pipelines_state[video] = False

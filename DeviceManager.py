@@ -105,6 +105,7 @@ class DeviceManager(GTool):
 			dev = Device(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			# Pixhawk device don't need to start loop
 			dev.isOpened = True
+			
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev

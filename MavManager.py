@@ -7,7 +7,7 @@ from pymavlink import mavutil
 import threading
 import time
 import multiprocessing
-
+SENSOR = b'\x04'
 
 from GTool import GTool
 # PyMAVLink has an issue that received messages which contain strings
@@ -29,15 +29,33 @@ class MavManager(GTool):
 	def __init__(self, toolbox):
         
 		super().__init__(toolbox)
+		# 暫存資料初始化
+		self.attitude = {
+			'pitch': 0.0,
+			'roll': 0.0
+		}
+		self.gps = {
+			'yaw': 0
+		}
 		self.gps_raw = {
-                'time_usec': '0',
-                'fix_type': '0',
-                'lat': '0',
-                'lon': '0',
-                'alt': '0',
-                'HDOP': '0',
-                'VDOP': '0'
+                'time_usec': 0,
+                'fix_type': 0,
+                'lat': 0,
+                'lon': 0,
+                'alt': 0,
+                'HDOP': 0,
+                'VDOP': 0
         }
+		self.sys_status = {
+                'voltage_battery': 0,
+                'current_battery': 0,
+				'battery_remaining': 0
+        }
+		self.vfr_hud = {
+			'groundspeed' : 0
+		}
+		self.depth = 0
+		
 		self.mav_connected = False
 		self.GCS_connected = False
 		self.FC_connected = False
@@ -48,6 +66,7 @@ class MavManager(GTool):
 		self.vehicle_conn = None
 		self.lock = threading.Lock() # lock for internect communication
 		self.lock2 = threading.Lock() # lock for temporary data(self.data) access
+		
 		self.ip = "" # Ground Control Station(GCS) ip
 		self.data = "" # data from Pixhawk, temporary store here, can be access by other thread
 		self.loop = threading.Thread(target=self.loopFunction)
@@ -57,7 +76,8 @@ class MavManager(GTool):
 		self.loop2.daemon = True
 		self.loop2.start()
 		
-		
+	def setSensorGroupList(self, sgl):
+		self.sensor_group_list = sgl
 	# connect to Ground Control Station(GCS) with udp
 	def connectGCS(self, ip):
 		self.lock.acquire()
@@ -117,13 +137,24 @@ class MavManager(GTool):
 		elif msg.get_type() != 'BAD_DATA':
 			#For debug
 			
-			if msg.get_type() == 'HEARTBEAT':
+			if msg.get_type() == 'GLOBAL_POSITION_INT':
 				self.lock2.acquire()
-				self.data ='HEARTBEAT'
+				self.data ='GLOBAL_POSITION_INT'
+				self.gps['yaw'] = msg.hdg
 				self.lock2.release()
 
-			if msg.get_type() == 'GPS_RAW_INT':
+			elif msg.get_type() == 'ATTITUDE':
 				self.lock2.acquire()
+				self.data ='ATTITUDE'
+				self.attitude['pitch'] = msg.pitch
+				self.attitude['roll'] = msg.roll
+				self.lock2.release()
+
+
+
+			elif msg.get_type() == 'GPS_RAW_INT':
+				self.lock2.acquire()
+				self.data ='GPS_RAW_INT'
 				self.gps_raw['time_usec'] = msg.time_usec
 				self.gps_raw['fix_type'] = msg.fix_type
 				self.gps_raw['lon'] = msg.lon
@@ -131,10 +162,33 @@ class MavManager(GTool):
 				self.gps_raw['alt'] = msg.alt
 				self.gps_raw['HDOP'] = msg.eph
 				self.gps_raw['VDOP'] = msg.epv
+				self.gps_raw['yaw'] = msg.yaw
 				self.lock2.release()
+
 				#print(f"GPS: time_usec:{msg.time_usec}, lat:{msg.lat}, lon:{msg.lon}, alt:{msg.alt}")
 				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
 
+			elif msg.get_type() == 'DISTANCE_SENSOR':
+				self.lock2.acquire()
+				self.data ='DISTANCE_SENSOR'
+				self.depth = msg.current_distance
+				self.lock2.release()
+
+			elif msg.get_type() == 'SYS_STATUS':
+				self.lock2.acquire()
+				self.data ='SYS_STATUS'
+				self.sys_status['voltage_battery'] = msg.voltage_battery
+				self.sys_status['current_battery'] = msg.current_battery
+				self.sys_status['battery_remaining'] = msg.battery_remaining
+				
+				self.lock2.release()
+			
+			elif msg.get_type() == 'VFR_HUD':
+				self.lock2.acquire()
+				self.data ='VFR_HUD'
+				self.vfr_hud['groundspeed'] = msg.groundspeed
+				
+				self.lock2.release()
 
 			# We now have a message we want to forward. Now we need to
 			# make it safe to send
@@ -155,10 +209,29 @@ class MavManager(GTool):
 			out_msg = self.data
 			self.data = ""
 			self.lock2.release()
+			if out_msg == "":
+				continue
 			
-			if out_msg == 'HEARTBEAT':
-				self._conn.send(out_msg)
-				time.sleep(0.1)
+
+			self.lock2.acquire()
+			self.sensor_group_list[4].get_sensor(0).data = self.gps_raw['fix_type']
+			self.sensor_group_list[4].get_sensor(1).data = self.gps_raw['lon']
+			self.sensor_group_list[4].get_sensor(2).data = self.gps_raw['lat']
+			self.sensor_group_list[4].get_sensor(3).data = self.gps_raw['alt']
+			self.sensor_group_list[4].get_sensor(4).data = self.gps['yaw']
+			self.sensor_group_list[4].get_sensor(5).data = self.attitude['pitch']
+			self.sensor_group_list[4].get_sensor(6).data = self.attitude['roll']
+			self.sensor_group_list[4].get_sensor(7).data = self.vfr_hud['groundspeed']
+
+			self.sensor_group_list[3].get_sensor(0).data = self.depth
+			self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
+			self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
+			self.sensor_group_list[3].get_sensor(3).data = self.sys_status['battery_remaining']
+			self.lock2.release()
+			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
+			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
+			self.send_distance_sensor_data(25,10)
+			time.sleep(0.3)
 				
 	def gps_data(self):
 		self.lock2.acquire()
@@ -173,7 +246,7 @@ class MavManager(GTool):
 			max_distance = 1000 # 最大检测距离，单位为厘米
 			current_time = 0  # 当前时间，单位为毫秒
 			sensor_type = 0  # 传感器类型
-			sensor_id = 0  # 传感器ID
+			sensor_id = 1  # 传感器ID
 			orientation = direction  # 方向，0表示正前方
 			covariance = 0  # 协方差，0表示测量无误差
 			#print(distance)

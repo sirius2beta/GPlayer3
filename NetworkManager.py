@@ -73,7 +73,7 @@ class NetworkManager(GTool):
         #print(f'primary timeout: {now-self.primaryLastHeartBeat}')
         #print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
         if now-self.primaryLastHeartBeat < 2:
-            print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+            #print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
             try:
                 self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
 
@@ -81,7 +81,7 @@ class NetworkManager(GTool):
                 print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
         # Send secondary heartbeat every 0.5s
         elif now-self.secondaryLastHeartBeat < 2:
-            print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
+            #print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
             try:
                 self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
             except:
@@ -209,9 +209,12 @@ class NetworkManager(GTool):
                 if formatIndex not in self._toolBox.videoManager.videoFormatList:
                     print('format error')
                     continue
+                formatStr = ""
                 for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
                     if formatpair[0] == videoNo:
                         formatStr = formatpair[1]
+                if formatStr == "":
+                    continue
                 ip = addr[0]
                 
                 formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
@@ -229,11 +232,10 @@ class NetworkManager(GTool):
             elif header == SENSOR[0]:
                 print("[SENSOR]")
                 
-            elif header == QUIT:
+            elif header == QUIT[0]:
                 print("[QUIT]")
                 video = int(indata[6:].decode())
-                self.pipelines[video].set_state(Gst.State.NULL)
-                self.pipelines_state[video] = False
+                self._toolBox.videoManager.stop(video)
                 print("  -quit : video"+str(video))
 
             elif header == CONTROL[0]:
