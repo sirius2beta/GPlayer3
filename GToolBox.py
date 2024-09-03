@@ -18,6 +18,7 @@ class GToolBox:
 		print("GPlayer initializing...")
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)
+		print("setting sensorgrouplist")
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
 		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
 		self.mavManager.startLoop()

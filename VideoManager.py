@@ -49,10 +49,10 @@ class VideoManager(GTool):
 			returned_value = '0'
 		if len(returned_value) > 1:
 			sys = returned_value.split('=')[1]
-			if sys == 'buster':
-				print('system: buster')
-			else:
-				print(f'system: {sys}')
+			#if sys == 'buster':
+			#	print('system: buster')
+			#else:
+			#	print(f'system: {sys}')
 		#Check camera device
 		for i in range(0,10):
 			newCamera = True

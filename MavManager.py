@@ -27,7 +27,6 @@ def fixMAVLinkMessageForForward(msg):
 	
 class MavManager(GTool):
 	def __init__(self, toolbox):
-        
 		super().__init__(toolbox)
 		# 暫存資料初始化
 		self.attitude = {
@@ -78,6 +77,7 @@ class MavManager(GTool):
 	def startLoop(self):
 		self.loop.start()
 		self.loop2.start()
+		print("[o] MavManager: started")
 	def setSensorGroupList(self, sgl):
 		self.sensor_group_list = sgl
 		print(f"sensor_group_list set")

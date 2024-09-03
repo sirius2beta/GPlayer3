@@ -117,6 +117,7 @@ class NetworkManager(GTool):
                 print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
                 self._toolBox.mavManager.connectGCS(self.P_CLIENT_IP)
                 self.mavLastConnectedIP = 'p'
+                self.primaryLastHeartBeat = time.time()
                 self.primaryNewConnection = False
             if self.secondaryNewConnection:
                 print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
@@ -162,7 +163,6 @@ class NetworkManager(GTool):
                 #print("[HEARTBEAT]")
                 #print(f" -id:{self.BOAT_ID}, primary:{primary}")
                 if primary == 'P':
-                    
                     if self.P_CLIENT_IP != ip or now-self.primaryLastHeartBeat > 3:
                         self.P_CLIENT_IP = ip
                         self.primaryNewConnection = True
@@ -178,12 +178,14 @@ class NetworkManager(GTool):
                 print("[FORMAT]")
                 msg = b''
                 if len(self._toolBox.videoManager.videoFormatList) == 0:
+                    print("no videoformat")
                     continue
                 else:
                     for form in self._toolBox.videoManager.videoFormatList:
                         for video in self._toolBox.videoManager.videoFormatList[form]:
                             videoIndex = video[0]
-                            msg += struct.pack("<2B", videoIndex, form)                    
+                            msg += struct.pack("<2B", videoIndex, form)   
+                    print("send videoformat")
                     self.sendMsg(FORMAT, msg)
 
                 
