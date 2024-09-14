@@ -10,6 +10,8 @@ import VideoFormat
 class VideoManager(GTool):
 	def __init__(self, toolbox):
 		super().__init__(toolbox)
+		self.sys = 'buster'
+
 
 		self.pipelinesexist = []
 		self.pipelines = []
@@ -51,10 +53,12 @@ class VideoManager(GTool):
 			returned_value = '0'
 		if len(returned_value) > 1:
 			sys = returned_value.split('=')[1]
-			#if sys == 'buster':
-			#	print('system: buster')
-			#else:
-			#	print(f'system: {sys}')
+			if sys == 'buster':
+				
+				print('system: buster')
+			else:
+				self.sys = 'jetson'
+				print(f'system: {sys}')
 		#Check camera device
 		for i in range(0,10):
 			newCamera = True
@@ -123,7 +127,7 @@ class VideoManager(GTool):
 						print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
-		gstring = VideoFormat.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
+		gstring = VideoFormat.getFormatCMD(self.sys, cam, format, width, height, framerate, encoder, IP, port)
 		print(gstring)
 		
 		if port in self.portOccupied:
