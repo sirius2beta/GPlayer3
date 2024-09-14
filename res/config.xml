@@ -44,8 +44,8 @@
             <sensor value="0" name="DEPTH" type="float"></sensor>
             <sensor value="1" name="BATTERY_VOLTAGE" type="float"></sensor>
             <sensor value="2" name="BATTERY_CURRENT" type="float"></sensor>
-            <sensor value="3" name="BATTERY_REMAINING" type="int8_t"></sensor>
-            <sensor value="4" name="COMM_DROP_RATE" type="uint16_t"></sensor>
+            <sensor value="3" name="BATTERY_REMAINING" type="int_8"></sensor>
+            <sensor value="4" name="COMM_DROP_RATE" type="uint_16"></sensor>
         </sensorgroup>
         <sensorgroup value="4" name="MAV1">
             <sensor value="0" name="FIX_TYPE" type="uint_32"></sensor>
@@ -56,6 +56,38 @@
             <sensor value="5" name="PITCH" type="float"></sensor>
             <sensor value="6" name="ROLL" type="float"></sensor>
             <sensor value="7" name="GROUNDSPEED" type="float"></sensor>
+        </sensorgroup>
+        <sensorgroup value="5" name="DETECTION">
+            <sensor value="0" name="LABEL1" type="uint_8"></sensor>
+            <sensor value="1" name="X1" type="int_16"></sensor>
+            <sensor value="2" name="Y1" type="int_16"></sensor>
+            <sensor value="3" name="W1" type="int_16"></sensor>
+            <sensor value="4" name="H1" type="int_16"></sensor>
+            <sensor value="5" name="Z1" type="int_16"></sensor>
+            <sensor value="6" name="LABEL2" type="uint_8"></sensor>
+            <sensor value="7" name="X2" type="int_16"></sensor>
+            <sensor value="8" name="Y2" type="int_16"></sensor>
+            <sensor value="9" name="W2" type="int_16"></sensor>
+            <sensor value="10" name="H2" type="int_16"></sensor>
+            <sensor value="11" name="Z2" type="int_16"></sensor>
+            <sensor value="12" name="LABEL3" type="uint_8"></sensor>
+            <sensor value="13" name="X3" type="int_16"></sensor>
+            <sensor value="14" name="Y3" type="int_16"></sensor>
+            <sensor value="15" name="W3" type="int_16"></sensor>
+            <sensor value="16" name="H3" type="int_16"></sensor>
+            <sensor value="17" name="Z3" type="int_16"></sensor>
+            <sensor value="18" name="LABEL4" type="uint_8"></sensor>
+            <sensor value="19" name="X4" type="int_16"></sensor>
+            <sensor value="20" name="Y4" type="int_16"></sensor>
+            <sensor value="21" name="W4" type="int_16"></sensor>
+            <sensor value="22" name="H4" type="int_16"></sensor>
+            <sensor value="23" name="Z4" type="int_16"></sensor>
+            <sensor value="24" name="LABEL5" type="uint_8"></sensor>
+            <sensor value="25" name="X5" type="int_16"></sensor>
+            <sensor value="26" name="Y5" type="int_16"></sensor>
+            <sensor value="27" name="W5" type="int_16"></sensor>
+            <sensor value="28" name="H5" type="int_16"></sensor>
+            <sensor value="29" name="Z5" type="int_16"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">

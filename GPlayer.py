@@ -7,7 +7,11 @@ class GPlayer:
 		version = 2.0
 		print(f"GPlayer version {version}")
 		self.toolBox = GToolBox.GToolBox(self) # initiate all modules
-		self.mainLoop()	# keep main thread alive
+		self.toolBox.startLoops()
+		print("GPlayer initialized!")
+		input("Press anykey to exit")
+		#self.mainLoop()	# keep main thread alive
+		
 
 	def mainLoop(self):
 		# keep main GPlayer alive

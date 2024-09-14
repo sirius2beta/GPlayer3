@@ -4,8 +4,10 @@ from NetworkManager import NetworkManager
 from VideoManager import VideoManager
 from DeviceManager import DeviceManager
 from MavManager import MavManager
+from SensorManager import SensorManager
 from config import Config
 from OakCam import OakCam
+
 
 # GToolBox stores all the modules and initialize them
 class GToolBox:
@@ -16,20 +18,28 @@ class GToolBox:
 
 		# Initialize all modules here
 		print("GPlayer initializing...")
+		self.sensorManager = SensorManager(self)
+		self.sensorManager.sensor_group_list = self.config.sensor_group_list
+		
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)
-		print("setting sensorgrouplist")
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
 		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
 		self.mavManager.startLoop()
+		self.oakCam = OakCam(self)
+		
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
-		self.oakCam = OakCam(self)
-
-		# networkManager is not started until after everything is ready
-		self.networkManager.startLoop()
-
-		print("GPlayer initialized!")
 		
+
+		
+		
+	def startLoops(self):
+		# networkManager is not started until after everything is ready
+		self.oakCam.startLoop()
+		self.networkManager.startLoop()
+		
+		print("start loops!!")
+
 	def core(self):
 		return self.core
