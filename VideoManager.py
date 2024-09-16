@@ -34,8 +34,8 @@ class VideoManager(GTool):
 			for video in self.videoFormatList[form]:
 				print(f"      - {index}:  video{video[0]} {video[1]}")
 			index += 1
-		if self.toolBox().oakCam.hasCamera:
-			print("      - OAK camera connected")
+		#if self.toolBox().oakCam.hasCamera:
+		#	print("      - OAK camera connected")
 
 	def createPipelines(self):
 		for i in range(0, 10):

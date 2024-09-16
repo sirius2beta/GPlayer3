@@ -24,7 +24,7 @@ class SensorManager(GTool):
     
     def send_detection_result(self, detectionMatrix):
         data = b''
-        for i in range(4):
+        for i in range(10):
 
             self.sensor_group_list[5].get_sensor(i*6).data = detectionMatrix[i*6]
             self.sensor_group_list[5].get_sensor(i*6+1).data = detectionMatrix[i*6+1]

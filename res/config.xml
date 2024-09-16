@@ -88,6 +88,36 @@
             <sensor value="27" name="W5" type="int_16"></sensor>
             <sensor value="28" name="H5" type="int_16"></sensor>
             <sensor value="29" name="Z5" type="int_16"></sensor>
+            <sensor value="30" name="LABEL6" type="uint_8"></sensor>
+            <sensor value="31" name="X1" type="int_16"></sensor>
+            <sensor value="32" name="Y1" type="int_16"></sensor>
+            <sensor value="33" name="W1" type="int_16"></sensor>
+            <sensor value="34" name="H1" type="int_16"></sensor>
+            <sensor value="35" name="Z1" type="int_16"></sensor>
+            <sensor value="36" name="LABEL7" type="uint_8"></sensor>
+            <sensor value="37" name="X2" type="int_16"></sensor>
+            <sensor value="38" name="Y2" type="int_16"></sensor>
+            <sensor value="39" name="W2" type="int_16"></sensor>
+            <sensor value="40" name="H2" type="int_16"></sensor>
+            <sensor value="41" name="Z2" type="int_16"></sensor>
+            <sensor value="42" name="LABEL8" type="uint_8"></sensor>
+            <sensor value="43" name="X3" type="int_16"></sensor>
+            <sensor value="44" name="Y3" type="int_16"></sensor>
+            <sensor value="45" name="W3" type="int_16"></sensor>
+            <sensor value="46" name="H3" type="int_16"></sensor>
+            <sensor value="47" name="Z3" type="int_16"></sensor>
+            <sensor value="48" name="LABEL9" type="uint_8"></sensor>
+            <sensor value="49" name="X4" type="int_16"></sensor>
+            <sensor value="50" name="Y4" type="int_16"></sensor>
+            <sensor value="51" name="W4" type="int_16"></sensor>
+            <sensor value="52" name="H4" type="int_16"></sensor>
+            <sensor value="53" name="Z4" type="int_16"></sensor>
+            <sensor value="54" name="LABEL10" type="uint_8"></sensor>
+            <sensor value="55" name="X5" type="int_16"></sensor>
+            <sensor value="56" name="Y5" type="int_16"></sensor>
+            <sensor value="57" name="W5" type="int_16"></sensor>
+            <sensor value="58" name="H5" type="int_16"></sensor>
+            <sensor value="59" name="Z5" type="int_16"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
