@@ -23,7 +23,9 @@ class GToolBox:
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
+		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
 		# networkManager is not started until after everything is ready
+		self.dataLogger = DataLogger(self)
 		self.networkManager.startLoop()
 
 		print("GPlayer initialized!")
