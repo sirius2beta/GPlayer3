@@ -4,6 +4,8 @@ from NetworkManager import NetworkManager
 
 class GPlayer:
 	def __init__(self):
+		version = 2.0
+		print(f"GPlayer version {version}")
 		self.toolBox = GToolBox.GToolBox(self) # initiate all modules
 		
 		self.mainLoop()	# keep main thread alive

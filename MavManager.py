@@ -27,7 +27,6 @@ def fixMAVLinkMessageForForward(msg):
 	
 class MavManager(GTool):
 	def __init__(self, toolbox):
-        
 		super().__init__(toolbox)
 		# 暫存資料初始化
 		self.attitude = {
@@ -71,13 +70,17 @@ class MavManager(GTool):
 		self.data = "" # data from Pixhawk, temporary store here, can be access by other thread
 		self.loop = threading.Thread(target=self.loopFunction)
 		self.loop.daemon = True
-		self.loop.start()
+		
 		self.loop2 = threading.Thread(target=self.processLoop) # process data with processLoop to prevent timeout from main loop function
 		self.loop2.daemon = True
-		self.loop2.start()
 		
+	def startLoop(self):
+		self.loop.start()
+		self.loop2.start()
+		print("[o] MavManager: started")
 	def setSensorGroupList(self, sgl):
 		self.sensor_group_list = sgl
+		print(f"sensor_group_list set")
 	# connect to Ground Control Station(GCS) with udp
 	def connectGCS(self, ip):
 		self.lock.acquire()
@@ -205,6 +208,8 @@ class MavManager(GTool):
 	def processLoop(self):
 		while True:
 			self.lock2.acquire()
+			if not hasattr(self, 'sensor_group_list'):
+				continue
 			
 			out_msg = self.data
 			self.data = ""
@@ -230,7 +235,7 @@ class MavManager(GTool):
 			self.lock2.release()
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[4].pack())
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
-			self.send_distance_sensor_data(25,10)
+			#self.send_distance_sensor_data(25,10)
 			time.sleep(0.3)
 				
 	def gps_data(self):

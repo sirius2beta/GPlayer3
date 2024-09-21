@@ -19,13 +19,17 @@ class GToolBox:
 		# Initialize all modules here
 		print("GPlayer initializing...")
 		self.networkManager = NetworkManager(self)
-		self.mavManager = MavManager(self)		
+		self.mavManager = MavManager(self)
+		print("setting sensorgrouplist")
+		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
+		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
+		self.mavManager.startLoop()
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.oakCam = OakCam(self)
-		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
+        self.dataLogger = DataLogger(self)
+        
 		# networkManager is not started until after everything is ready
-		self.dataLogger = DataLogger(self)
 		self.networkManager.startLoop()
 
 		print("GPlayer initialized!")
