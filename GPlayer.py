@@ -14,6 +14,7 @@ class GPlayer:
 		# keep main GPlayer alive
 		while True:
 			time.sleep(10)
+			print(self.toolBox.mavManager.gps_data)
 
 
 

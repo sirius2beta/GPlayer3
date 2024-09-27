@@ -5,6 +5,8 @@ import threading
 from GTool import GTool
 from datetime import datetime
 
+#self._toolBox.mavManager.depth  存取深度資料
+
 class DataLogger(GTool):
     def __init__(self, toolbox):
         super().__init__(toolbox)
@@ -27,7 +29,7 @@ class DataLogger(GTool):
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         try:
-            gps_data = self._toolBox.mavManager.gps_data()
+            gps_data = self._toolBox.mavManager.gps_data
         except Exception as e:
             print('DataLogger exception: GPS_data: msg:{e}')
             pass
