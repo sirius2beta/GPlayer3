@@ -15,6 +15,7 @@ SENSOR = b'\x50'
 class DeviceManager(GTool):	
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
+		# self.aqua_device = None
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  # 目前連在pi上的裝置
 		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
@@ -113,6 +114,7 @@ class DeviceManager(GTool):
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			# self.aqua_device = dev
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
