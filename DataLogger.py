@@ -24,22 +24,25 @@ class DataLogger(GTool):
     def log_gps_data(self):
         gps_data = {"time_usec": 0, "fix_type": 0, "lat": 0, "lon": 0, "alt": 0, "HDOP": 0, "VDOP": 0}
         aqua_data = []
+        now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         try:
             gps_data = self._toolBox.mavManager.gps_data()
         except Exception as e:
+            print('DataLogger exception: GPS_data: msg:{e}')
             pass
             
         try:
             aqua_data = self._toolBox.deviceManager.device_list[1].aqua_data()
         except Exception as e:
+            print('DataLogger exception: Aqua_data: msg:{e}')
             pass
             
         with open(self.log_file, 'a') as log:
-            log_entry = f"{gps_data['time_usec']}, {gps_data['fix_type']}, {gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, {gps_data['HDOP']}, {gps_data['VDOP']}, {aqua_data}\n"
+            log_entry = f"Pi time:{now}, {gps_data['time_usec']}, {gps_data['fix_type']}, {gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, {gps_data['HDOP']}, {gps_data['VDOP']}, {aqua_data}\n"
             log.write(log_entry)
 
     def looper(self):
         while(True):
             self.log_gps_data()
-            time.sleep(5)
+            time.sleep(1)
