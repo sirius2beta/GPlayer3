@@ -244,7 +244,7 @@ class MavManager(GTool):
 	
 	@property
 	def depth(self):
-		return round(self._depth,2)
+		return self._depth
 	
 	def send_distance_sensor_data(self, direction = 0, d = 0):
 		try:
