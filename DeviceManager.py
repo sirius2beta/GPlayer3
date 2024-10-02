@@ -15,7 +15,7 @@ SENSOR = b'\x50'
 class DeviceManager(GTool):	
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
-		# self.aqua_device = None
+		self.aqua_device = None
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  # 目前連在pi上的裝置
 		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
@@ -109,12 +109,11 @@ class DeviceManager(GTool):
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev
-		
 		elif idVendor == "0403" and idProduct == "6001": # AT600 device 
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			# self.aqua_device = dev
+			self.aqua_device = dev
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
@@ -140,7 +139,6 @@ class DeviceManager(GTool):
 			dev.isOpened = True
 			return dev
 		elif idVendor == "2341" and idProduct == "8037": # 保留arduino做為測試用
-			
 			print("      ...Devicefactory create Arduino")
 			device_type = 5
 			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)

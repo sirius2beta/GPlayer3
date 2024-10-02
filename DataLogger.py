@@ -24,24 +24,34 @@ class DataLogger(GTool):
         return os.path.join(self.log_directory, file_name) # 回傳檔案路徑
 
     def log_gps_data(self):
-        gps_data = {"time_usec": 0, "fix_type": 0, "lat": 0, "lon": 0, "alt": 0, "HDOP": 0, "VDOP": 0}
-        aqua_data = []
+        self.gps_data = {
+            'time_usec': 0,
+            'fix_type': 0,
+            'lat': 0,
+            'lon': 0,
+            'alt': 0,
+            'HDOP': 0,
+            'VDOP': 0
+        }
+        aqua_data = [] * 21 
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
         try:
             gps_data = self._toolBox.mavManager.gps_data
+            depth = self._toolBox.mavManager.depth
         except Exception as e:
-            print('DataLogger exception: GPS_data: msg:{e}')
+            print(f'DataLogger exception: GPS_data: msg:{e}')
             pass
             
         try:
-            aqua_data = self._toolBox.deviceManager.device_list[1].aqua_data()
+            if(self._toolBox.deviceManager.aqua_device != None):
+                aqua_data = self._toolBox.deviceManager.aqua_device.get_aqua_data()
         except Exception as e:
-            print('DataLogger exception: Aqua_data: msg:{e}')
+            print(f'DataLogger exception: Aqua_data: msg:{e}')
             pass
             
         with open(self.log_file, 'a') as log:
-            log_entry = f"Pi time:{now}, {gps_data['time_usec']}, {gps_data['fix_type']}, {gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, {gps_data['HDOP']}, {gps_data['VDOP']}, {aqua_data}\n"
+            log_entry = f"Pi time:{now}, {gps_data['time_usec']}, {gps_data['fix_type']}, {gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, {gps_data['HDOP']}, {gps_data['VDOP']}, {depth}, {aqua_data}\n"
             log.write(log_entry)
 
     def looper(self):
