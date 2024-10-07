@@ -165,6 +165,10 @@ class MavManager(GTool):
 				self.gps_raw['alt'] = msg.alt
 				self.gps_raw['HDOP'] = msg.eph
 				self.gps_raw['VDOP'] = msg.epv
+				self.gps_raw['HACC'] = msg.h_acc
+				self.gps_raw['VACC'] = msg.v_acc
+				self.gps_raw['SACC'] = msg.vel_acc
+				self.gps_raw['YACC'] = msg.hdg_acc
 				self.gps_raw['yaw'] = msg.yaw
 				self.lock2.release()
 
