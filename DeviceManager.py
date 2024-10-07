@@ -109,18 +109,11 @@ class DeviceManager(GTool):
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev
-		elif idVendor == "0403" and idProduct == "6001": # AT600 device 
+		elif idVendor == "1d6b" and idProduct == "0002": # AT600 device 
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			self.aqua_device = dev
-			dev.start_loop()
-			dev.isOpened = True
-			return dev
-		elif idVendor == "1d6b" and idProduct == "0002": # ESP32BT device
-			print("      ...Devicefactory create ESP32BT")
-			device_type = 2
-			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
@@ -148,5 +141,14 @@ class DeviceManager(GTool):
 		
 		else:
 			return None
+		"""
+		elif idVendor == "1d6b" and idProduct == "0002": # ESP32BT device
+			print("      ...Devicefactory create ESP32BT")
+			device_type = 2
+			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
+			dev.isOpened = True
+			return dev
+		"""
 	def __del__(self):
 		pass
