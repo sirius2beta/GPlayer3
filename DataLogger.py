@@ -23,7 +23,7 @@ class DataLogger(GTool):
         file_name = f"aqua_{current_time.strftime('%Y%m%d_%H%M')}.txt" # 設定檔案名稱
         return os.path.join(self.log_directory, file_name) # 回傳檔案路徑
 
-    def log_gps_data(self):
+    def log_data(self):
         self.gps_data = {
             'time_usec': 0,
             'fix_type': 0,
@@ -56,5 +56,5 @@ class DataLogger(GTool):
 
     def looper(self):
         while(True):
-            self.log_gps_data()
+            self.log_data()
             time.sleep(1)

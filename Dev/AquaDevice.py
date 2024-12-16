@@ -97,4 +97,3 @@ class AquaDevice(Device):
             print(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
             """
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager  
-

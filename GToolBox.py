@@ -7,6 +7,7 @@ from MavManager import MavManager
 from config import Config
 #from OakCam import OakCam
 from DataLogger import DataLogger
+from KBestReader import KBestReader
 from CoolingModule import CoolingModule
 
 # GToolBox stores all the modules and initialize them
@@ -26,6 +27,7 @@ class GToolBox:
 		self.mavManager.startLoop()
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
+		self.kBestReader = KBestReader(self)
 		#self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
         

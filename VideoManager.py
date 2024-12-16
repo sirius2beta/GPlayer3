@@ -95,30 +95,27 @@ class VideoManager(GTool):
 							if add == True:
 								self.videoFormatList[index].append([i,form])
 						
-		
-		
-
 	def get_video_format_for_diffNx(self):	
 		#Check camera device
 		for i in range(0,10):
-				try:
-					cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
-					returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
-				except:
+			try:
+				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
+				returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
+			except:
+				continue
+			line_list = returned_value.splitlines()
+			new_line_list = list()
+			for j in line_list:
+				if len(j.split()) == 0:
 					continue
-				line_list = returned_value.splitlines()
-				new_line_list = list()
-				for j in line_list:
-					if len(j.split()) == 0:
-						continue
-					elif j.split()[0] =='Pixel':
-						form = j.split()[2][1:-1]
-					elif j.split()[0] =='Size:':
-						size = j.split()[2]
-						width, height = size.split('x')
-					elif j.split()[0] == 'Interval:':
-						self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
-						print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+				elif j.split()[0] =='Pixel':
+					form = j.split()[2][1:-1]
+				elif j.split()[0] =='Size:':
+					size = j.split()[2]
+					width, height = size.split('x')
+				elif j.split()[0] == 'Interval:':
+					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+					print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
 		gstring = VideoFormat.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
