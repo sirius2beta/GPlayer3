@@ -79,18 +79,7 @@ class RS485Device(Device):
             self.sensor_group_list[2].get_sensor(1).data = self.current
             self.sensor_group_list[2].get_sensor(2).data = self.capacity
             self.sensor_group_list[2].get_sensor(3).data = self.battery_temp
-            """
-            print(f"self.sensor_group_list[0].get_sensor(0).data:{self.sensor_group_list[0].get_sensor(0).data}")  
-            print(f"self.sensor_group_list[0].get_sensor(1).data:{self.sensor_group_list[0].get_sensor(1).data}") 
-
-            print(f"self.sensor_group_list[2].get_sensor(0).data:{self.sensor_group_list[2].get_sensor(0).data}")  
-            print(f"self.sensor_group_list[2].get_sensor(1).data:{self.sensor_group_list[2].get_sensor(1).data}")  
-            print(f"self.sensor_group_list[2].get_sensor(2).data:{self.sensor_group_list[2].get_sensor(2).data}")  
-            print(f"self.sensor_group_list[2].get_sensor(3).data:{self.sensor_group_list[2].get_sensor(3).data}")  
-
-            print(f"pack:{SENSOR, self.sensor_group_list[0].pack()}")
-            print(f"pack:{SENSOR, self.sensor_group_list[2].pack()}")
-            """
+            
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[0].pack())
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[2].pack())
             time.sleep(1)
