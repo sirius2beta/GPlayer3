@@ -43,6 +43,7 @@ class VideoManager(GTool):
 	#get video format from existing camera devices
 	def get_video_format(self):
 		try:
+			# grep '^VERSION_CODENAME=' /etc/os-release | cut -d '=' -f 2
 			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
 			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
 		except:
