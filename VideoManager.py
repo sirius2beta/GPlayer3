@@ -17,7 +17,21 @@ class VideoManager(GTool):
 		self.camera_format = []
 		self.videoFormatList = {}
 		
-		self.get_video_format() # save existing camera to videoFormatList
+		try:
+			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
+			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
+		except:
+			returned_value = '0'
+		
+		if(len(returned_value) > 1):
+			sys = returned_value.split('=')[1].strip()
+			if(sys == 'buster'):
+				print('system: buster')
+				self.get_video_format()
+			elif(sys == 'bionic'):
+				print(f'system: bionic')
+				self.get_video_format_for_diffNx()
+		
 		self.portOccupied = {} # {port, videoNo}
 
 		GObject.threads_init()
@@ -42,18 +56,6 @@ class VideoManager(GTool):
 
 	#get video format from existing camera devices
 	def get_video_format(self):
-		try:
-			# grep '^VERSION_CODENAME=' /etc/os-release | cut -d '=' -f 2
-			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
-			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
-		except:
-			returned_value = '0'
-		if len(returned_value) > 1:
-			sys = returned_value.split('=')[1]
-			#if sys == 'buster':
-			#	print('system: buster')
-			#else:
-			#	print(f'system: {sys}')
 		#Check camera device
 		for i in range(0,10):
 			newCamera = True
@@ -99,6 +101,7 @@ class VideoManager(GTool):
 	def get_video_format_for_diffNx(self):	
 		#Check camera device
 		for i in range(0,10):
+			newCamera = True
 			try:
 				cmd = "v4l2-ctl -d /dev/video{} --list-formats-ext".format(i)
 				returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8")  # returns the exit code in unix
@@ -107,6 +110,7 @@ class VideoManager(GTool):
 			line_list = returned_value.splitlines()
 			new_line_list = list()
 			for j in line_list:
+				# print(j.split())
 				if len(j.split()) == 0:
 					continue
 				elif j.split()[0] =='Pixel':
@@ -115,8 +119,28 @@ class VideoManager(GTool):
 					size = j.split()[2]
 					width, height = size.split('x')
 				elif j.split()[0] == 'Interval:':
-					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
-					print('video{} {} width={} height={} framerate={}'.format(i,form, width, height , j.split()[3][1:].split('.')[0]))
+					fps = j.split()[3][1:].split('.')[0]
+					self.camera_format.append('video{} {} width={} height={} framerate={}'.format(i,form, width, height , fps))
+					index = self._toolBox.config.getVideoFormatIndex(width, height, fps)
+					if index != -1:
+						if index not in self.videoFormatList:
+							self.videoFormatList[index] = []
+							self.videoFormatList[index].append([i,form])
+						else:
+							video_index = 0
+							add = True
+							for video in self.videoFormatList[index]:
+								if video[0] == i:
+									if form =='MJPG':
+										self.videoFormatList[index].pop(video_index)
+										self.videoFormatList[index].append([i,form])
+										add = False
+									else:
+										add = False
+										break
+								video_index += 1
+							if add == True:
+								self.videoFormatList[index].append([i,form])
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
 		gstring = VideoFormat.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
