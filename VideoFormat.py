@@ -21,7 +21,10 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				if sys == 'buster':
 					gstring +=' jpegparse ! jpegdec ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 				else:
-					gstring +='jpegparse ! jpegdec ! videoconvert ! videoconvert   ! nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+					# Jetson hardware encode H264
+					#gstring +='jpegparse ! jpegdec ! videoconvert ! videoconvert ! nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+					# Software encode, more stable?
+					gstring +='jpegparse ! jpegdec ! videoconvert ! videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 			else:
 				gstring +='jpegparse ! jpegdec ! jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
 

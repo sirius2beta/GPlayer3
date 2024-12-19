@@ -24,14 +24,13 @@ class VideoManager(GTool):
 			returned_value = '0'
 		
 		if(len(returned_value) > 1):
-			sys = returned_value.split('=')[1].strip()
-			if(sys == 'buster'):
-				print('system: buster')
+			self.OS = returned_value.split('=')[1].strip()
+			print(f"Operating System: {self.OS}")
+			if(self.OS == 'bionic'): # for Ubuntu 18.04 (Jetson Nano
+				self.get_video_format_Ubuntu_18_04()
+			else:
 				self.get_video_format()
-			elif(sys == 'bionic'):
-				print(f'system: bionic')
-				self.get_video_format_for_diffNx()
-		
+
 		self.portOccupied = {} # {port, videoNo}
 
 		GObject.threads_init()
@@ -98,7 +97,7 @@ class VideoManager(GTool):
 							if add == True:
 								self.videoFormatList[index].append([i,form])
 						
-	def get_video_format_for_diffNx(self):	
+	def get_video_format_Ubuntu_18_04(self):	
 		#Check camera device
 		for i in range(0,10):
 			newCamera = True
@@ -143,7 +142,7 @@ class VideoManager(GTool):
 								self.videoFormatList[index].append([i,form])
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
-		gstring = VideoFormat.getFormatCMD('buster', cam, format, width, height, framerate, encoder, IP, port)
+		gstring = VideoFormat.getFormatCMD(self.OS, cam, format, width, height, framerate, encoder, IP, port)
 		print(gstring)
 		
 		if port in self.portOccupied:

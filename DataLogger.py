@@ -10,7 +10,7 @@ class DataLogger(GTool):
         super().__init__(toolbox) 
         self._toolBox = toolbox
         """
-        1. 在初始化 DataLogger 時，會檢查是否存在存放log的資料夾 "/home/pi/GPlayerLog"，
+        1. 在初始化 DataLogger 時，會檢查是否存在存放log的資料夾 "../GPlayerLog"，
             若不存在，則自動建立該資料夾。
         2. 使用初始化當下的時間來定義日誌文件的名稱，格式為：log_YYYYMMDD_HHMM.txt，
             其中 YYYY 是西元年，MM 是月份，DD 是日期，HHMM 是時間的時和分。
@@ -22,12 +22,7 @@ class DataLogger(GTool):
         except:
             returned_value = '0'
 		
-        if(len(returned_value) > 1):
-            sys = returned_value.split('=')[1].strip()
-            if(sys == 'buster'):
-                self.log_folder_path = "/home/pi/GPlayerLog"
-            elif(sys == 'bionic'):
-                self.log_folder_path = "/home/jetson/GPlayerLog"
+        self.log_folder_path = "../GPlayerLog"
         
         self.log_directory = os.path.expanduser(self.log_folder_path)      # 設定log存放路徑
         if(not os.path.exists(self.log_directory)):                         # 如果路徑不存在，則建立
