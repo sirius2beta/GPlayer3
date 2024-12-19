@@ -8,9 +8,12 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				gstring += (mid+' ! ')
 			if encoder == 'h264':
 				if sys == 'buster':
-					gstring +=' videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
-				else:
+					gstring +='videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
+				else: # for jetson
 					gstring +='nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+					# Software encode, more stable?
+					gstring +='videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+			
 			else:
 				gstring +='jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
 		elif format == 'MJPG':
@@ -19,12 +22,12 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				gstring += (mid+' ! ')
 			if encoder == 'h264':
 				if sys == 'buster':
-					gstring +=' jpegparse ! jpegdec ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
-				else:
+					gstring +='jpegparse ! jpegdec ! videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
+				else: # for jetson
 					# Jetson hardware encode H264
 					#gstring +='jpegparse ! jpegdec ! videoconvert ! videoconvert ! nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 					# Software encode, more stable?
-					gstring +='jpegparse ! jpegdec ! videoconvert ! videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+					gstring +='jpegparse ! jpegdec ! videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 			else:
 				gstring +='jpegparse ! jpegdec ! jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
 
@@ -35,9 +38,11 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 			if encoder == 'h264':
 				if sys == 'buster':
 					gstring +='videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
-				else:
+				else: # for jetson
 					gstring +='videoconvert !  nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
-
+					# Software encode, more stable?
+					gstring +='videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+			
 			else:
 				gstring +='jpegenc quality=30 ! rtpjpegpay ! udpsink host={} port={}'.format(IP, port)
 		else:

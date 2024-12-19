@@ -17,19 +17,10 @@ class VideoManager(GTool):
 		self.camera_format = []
 		self.videoFormatList = {}
 		
-		try:
-			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
-			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
-		except:
-			returned_value = '0'
-		
-		if(len(returned_value) > 1):
-			self.OS = returned_value.split('=')[1].strip()
-			print(f"Operating System: {self.OS}")
-			if(self.OS == 'bionic'): # for Ubuntu 18.04 (Jetson Nano
+		if(self._toolBox.OS == 'bionic'): # for Ubuntu 18.04 (Jetson Nano
 				self.get_video_format_Ubuntu_18_04()
-			else:
-				self.get_video_format()
+		else:
+			self.get_video_format()
 
 		self.portOccupied = {} # {port, videoNo}
 
@@ -142,9 +133,8 @@ class VideoManager(GTool):
 								self.videoFormatList[index].append([i,form])
 
 	def play(self, cam, format, width, height, framerate, encoder, IP, port):
-		gstring = VideoFormat.getFormatCMD(self.OS, cam, format, width, height, framerate, encoder, IP, port)
+		gstring = VideoFormat.getFormatCMD(self._toolBox.OS, cam, format, width, height, framerate, encoder, IP, port)
 		print(gstring)
-		
 		if port in self.portOccupied:
 			videoToStop = self.portOccupied[port]
 			self.pipelines[videoToStop].set_state(Gst.State.NULL)

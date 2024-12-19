@@ -218,17 +218,11 @@ class NetworkManager(GTool):
                 if formatStr == "":
                     continue
                 ip = addr[0]
-                
                 formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-                self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
-                
-                #print(quality, ip, port)
+                self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 
 
-                gstring = VF.getFormatCMD('buster', videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
-                print(gstring)
-                
                 
 
             elif header == SENSOR[0]:
