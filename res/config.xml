@@ -57,6 +57,20 @@
             <sensor value="6" name="ROLL" type="float"></sensor>
             <sensor value="7" name="GROUNDSPEED" type="float"></sensor>
         </sensorgroup>
+        <sensorgroup value="5" name="KBEST">
+            <sensor value="0" name="BOAT_RSSI" type="int_32"></sensor>
+            <sensor value="1" name="GROUND_RSSI" type="int_32"></sensor>
+            <sensor value="2" name="BOAT_RATE" type="float"></sensor>
+            <sensor value="3" name="GROUND_RATE" type="float"></sensor>
+        </sensorgroup>
+        <sensorgroup value="6" name="ARDUSIMPLE">
+            <sensor value="0" name="V_ACC" type="uint_32"></sensor>
+            <sensor value="1" name="H_ACC" type="uint_32"></sensor>
+            <sensor value="2" name="S_ACC" type="uint_32"></sensor>
+            <sensor value="3" name="Y_ACC" type="uint_32"></sensor>
+            <sensor value="4" name="" type=""></sensor>
+            <sensor value="5" name="" type=""></sensor>
+        </sensorgroup>
     </enum>
     <enum name="CONTROL">
 

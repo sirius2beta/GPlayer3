@@ -1,6 +1,7 @@
 import os
 import time
 import threading
+import subprocess
 from GTool import GTool
 from datetime import datetime
 
@@ -15,7 +16,20 @@ class DataLogger(GTool):
             其中 YYYY 是西元年，MM 是月份，DD 是日期，HHMM 是時間的時和分。
         """
         # ================================================================================
-        self.log_directory = os.path.expanduser("/home/pi/GPlayerLog")      # 設定log存放路徑
+        try:
+            cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
+            returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
+        except:
+            returned_value = '0'
+		
+        if(len(returned_value) > 1):
+            sys = returned_value.split('=')[1].strip()
+            if(sys == 'buster'):
+                self.log_folder_path = "/home/pi/GPlayerLog"
+            elif(sys == 'bionic'):
+                self.log_folder_path = "/home/jetson/GPlayerLog"
+        
+        self.log_directory = os.path.expanduser(self.log_folder_path)      # 設定log存放路徑
         if(not os.path.exists(self.log_directory)):                         # 如果路徑不存在，則建立
             os.makedirs(self.log_directory)                                 # 建立路徑
         current_time = datetime.now()                                       # 取得目前時間
