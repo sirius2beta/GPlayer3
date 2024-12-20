@@ -16,15 +16,9 @@ class DataLogger(GTool):
             其中 YYYY 是西元年，MM 是月份，DD 是日期，HHMM 是時間的時和分。
         """
         # ================================================================================
-        try:
-            cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
-            returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
-        except:
-            returned_value = '0'
-		
         self.log_folder_path = "../GPlayerLog"
         
-        self.log_directory = os.path.expanduser(self.log_folder_path)      # 設定log存放路徑
+        self.log_directory = os.path.expanduser(self.log_folder_path)       # 設定log存放路徑
         if(not os.path.exists(self.log_directory)):                         # 如果路徑不存在，則建立
             os.makedirs(self.log_directory)                                 # 建立路徑
         current_time = datetime.now()                                       # 取得目前時間
