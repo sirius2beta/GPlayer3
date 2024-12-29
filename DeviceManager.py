@@ -9,6 +9,7 @@ from Dev.TestDevice import TestDevice
 from Dev.AquaDevice import AquaDevice
 from Dev.RS485Device import RS485Device
 from Dev.WinchDevice import WinchDevice
+from Dev.ArduSimpleDevice import ArduSimpleDevice
 
 SENSOR = b'\x50'
 
@@ -16,6 +17,7 @@ class DeviceManager(GTool):
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
 		self.aqua_device = None
+		self.ardusimple_isOpen = False
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  # 目前連在pi上的裝置
 		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
@@ -95,7 +97,7 @@ class DeviceManager(GTool):
 
 	def _deviceFactory(self, idVendor, idProduct, dev_path):
 		# Pixhawk
-		if idVendor == "1209" and idProduct == "5740": 
+		if(idVendor == "1209" and idProduct == "5740"): 
 			if self.SITL_connect == True:
 				return None
 			if self.Pixhawk_exist == True:
@@ -109,7 +111,7 @@ class DeviceManager(GTool):
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev
-		elif idVendor == "1d6b" and idProduct == "0002": # AT600 device 
+		elif(idVendor == "1d6b" and idProduct == "0002"): # AT600 device 
 			print("      ...Devicefactory create AT600")
 			device_type = 1
 			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
@@ -117,28 +119,37 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "10c4" and idProduct == "ea60": # Node MCU
+		elif(idVendor == "10c4" and idProduct == "ea60"): # Node MCU
 			print("      ...Devicefactory create Node MCU")
 			device_type = 3
 			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "067b" and idProduct == "2303": # RS485Module
+		elif(idVendor == "067b" and idProduct == "2303"): # RS485Module
 			print("      ...Devicefactory create RS485Module")
 			device_type = 4
 			dev = RS485Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.start_loop()
 			dev.isOpened = True
 			return dev
-		elif idVendor == "2341" and idProduct == "8037": # 保留arduino做為測試用
+		elif(idVendor == "2341" and idProduct == "8037"): # 保留arduino做為測試用
 			print("      ...Devicefactory create Arduino")
 			device_type = 5
 			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			dev.isOpened = True
 			dev.start_loop()
 			return dev
-		
+
+		elif(idVendor == "152a" and idProduct == "85c0" and self.ardusimple_isOpen == False):
+			print("      ...Devicefactory create ArduSimple")
+			self.ardusimple_isOpen = True
+			device_type = 6
+			dev = ArduSimpleDevice(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			dev.start_loop()
+			dev.isOpened = True
+			return dev
+				
 		else:
 			return None
 		

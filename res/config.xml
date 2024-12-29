@@ -64,12 +64,9 @@
             <sensor value="3" name="GROUND_RATE" type="float"></sensor>
         </sensorgroup>
         <sensorgroup value="6" name="ARDUSIMPLE">
-            <sensor value="0" name="V_ACC" type="uint_32"></sensor>
-            <sensor value="1" name="H_ACC" type="uint_32"></sensor>
-            <sensor value="2" name="S_ACC" type="uint_32"></sensor>
-            <sensor value="3" name="Y_ACC" type="uint_32"></sensor>
-            <sensor value="4" name="" type=""></sensor>
-            <sensor value="5" name="" type=""></sensor>
+            <sensor value="0" name="LAT_ACC" type="int_32"></sensor>
+            <sensor value="1" name="LON_ACC" type="int_32"></sensor>
+            <sensor value="2" name="ALT_ACC" type="int_32"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
@@ -89,6 +86,7 @@
         <entry value="3" name="NodeMCU" idVendor="10c4" idProduct="ea60"></entry>
         <entry value="4" name="RS485Module" idVendor="0403" idProduct="6001"></entry>
         <entry value="5" name="TestDev" idVendor="2341" idProduct="8037"></entry>
+        <entry value="6" name="ArduSimple" idVendor="152a" idProduct="85c0"></entry>
     </enum>
     <enum name="CONTROL_TYPE">
         <entry value="0" name="WINCH">
