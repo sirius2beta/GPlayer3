@@ -39,20 +39,28 @@ class DataLogger(GTool):
             'VDOP': 0,
         }
         aqua_data = [] * 21 
+        acc_data = [] * 3   # [lat_acc, lon_acc, alt_acc]
         pi_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         
-        try:
+        try:    # 從 mavManager調取 GPS_data 和 水深
             gps_data = self._toolBox.mavManager.gps_data
             depth = self._toolBox.mavManager.depth
         except Exception as e:
             print(f'DataLogger exception: GPS_data: msg:{e}')
             pass
-            
-        try:
+
+        try:    # 從 deviceManager.aqua_device調取 aqua_data
             if(self._toolBox.deviceManager.aqua_device != None):
                 aqua_data = self._toolBox.deviceManager.aqua_device.get_aqua_data()
         except Exception as e:
             print(f'DataLogger exception: Aqua_data: msg:{e}')
+            pass
+        
+        try:    # 從 deviceManager.ardusimple_device調取 ACCList
+            if(self._toolBox.deviceManager.ardusimple_device != None):
+                acc_data = self._toolBox.deviceManager.ardusimple_device.get_ACCList()
+        except Exception as e:
+            print(f'DataLogger exception: acc_data: msg:{e}')
             pass
 
         try:
@@ -60,7 +68,7 @@ class DataLogger(GTool):
                 log_entry = (
                     f"Pi time:{pi_time}, {gps_data['time_usec']}, {gps_data['fix_type']}, "
                     f"{gps_data['lat']}, {gps_data['lon']}, {gps_data['alt']}, "
-                    f"{gps_data['HDOP']}, {gps_data['VDOP']}, {depth}, {aqua_data}\n"
+                    f"{gps_data['HDOP']}, {gps_data['VDOP']}, {depth}, {acc_data}, {aqua_data}\n"
                 )
                 log.write(log_entry)
 

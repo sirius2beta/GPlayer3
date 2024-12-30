@@ -16,12 +16,13 @@ SENSOR = b'\x50'
 class DeviceManager(GTool):	
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
-		self.aqua_device = None
-		self.ardusimple_isOpen = False
+		self.aqua_device = None 		# aqua_device object
+		self.ardusimple_device = None 	# ardusimple_device object
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
-		self.device_list = []  # 目前連在pi上的裝置
-		self.Pixhawk_exist = False #會有出現兩個pixhawk的情形，確保指讀取一個
-		self.SITL_connect = False # 如果要測試SITL，此值為True
+		self.device_list = []  		# 目前連在pi上的裝置
+		self.Pixhawk_exist = False 	# 會有出現兩個pixhawk的情形，確保指讀取一個
+		self.ardusimple_exist = False # ArduSimple有兩Port，確保只讀取一個
+		self.SITL_connect = False 	# 如果要測試SITL，此值為True
 		# get all tty* device (ACM, USB..)
 		cmd = "ls /dev/tty*"
 		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
@@ -75,8 +76,6 @@ class DeviceManager(GTool):
 			print("      - no device found")
 		for i in self.device_list:
 			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
-	
-	
 	
 	def processControl(self, control_type, cmd):
 		command_type = int(cmd[0])
@@ -141,13 +140,16 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			return dev
 
-		elif(idVendor == "152a" and idProduct == "85c0" and self.ardusimple_isOpen == False):
+		elif(idVendor == "152a" and idProduct == "85c0"): # ArduSimple
+			if(self.ardusimple_exist): # ardusimple 存在，就不再呼叫
+				return None
 			print("      ...Devicefactory create ArduSimple")
-			self.ardusimple_isOpen = True
 			device_type = 6
 			dev = ArduSimpleDevice(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			self.ardusimple_device = dev
 			dev.start_loop()
 			dev.isOpened = True
+			self.ardusimple_exist = True # 設定 ardusimple 存在
 			return dev
 				
 		else:

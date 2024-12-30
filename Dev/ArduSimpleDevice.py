@@ -11,12 +11,16 @@ class ArduSimpleDevice(Device):
         
         # [message_id, utc_position_fix, rms_pseudorange_residual, semi_major_error, semi_minor_error, ellipse_orientation, lat_acc, lon_acc, alt_acc, checksum]
         self.GST_list = [None, None, None, None, None, None, None, None, None, None]
+        # [lat_acc, lon_acc, alt_acc]
+        self.ACC_list = [None, None, None]
+
         self.ser = serial.Serial(port = self.dev_path, baudrate = 115200, timeout = 2)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
 
     def reader(self):
-        try: 
-            while(True):
+        while(True):
+            try: 
+                # =====這裡做資料處理輸出field List=====
                 raw_data = self.ser.readline()
                 decode_data = raw_data.decode('utf-8').strip().lstrip('$')
                 fields = decode_data.split(',')
@@ -26,28 +30,43 @@ class ArduSimpleDevice(Device):
                     checksum = checksum_data[1]
                 else:
                     checksum = None
-                self.GST_list = [
-                    fields[0],               # message_id
-                    fields[1],               # utc_position_fix
-                    float(fields[2]) if fields[2] else None,  # rms_pseudorange_residual
-                    float(fields[3]) if fields[3] else None,  # semi_major_error
-                    float(fields[4]) if fields[4] else None,  # semi_minor_error
-                    float(fields[5]) if fields[5] else None,  # ellipse_orientation
-                    float(fields[6]) if fields[6] else None,  # lat_acc
-                    float(fields[7]) if fields[7] else None,  # lon_acc
-                    float(fields[8]) if fields[8] else None,  # alt_acc
-                    checksum               # checksum
-                ]
-                print(f"raw_data:\n{raw_data}")
-                print(self.GST_list)
+                # =====================================
+                if(fields[0] == "GPGST" or fields[0] == "GLGST" or fields[0] == "GNGST"):
+                    self.GST_list = [
+                        fields[0],  # message_id
+                        fields[1],  # utc_position_fix
+                        fields[2],  # rms_pseudorange_residual
+                        fields[3],  # semi_major_error
+                        fields[4],  # semi_minor_error
+                        fields[5],  # ellipse_orientation
+                        fields[6],  # lat_acc
+                        fields[7],  # lon_acc
+                        fields[8],  # alt_acc
+                        checksum    # checksum
+                    ] 
 
-        except(serial.serialutil.SerialException): # if serial error
-            print("Serial Error...")
-            print("Trying to reconnect...")
+                    self.ACC_list = [
+                        fields[6],  # lat_acc
+                        fields[7],  # lon_acc
+                        fields[8],  # alt_acc
+                    ]
+                    
+                    print(f"GST_list:\n{self.GST_list}")
+                    print(f"ACC_list:\n{self.ACC_list}")
 
-        except Exception as e: # if other error
-            print(e)
+            except(serial.serialutil.SerialException): # if serial error
+                print("Serial Error...")
+                print("Trying to reconnect...")
+
+            except Exception as e: # if other error
+                print(e)
         
+    def get_GSTList(self):
+        return self.GST_list
+    
+    def get_ACCList(self):
+        return self.ACC_list
+
     def start_loop(self):
         super().start_loop() 
             
