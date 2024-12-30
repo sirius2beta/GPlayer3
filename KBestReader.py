@@ -62,14 +62,17 @@ class KBestReader():
                     extracted_value = float(match.group(1))
                     self.rx_rate = extracted_value
 
-                time.sleep(1)
-
             except subprocess.TimeoutExpired:
                 print("SNMP command timed out.")
+                print("Please confirm whether the KBest device is connected.")
                 return None
+            except FileNotFoundError:
+                print("Please confirm that the SNMP method has been downloaded to the computer.")
             except Exception as e:
                 print(f"Exception occurred: {e}")
                 return None
+            finally:
+                time.sleep(1)
         
     def _io_loop(self):
         while(True):

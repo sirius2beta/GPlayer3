@@ -22,3 +22,5 @@ sudo cp wpa_supplicant.conf /etc/wpa_supplicant
 chmod +x push.sh
 chmod +x update.sh 
 
+echo "start downloading snmp..."
+sudo apt-get install snmp
