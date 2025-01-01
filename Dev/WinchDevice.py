@@ -1,7 +1,7 @@
 import time
 import serial
 
-from Device import Device
+from Dev.Device import Device
 
 # This device will connect to arduino, which canc accept command for winch control
 # Command for arduino

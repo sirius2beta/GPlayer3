@@ -2,7 +2,7 @@ import time
 import serial
 import struct
 import threading
-from Device import Device
+from Dev.Device import Device
 from config import Config as CF
 
 SENSOR = b'\x04'

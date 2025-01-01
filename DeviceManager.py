@@ -4,7 +4,6 @@ import subprocess
 import serial
 
 from GTool import GTool
-from Device import Device
 from Dev.TestDevice import TestDevice
 from Dev.AquaDevice import AquaDevice
 from Dev.RS485Device import RS485Device

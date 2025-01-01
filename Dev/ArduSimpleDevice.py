@@ -1,7 +1,7 @@
 import time
 import serial
 import threading
-from Device import Device
+from Dev.Device import Device
 
 SENSOR = b'\x04'
 

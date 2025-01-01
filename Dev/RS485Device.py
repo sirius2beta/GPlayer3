@@ -1,7 +1,7 @@
 import time
 import serial
 
-from Device import Device
+from Dev.Device import Device
 from config import Config as CF
 
 SENSOR = b'\x04'
