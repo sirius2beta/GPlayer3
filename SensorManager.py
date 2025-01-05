@@ -1,6 +1,4 @@
 import GTool
-import Device
-import SensorGroup
 
 class DeviceManager(GTool):
     def __init__(self, toolBox):
