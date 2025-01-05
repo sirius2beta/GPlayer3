@@ -51,8 +51,8 @@ class ArduSimpleDevice(Device):
                         fields[8],  # alt_acc
                     ]
                     
-                    print(f"GST_list:\n{self.GST_list}")
-                    print(f"ACC_list:\n{self.ACC_list}")
+                    # print(f"GST_list:\n{self.GST_list}")
+                    # print(f"ACC_list:\n{self.ACC_list}")
 
             except(serial.serialutil.SerialException): # if serial error
                 print("Serial Error...")
@@ -86,8 +86,6 @@ class ArduSimpleDevice(Device):
                 self.sensor_group_list[6].get_sensor(2).data = -1 # alt_acc
             else:
                 self.sensor_group_list[6].get_sensor(2).data = self.GST_list[8] # alt_acc
-
-            self.networkManager.sendMsg(SENSOR, self.sensor_group_list[6].pack()) # send the data to the network manager  
             time.sleep(1)
             
 

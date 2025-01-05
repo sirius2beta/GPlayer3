@@ -14,8 +14,3 @@ class GPlayer:
 		# keep main GPlayer alive
 		while True:
 			time.sleep(10)
-
-
-
-	
-
