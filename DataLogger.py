@@ -64,6 +64,7 @@ class DataLogger(GTool):
             self.log_data.alt = gps_data['alt']
             self.log_data.HDOP = gps_data['HDOP']
             self.log_data.VDOP = gps_data['VDOP']
+            self.log_data.depth = depth
 
             # ArduSimple Accuracy
             self.log_data.lat_acc = acc_data[0]
@@ -73,7 +74,7 @@ class DataLogger(GTool):
             # Aqua Data
             self.log_data.temperature = aqua_data[0]                         # 1. 水溫
             self.log_data.pressure = aqua_data[1]                            # 2. 壓力
-            self.log_data.depth = aqua_data[2]                               # 3. 深度
+            self.log_data.aqua_depth = aqua_data[2]                          # 3. 深度
             self.log_data.level_depth_to_water = aqua_data[3]                # 4. 水位深度
             self.log_data.level_surface_elevation = aqua_data[4]             # 5. 表面高程
             self.log_data.actual_conductivity = aqua_data[5]                 # 6. 實際導電率

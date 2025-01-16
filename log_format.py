@@ -19,9 +19,9 @@ class LogFormat:
         self.alt_acc = -1       # 高度精度
 
         # Aqua 資料 (根據 XML 修改名稱並轉換為小寫)
-        self.temperature = -1                        # 1. 水溫
-        self.pressure = -1                           # 2. 壓力
-        self.depth = -1                              # 3. 深度
+        self.temperature = -1                       # 1. 水溫
+        self.pressure = -1                          # 2. 壓力
+        self.aqua_depth = -1                        # 3. 深度
         self.level_depth_to_water = -1              # 4. 水位深度
         self.level_surface_elevation = -1           # 5. 表面高程
         self.actual_conductivity = -1               # 6. 實際導電率

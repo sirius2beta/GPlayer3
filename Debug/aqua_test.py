@@ -2,20 +2,13 @@ import time
 import serial
 import struct
 import threading
-from Dev.Device import Device
 
-SENSOR = b'\x04'
-
-class AquaDevice(Device):           
-    def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
-        super().__init__(device_type, dev_path, sensor_group_list, networkManager)
-       
-        self.wake_up_command = ['01', '0D', 'C1', 'E5' ] # 喚醒 Aqua
-        
-        # command 對應 config 文件
+class AquaDevice():           
+    def __init__(self, dev_path=""):
+        self.dev_path = dev_path
         self.command_set = [
             ['01', '03', '15', '4A', '00', '07', '21', 'D2'], # 0:溫度
-            ['01', '03', '15', '51', '00', '07', '51', 'D5'], # 壓力
+            ['01', '03', '15', '51', '00', '07', '51', 'D5'], # 壓力 
             ['01', '03', '15', '58', '00', '07', '81', 'D7'], # 深度
             ['01', '03', '15', '5F', '00', '07', '30', '16'], # 水位，對水的深度
             ['01', '03', '15', '66', '00', '07', 'E0', '1B'], # 表面高程
@@ -36,32 +29,30 @@ class AquaDevice(Device):
             ['01', '03', '16', '23', '00', '07', 'F1', '8A'], # 外部電壓
             ['01', '03', '16', '2A', '00', '07', '21', '88'], # 20:電池剩餘容量
         ]
-        # data_list 對應 config 文件
-        self.data_list = [0.0] * 21 # sensor data list (index 20，共需儲存位置為21 因此*21)
-        self.send_interval = 1 # every 5 seconds send data to the network manager
+        self.data_list = [0.0] * 21 # sensor data list (empty list, length = 22)
         self.read_all = True # If read_all as False, only read depth data.
-        self.ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 1)
+        self.ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 6)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
     
     def get_aqua_data(self):
         return self.data_list
 
     def send(self, command): # send command to device and get response, command is a list of hex values.
-        # print(f"Request:{command}")
+        print(f"Request:{command}")
         command = bytes([int(x, 16) for x in command]) # commnad: list to bytes
         self.ser.write(command) # write command to device
         response = self.ser.read(19) # read response from device
         response = [format(x, '02x') for x in response] # convert to hex
-        # print(f"response:{response}")
+        print(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.
-        try:
-            data = self.send(command = self.wake_up_command) # 喚醒 Aqua
-            self.ser.timeout = 6 # 將 timeout 改為6秒
+        try: 
             while(True):
                 if(self.read_all): # if read_all is True, read all data
+                    tt1 = time.time()
                     for i in range(len(self.command_set)):
+                        t1 = time.time()
                         data = self.send(command = self.command_set[i]) # send command to device
                         try:
                             value = data[3] + data[4] + data[5] + data[6] # get the value
@@ -70,6 +61,11 @@ class AquaDevice(Device):
                         except Exception as e:
                             print(f"{i}:{e}")
                             continue
+                        t2 = time.time()
+
+                        print(f"用時:{t2 - t1}")
+                    tt2 = time.time()
+                    print(f"完成讀取一圈，用時:{tt2-tt1}")
                 else:
                     data = self.send(command = self.command_set[3]) # send command to device
                     try:
@@ -86,25 +82,7 @@ class AquaDevice(Device):
 
         except Exception as e: # if other error
             print(e)
-        
-    def start_loop(self):
-        super().start_loop() 
-            
-    def _io_loop(self):
-        while(True):
-            time.sleep(self.send_interval)
-            for i in range((len(self.data_list))): # loop through the data list
-                self.sensor_group_list[1].get_sensor(i).data = self.data_list[i] # store the data
-            # print the data to the console, for testing
-            """
-            for i in range((len(self.data_list)-1)):
-                print(f"{self.sensor_group_list[self.device_type].get_sensor(i).data}")  
-            print(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
-            """
-            self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
 
 if(__name__ == "__main__" ):
-    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB0", sensor_group_list = [], networkManager = None)     
-    while(True):
-        print(aqua.get_aqua_data())
-        time.sleep(1)
+    aqua = AquaDevice("/dev/ttyUSB0")     
+    time.sleep(1000)

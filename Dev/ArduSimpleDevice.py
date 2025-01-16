@@ -13,6 +13,8 @@ class ArduSimpleDevice(Device):
         self.GST_list = [None, None, None, None, None, None, None, None, None, None]
         # [lat_acc, lon_acc, alt_acc]
         self.ACC_list = [None, None, None]
+        # [message_id, utc_vector_fix, yaw_angle, yaw, tilt_angle, tilt, range_meters, gps_quality_indicator, pdop, num_satellites_used, checksum]
+
 
         self.ser = serial.Serial(port = self.dev_path, baudrate = 115200, timeout = 2)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
