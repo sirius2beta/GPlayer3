@@ -258,10 +258,7 @@ class MavManager(GTool):
 	@property
 	def mav_gps(self):
 		return self.gps
-	
-	@property
-	def vfr_hud(self):
-		return self.vfr_hud
+
 
 	
 	def send_distance_sensor_data(self, direction = 0, d = 0):

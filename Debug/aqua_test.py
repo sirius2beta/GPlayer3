@@ -84,5 +84,5 @@ class AquaDevice():
             print(e)
 
 if(__name__ == "__main__" ):
-    aqua = AquaDevice("/dev/ttyUSB0")     
+    aqua = AquaDevice("/dev/ttyUSB1")     
     time.sleep(1000)

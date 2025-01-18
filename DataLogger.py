@@ -37,6 +37,8 @@ class DataLogger(GTool):
         mav_vfr_hud = {'groundspeed' : 0}
         aqua_data = {key: -1 for key in range(21)}  # 初始化 21 個 Aqua 屬性為 -1
         acc_data = [-1, -1, -1]  # [lat_acc, lon_acc, alt_acc]
+        rmc_data = []
+        avr_data = []
 
         # 嘗試從工具箱中調用數據
         try:
@@ -110,7 +112,6 @@ class DataLogger(GTool):
             self.log_data.oxygen_partial_pressure = aqua_data[18]            # 19. 氧分壓
             self.log_data.external_voltage = aqua_data[19]                   # 20. 外部電壓
             self.log_data.battery_capacity_remaining = aqua_data[20]         # 21. 電池剩餘容量
-
 
             # 保存到日誌檔案
             with open(self.log_file, 'a') as log:
