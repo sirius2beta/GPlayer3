@@ -12,11 +12,20 @@ class LogFormat:
         self.HDOP = -1          # 水平精度因子 (HDOP)
         self.VDOP = -1          # 垂直精度因子 (VDOP)
         self.depth = -1         # 深度
+        # V2新增
+        self.speed = -1         # 速度
+        self.roll = -1          # 姿態-翻滚
+        self.pitch = -1         # 姿態-俯仰
+        self.yaw = -1           # 姿態-航偏
 
         # ArduSimple 精度數據
         self.lat_acc = -1       # 緯度精度
         self.lon_acc = -1       # 經度精度
         self.alt_acc = -1       # 高度精度
+        # V2新增
+        self.gps_speed = -1         # GPS-速度
+        self.gps_tilt = -1          # GPS-俯仰
+        self.gps_yaw = -1           # GPS-航偏
 
         # Aqua 資料 (根據 XML 修改名稱並轉換為小寫)
         self.temperature = -1                       # 1. 水溫
@@ -46,7 +55,7 @@ class LogFormat:
         data = self.__dict__  # 獲取所有屬性和值，回傳型態為字典，key 為標題，value 為數值
         # 將屬性名稱和值分別存儲為標題和行內容
         values = list(data.values())
-        
+
         # 使用 StringIO 作為內存中的 CSV 文件
         output = StringIO()  # 新增 StringIO 物件
         writer = csv.writer(output) 
@@ -59,3 +68,6 @@ if __name__ == "__main__":
     log = LogFormat()
     csv_data = log.get_all()
     print(f"csv_data:{csv_data}, type:{type(csv_data)}")  # 輸出 CSV 格式
+
+    length = len(csv_data.strip().split(","))
+    print(f"len:{length}")

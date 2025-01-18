@@ -37,18 +37,18 @@ class MavManager(GTool):
 			'yaw': 0
 		}
 		self.gps_raw = {
-                'time_usec': 0,
-                'fix_type': 0,
-                'lat': 0,
-                'lon': 0,
-                'alt': 0,
-                'HDOP': 0,
-                'VDOP': 0
+			'time_usec': 0,
+			'fix_type': 0,
+			'lat': 0,
+			'lon': 0,
+			'alt': 0,
+			'HDOP': 0,
+			'VDOP': 0
         }
 		self.sys_status = {
-                'voltage_battery': 0,
-                'current_battery': 0,
-				'battery_remaining': 0
+			'voltage_battery': 0,
+			'current_battery': 0,
+			'battery_remaining': 0
         }
 		self.vfr_hud = {
 			'groundspeed' : 0
@@ -101,12 +101,12 @@ class MavManager(GTool):
 		self.FC_connected = True
 		
 		msg = self.vehicle_conn.mav.request_data_stream_encode(
-                0,
-                0,
-				24, # massage ID
-                1, # rate(Hz)
-                1, # Turn on
-				)
+			0,
+			0,
+			24, # massage ID
+			1, # rate(Hz)
+			1, # Turn on
+		)
 		self.vehicle_conn.mav.send(msg)
 		print(f"MavManager: FC connected to {dev}")
 
@@ -242,6 +242,7 @@ class MavManager(GTool):
 			#self.send_distance_sensor_data(25,10)
 			time.sleep(0.3)
 
+	# getter method
 	@property	
 	def gps_data(self):
 		return self.gps_raw
@@ -249,6 +250,19 @@ class MavManager(GTool):
 	@property
 	def depth(self):
 		return self._depth
+	
+	@property
+	def mav_attitude(self):
+		return self.attitude
+	
+	@property
+	def mav_gps(self):
+		return self.gps
+	
+	@property
+	def vfr_hud(self):
+		return self.vfr_hud
+
 	
 	def send_distance_sensor_data(self, direction = 0, d = 0):
 		try:

@@ -31,16 +31,22 @@ class DataLogger(GTool):
         threading.Thread(target = self.looper, daemon = True).start() # 開始log
 
     def save_data(self):
-        gps_data = {'time_usec': -1, 'fix_type': -1, 'lat': -1, 'lon': -1, 'alt': -1, 'HDOP': -1, 'VDOP': -1}
+        mav_gps_data = {'time_usec': -1, 'fix_type': -1, 'lat': -1, 'lon': -1, 'alt': -1, 'HDOP': -1, 'VDOP': -1}
+        mav_attitude = {'pitch': 0.0, 'roll': 0.0 }
+        mav_gps = {'yaw': 0}
+        mav_vfr_hud = {'groundspeed' : 0}
         aqua_data = {key: -1 for key in range(21)}  # 初始化 21 個 Aqua 屬性為 -1
         acc_data = [-1, -1, -1]  # [lat_acc, lon_acc, alt_acc]
 
         # 嘗試從工具箱中調用數據
         try:
-            gps_data = self._toolBox.mavManager.gps_data
-            depth = self._toolBox.mavManager.depth
+            mav_gps_data = self._toolBox.mavManager.gps_data
+            mav_depth = self._toolBox.mavManager.depth
+            mav_attitude = self._toolBox.mavManager.mav_attitude
+            mav_gps = self._toolBox.mavManager.mav_gps
+            mav_vfr_hud = self._toolBox.mavManager.vfr_hud
         except Exception as e:
-            print(f'DataLogger exception: GPS_data: msg:{e}')
+            print(f'DataLogger exception: MAV_data: msg:{e}')
         
         try:
             if self._toolBox.deviceManager.aqua_device is not None:
@@ -51,25 +57,36 @@ class DataLogger(GTool):
         try:
             if self._toolBox.deviceManager.ardusimple_device is not None:
                 acc_data = self._toolBox.deviceManager.ardusimple_device.get_ACCList()
+                rmc_data = self._toolBox.deviceManager.ardusimple_device.get_RMCList()
+                avr_data = self._toolBox.deviceManager.ardusimple_device.get_AVRList()
         except Exception as e:
             print(f'DataLogger exception: acc_data: msg:{e}')
 
         # 更新 Log 資料
         try:
             # Pixhawk Data
-            self.log_data.time_usec = gps_data['time_usec']
-            self.log_data.fix_type = gps_data['fix_type']
-            self.log_data.lat = gps_data['lat']
-            self.log_data.lon = gps_data['lon']
-            self.log_data.alt = gps_data['alt']
-            self.log_data.HDOP = gps_data['HDOP']
-            self.log_data.VDOP = gps_data['VDOP']
-            self.log_data.depth = depth
+            self.log_data.time_usec = mav_gps_data['time_usec']
+            self.log_data.fix_type = mav_gps_data['fix_type']
+            self.log_data.lat = mav_gps_data['lat']
+            self.log_data.lon = mav_gps_data['lon']
+            self.log_data.alt = mav_gps_data['alt']
+            self.log_data.HDOP = mav_gps_data['HDOP']
+            self.log_data.VDOP = mav_gps_data['VDOP']
+            self.log_data.depth = mav_depth
+            # V2新增
+            self.log_data.speed = mav_vfr_hud['groundspeed']
+            self.log_data.roll = mav_attitude['roll']
+            self.log_data.pitch = mav_attitude['pitch']
+            self.log_data.yaw = mav_gps['yaw'] 
 
             # ArduSimple Accuracy
             self.log_data.lat_acc = acc_data[0]
             self.log_data.lon_acc = acc_data[1]
             self.log_data.alt_acc = acc_data[2]
+            # V2新增
+            self.log_data.gps_speed = rmc_data[5]
+            self.log_data.gps_tilt = avr_data[4]
+            self.log_data.gps_yaw = avr_data[2]
 
             # Aqua Data
             self.log_data.temperature = aqua_data[0]                         # 1. 水溫
