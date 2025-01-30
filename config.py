@@ -58,3 +58,5 @@ class Config:
 if __name__ == "__main__":
     config = Config(None)
     print(config._parse_sensor_group())
+
+    print(config.sensor_group_list[0].get_sensor(0).data)
