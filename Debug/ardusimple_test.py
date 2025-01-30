@@ -2,7 +2,7 @@ import serial
 import time
 
 # 設置串口參數
-port = '/dev/ttyACM3'  # 替換為你的串口名稱，例如 '/dev/ttyUSB0' (Linux) 或 'COM3' (Windows)
+port = '/dev/ttyACM1'  # 替換為你的串口名稱，例如 '/dev/ttyUSB0' (Linux) 或 'COM3' (Windows)
 baudrate = 115200  # 根據你的設備設置波特率
 
 try:

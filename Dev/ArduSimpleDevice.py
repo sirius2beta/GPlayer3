@@ -73,11 +73,11 @@ class ArduSimpleDevice(Device):
                         checksum    # checksum
                     ] 
 
-                    print(f"RMC_list:\n{self.RMC_list}")
+                    #print(f"RMC_list:\n{self.RMC_list}")
                 # ================= When output is AVR =================
                 if(fields[0] == "PTNL" and fields[1] == "AVR"):
                     self.AVR_list = [
-                        fields[0] + fields[1],  # message_id
+                        fields[0] + "," + fields[1],  # message_id
                         fields[2],  # utc_vector_fix
                         fields[3],  # yaw_angle
                         fields[4],  # yaw
@@ -92,7 +92,7 @@ class ArduSimpleDevice(Device):
                         checksum    # checksum
                     ] 
                     
-                    print(f"AVR_list:\n{self.AVR_list}")
+                    #print(f"AVR_list:\n{self.AVR_list}")
 
             except(serial.serialutil.SerialException): # if serial error
                 print("Serial Error...")
@@ -108,10 +108,10 @@ class ArduSimpleDevice(Device):
         return self.ACC_list
     
     def get_RMCList(self):
-        return self.GST_list
+        return self.RMC_list
     
     def get_AVRList(self):
-        return self.ACC_list
+        return self.AVR_list
 
     def start_loop(self):
         super().start_loop() 
