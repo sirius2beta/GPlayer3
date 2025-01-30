@@ -18,4 +18,4 @@ response = ser.read(19) # read response from device
 response = [format(x, '02x') for x in response] # convert to hex
 t2 = time.time()
 print(t2 - t1 )
-print(f"response:{response}")
+print(f"response:{response}") 

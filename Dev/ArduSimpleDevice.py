@@ -64,12 +64,12 @@ class ArduSimpleDevice(Device):
                         fields[0],  # message_id
                         fields[1],  # utc_position_fix
                         fields[2],  # Status
-                        fields[3],  # Latitude
-                        fields[4],  # Longitude
-                        fields[5],  # Speed
-                        fields[6],  # Track_angle
-                        fields[7],  # Date
-                        fields[8],  # Magnetic_variation
+                        fields[3] + fields[4],  # Latitude
+                        fields[5] + fields[6],  # Longitude
+                        fields[7],  # Speed
+                        fields[8],  # Track_angle
+                        fields[9],  # Date
+                        fields[10], # Magnetic_variation
                         checksum    # checksum
                     ] 
 
