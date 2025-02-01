@@ -1,8 +1,5 @@
-import serial
-import time
 import struct
-import threading
-from enum import Enum
+
 
 # Sensor class used to store the information of the sensor EX: temperature_sensor, pH_sensor
 class Sensor:

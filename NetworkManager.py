@@ -223,8 +223,6 @@ class NetworkManager(GTool):
                 self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 
 
-                
-
             elif header == SENSOR[0]:
                 print("[SENSOR]")
                 
@@ -240,5 +238,3 @@ class NetworkManager(GTool):
                 boat_id = int(indata[0])
                 control_type = int(indata[1])
                 self._toolBox.deviceManager.processControl(control_type, indata[2:])
-                
-                

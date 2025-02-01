@@ -12,8 +12,6 @@ class Config:
         self.xmlroot = tree.getroot()
         self._parse_sensor_group()
         self._parse_video_format()
-
-        
     
     def getVideoFormatIndex(self, width, height, fps):
         index = 0
@@ -61,3 +59,4 @@ if __name__ == "__main__":
     config = Config(None)
     print(config._parse_sensor_group())
 
+    print(config.sensor_group_list[0].get_sensor(0).data)
