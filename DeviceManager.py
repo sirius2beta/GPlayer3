@@ -4,6 +4,8 @@ import subprocess
 import serial
 
 from GTool import GTool
+
+from Dev.Device import Device
 from Dev.TestDevice import TestDevice
 from Dev.AquaDevice import AquaDevice
 from Dev.RS485Device import RS485Device
@@ -17,6 +19,7 @@ class DeviceManager(GTool):
 		super().__init__(toolBox)
 		self.aqua_device = None 		# aqua_device object
 		self.ardusimple_device = None 	# ardusimple_device object
+		self.winch_device = None
 		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
 		self.device_list = []  		# 目前連在pi上的裝置
 		self.Pixhawk_exist = False 	# 會有出現兩個pixhawk的情形，確保指讀取一個
@@ -109,18 +112,22 @@ class DeviceManager(GTool):
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev
-		elif(idVendor == "1d6b" and idProduct == "0002"): # AT600 device 
-			print("      ...Devicefactory create AT600")
-			device_type = 1
-			#dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			#dev.isOpened = True
-			#dev.start_loop()
-			#return dev
-			#dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			#self.aqua_device = dev
-			#dev.start_loop()
-			#dev.isOpened = True
-			#return dev
+		elif(idVendor == "1d6b" and idProduct == "0002"): # Winch device
+			print("      ...Devicefactory create Winch Device")
+			device_type = 2
+			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			self.winch_device = dev
+			dev.isOpened = True
+			dev.start_loop()
+			return dev
+		elif(idVendor == "0403" and idProduct == "6001"): # Aqua 
+			print("      ...Devicefactory create Aqua Device")
+			device_type = 7
+			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			self.aqua_device = dev
+			dev.start_loop()
+			dev.isOpened = True
+			return dev
 		elif(idVendor == "10c4" and idProduct == "ea60"): # Node MCU
 			print("      ...Devicefactory create Node MCU")
 			device_type = 3

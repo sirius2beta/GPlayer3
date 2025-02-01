@@ -82,11 +82,12 @@
     <enum name="DEVICE_TYPE">
         <entry value="0" name="Pixhawk" idVendor="1209" idProduct="5740" ></entry>
         <entry value="1" name="AT600" idVendor="1d6b" idProduct="3431"></entry>
-        <entry value="2" name="ESP32BT" idVendor="1d6b" idProduct="0002"></entry>
+        <entry value="2" name="WINCH" idVendor="1d6b" idProduct="0002"></entry>
         <entry value="3" name="NodeMCU" idVendor="10c4" idProduct="ea60"></entry>
         <entry value="4" name="RS485Module" idVendor="0403" idProduct="6001"></entry>
         <entry value="5" name="TestDev" idVendor="2341" idProduct="8037"></entry>
         <entry value="6" name="ArduSimple" idVendor="152a" idProduct="85c0"></entry>
+        <entry value="7" name="Aqua" idVendor="0403" idProduct="6001"></entry>
     </enum>
     <enum name="CONTROL_TYPE">
         <entry value="0" name="WINCH">
