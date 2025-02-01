@@ -112,11 +112,15 @@ class DeviceManager(GTool):
 		elif(idVendor == "1d6b" and idProduct == "0002"): # AT600 device 
 			print("      ...Devicefactory create AT600")
 			device_type = 1
-			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			self.aqua_device = dev
-			dev.start_loop()
-			dev.isOpened = True
-			return dev
+			#dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			#dev.isOpened = True
+			#dev.start_loop()
+			#return dev
+			#dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			#self.aqua_device = dev
+			#dev.start_loop()
+			#dev.isOpened = True
+			#return dev
 		elif(idVendor == "10c4" and idProduct == "ea60"): # Node MCU
 			print("      ...Devicefactory create Node MCU")
 			device_type = 3

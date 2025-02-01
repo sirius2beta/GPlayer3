@@ -20,7 +20,7 @@ class WinchDevice(Device):
             self.serialOut = serial.Serial(port = self.dev_path, baudrate = 9600, timeout = 5) 
             self.isSerialInit = True
             # initialize winch on arduino
-            self.send(f's,2,0,2 5 2000 1000')
+            self.send(f's, 2000 1000')
 
         except serial.serialutil.SerialException: # if serial error
             print("Serial Error...")
@@ -63,4 +63,7 @@ class WinchDevice(Device):
                     self.send('z,2')
             
     def _io_loop(self):
-        time.sleep(1)
+        while True:
+            data = self.serialOut.readline()
+            print(data)
+            time.sleep(0.2)
