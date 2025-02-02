@@ -21,7 +21,7 @@ class WinchDevice(Device):
             self.serialOut = serial.Serial(port = self.dev_path, baudrate = 9600, timeout = 5) 
             self.isSerialInit = True
             # initialize winch on arduino
-            self.send(f's, 2000 1000')
+            self.send(f's,2000 1000')
 
         except serial.serialutil.SerialException: # if serial error
             print("Serial Error...")
@@ -68,8 +68,10 @@ class WinchDevice(Device):
             elif command_type == 5: #回傳部分參數
                 pass
             elif command_type == 6: #move
-                step = struct.unpack("<i", cmd[1:])
+                step = int(struct.unpack("<i", cmd[1:])[0])
                 print(f"WinchDevice: move step {step}")
+                if self.isSerialInit == True:
+                    self.send(f'c,{step}')
             elif command_type == 7: #stop
                 print("WinchDevice: stop")
             elif command_type == 8: # report step tension
@@ -82,10 +84,13 @@ class WinchDevice(Device):
         while True:
             input = self.serialOut.readline()
             print(input)
-            input = input.decode().split(",")
-            if input[0] == "cs":
-                step = int(input[1])
-                tension = int(input[2])
+            try:
+                input = input.decode().split(",")
+                if input[0] == "cs":
+                    step = int(input[1])
+                    tension = int(input[2])
+            except:
+                pass
             
             time.sleep(0.2)
             
