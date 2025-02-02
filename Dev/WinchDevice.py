@@ -16,7 +16,7 @@ class WinchDevice(Device):
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
         super().__init__(device_type, dev_path, sensor_group_list, networkManager)
         self.isSerialInit = False
-        self.control_type = 2
+        self.control_type = 0
         try:
             self.serialOut = serial.Serial(port = self.dev_path, baudrate = 9600, timeout = 5) 
             self.isSerialInit = True
@@ -47,7 +47,7 @@ class WinchDevice(Device):
         
     # process command for control
     def processCMD(self, control_type ,cmd):
-        if control_type == 2:
+        if control_type == self.control_type:
             command_type = int(cmd[0])
             print(f"control:{control_type}, command type:{command_type}, ")
             if command_type == 0:  # 讀取全部參數
@@ -57,7 +57,7 @@ class WinchDevice(Device):
                 steps = int.from_bytes(cmd[1:], 'little', signed=True)
                 print(f"  - steps:{steps}")
                 if self.isSerialInit == True:
-                    self.send(f'c,2,2,{steps}')
+                    self.send(f'c,{steps}')
             elif command_type == 2:  # 寫入全部參數
                 print("  - stop")
 
@@ -81,6 +81,7 @@ class WinchDevice(Device):
     def _io_loop(self):
         step = 0
         tension = 0
+        status = 0
         while True:
             input = self.serialOut.readline()
             print(input)
@@ -89,15 +90,22 @@ class WinchDevice(Device):
                 if input[0] == "cs":
                     step = int(input[1])
                     tension = int(input[2])
+                    if input[3][0] == 'S':
+                        status = 0
+                    elif input[3][0] == 'R':
+                        status = 1
+                    else:
+                        status = 3
             except:
                 pass
             
             time.sleep(0.2)
             
-            data = struct.pack("<B", 2)
+            data = struct.pack("<B", self.control_type)
             data += struct.pack("<B", 8)
             data += struct.pack("<i", step)
             data += struct.pack("<i", tension)
+            data += struct.pack("<B", status)
             self.networkManager.sendMsg(b'\x05', data)
     def setStep(step):
         if self.isSerialInit == True:
