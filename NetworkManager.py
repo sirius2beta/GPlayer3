@@ -70,6 +70,7 @@ class NetworkManager(GTool):
         # Send message from outside
         
         msg = topic + chr(self.BOAT_ID).encode() + msg
+        #print(f"sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
         #print(f'primary timeout: {now-self.primaryLastHeartBeat}')
         #print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
         if now-self.primaryLastHeartBeat < 2:

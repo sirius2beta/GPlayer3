@@ -80,7 +80,7 @@ class DeviceManager(GTool):
 			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
 	
 	def processControl(self, control_type, cmd):
-		command_type = int(cmd[0])
+		print(f"control type: {control_type}")
 		for d in self.device_list:
 			d.processCMD(control_type, cmd)
 
@@ -91,8 +91,7 @@ class DeviceManager(GTool):
 			print(f"  - received ID:{devID}, dev.ID:{d.ID}")
 			if d.ID == dev.periID:
 				if d.type == 2:
-					pass
-					#print("  -stepper cmd--")
+					print("  -stepper cmd--")
 					#d.write(f"s,{dev.type},0,{dev.pinIDList[0]} {dev.pinIDList[1]} {dev.settings[0]} {dev.settings[1]}")
 					#d.write(f"c,{dev.type},{dev.pinIDList[0]},{dev.settings[2]}")
 

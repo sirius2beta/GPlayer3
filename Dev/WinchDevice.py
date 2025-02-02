@@ -1,6 +1,6 @@
 import time
 import serial
-
+import struct
 from Dev.Device import Device
 
 # This device will connect to arduino, which canc accept command for winch control
@@ -10,12 +10,13 @@ from Dev.Device import Device
             # stepper stop:              z,2
 
 
-SENSOR = b'\x04'
+CONTROL = b'\x05'
 
 class WinchDevice(Device):
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
         super().__init__(device_type, dev_path, sensor_group_list, networkManager)
         self.isSerialInit = False
+        self.control_type = 2
         try:
             self.serialOut = serial.Serial(port = self.dev_path, baudrate = 9600, timeout = 5) 
             self.isSerialInit = True
@@ -46,24 +47,56 @@ class WinchDevice(Device):
         
     # process command for control
     def processCMD(self, control_type ,cmd):
-        if control_type == 0:
+        if control_type == 2:
             command_type = int(cmd[0])
             print(f"control:{control_type}, command type:{command_type}, ")
-            if command_type == 0:  # set maxspeed, acceleration
+            if command_type == 0:  # 讀取全部參數
                 print("  - set")
                 # 待新增
-            elif command_type == 1:  # run steps
+            elif command_type == 1:  # 讀取部分參數
                 steps = int.from_bytes(cmd[1:], 'little', signed=True)
                 print(f"  - steps:{steps}")
                 if self.isSerialInit == True:
                     self.send(f'c,2,2,{steps}')
-            elif command_type == 2:  # stop
+            elif command_type == 2:  # 寫入全部參數
                 print("  - stop")
-                if self.isSerialInit == True:
-                    self.send('z,2')
+
+            elif command_type == 3: #寫入部分參數
+                pass
+            elif command_type == 4: #回傳全部參數
+                pass
+            elif command_type == 5: #回傳部分參數
+                pass
+            elif command_type == 6: #move
+                step = struct.unpack("<i", cmd[1:])
+                print(f"WinchDevice: move step {step}")
+            elif command_type == 7: #stop
+                print("WinchDevice: stop")
+            elif command_type == 8: # report step tension
+                pass
+
             
     def _io_loop(self):
+        step = 0
+        tension = 0
         while True:
-            data = self.serialOut.readline()
-            print(data)
+            input = self.serialOut.readline()
+            print(input)
+            input = input.decode().split(",")
+            if input[0] == "cs":
+                step = int(input[1])
+                tension = int(input[2])
+            
             time.sleep(0.2)
+            
+            data = struct.pack("<B", 2)
+            data += struct.pack("<B", 8)
+            data += struct.pack("<i", step)
+            data += struct.pack("<i", tension)
+            self.networkManager.sendMsg(b'\x05', data)
+    def setStep(step):
+        if self.isSerialInit == True:
+            self.send(f'c,{step}')
+    def stop():
+        if self.isSerialInit == True:
+            self.send('z,2')
