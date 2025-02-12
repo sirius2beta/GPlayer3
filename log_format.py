@@ -26,6 +26,9 @@ class LogFormat:
         self.gps_speed = None         # GPS-速度
         self.gps_tilt = None          # GPS-俯仰
         self.gps_yaw = None           # GPS-航偏
+        # V3新增
+        self.gps_orthometric_height = None  # GPS-正高
+        self.geoid_separation = None        # GPS-大地起伏
 
         # Aqua 資料 (根據 XML 修改名稱並轉換為小寫)
         self.temperature = None                       # 1. 水溫
@@ -76,6 +79,7 @@ class LogFormat:
 if __name__ == "__main__":
     log = LogFormat()
     log.temperature = 20 # 假設溫度是20度
+    log.geoid_separation = 1
     
     csv_data = log.get_all()
     print(f"csv_data:{csv_data}, type:{type(csv_data)}")  # 輸出 CSV 格式

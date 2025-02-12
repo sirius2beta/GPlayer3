@@ -18,6 +18,7 @@ class ArduSimpleDevice(Device):
         # [message_id, utc_vector_fix, yaw_angle, yaw, tilt_angle, tilt, None, None, range_meters, gps_quality_indicator, pdop, num_satellites_used, checksum]
         self.AVR_list = [None, None, None, None, None, None, None, None, None, None, None, None, None]
 
+        self.GGA_list = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
         self.ser = serial.Serial(port = self.dev_path, baudrate = 115200, timeout = 2)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
 
@@ -64,8 +65,8 @@ class ArduSimpleDevice(Device):
                         fields[0],  # message_id
                         fields[1],  # utc_position_fix
                         fields[2],  # Status
-                        fields[3] + fields[4],  # Latitude
-                        fields[5] + fields[6],  # Longitude
+                        fields[3] + "," + fields[4],  # Latitude
+                        fields[5] + "," + fields[6],  # Longitude
                         fields[7],  # Speed
                         fields[8],  # Track_angle
                         fields[9],  # Date
@@ -93,6 +94,28 @@ class ArduSimpleDevice(Device):
                     ] 
                     
                     #print(f"AVR_list:\n{self.AVR_list}")
+                
+                # ================= When output is GGA =================
+                if(fields[0] == "GPGGA"):
+                    self.GGA_list = [
+                        fields[0],  # message_id
+                        fields[1],  # utc_vector_fix
+                        fields[2],  # Latitude
+                        fields[3],  # N or S
+                        fields[4],  # Longitude
+                        fields[5],  # E or W
+                        fields[6],  # GPS Quality
+                        fields[7],  # --
+                        fields[8],  # HDOP
+                        fields[9],  # Orthometric height
+                        fields[10], # --
+                        fields[11], # Geoid separation
+                        fields[12], # --
+                        fields[13], # --
+                        fields[14], # --
+                        checksum    # checksum
+                    ]
+                
 
             except(serial.serialutil.SerialException): # if serial error
                 print("Serial Error...")
@@ -112,6 +135,9 @@ class ArduSimpleDevice(Device):
     
     def get_AVRList(self):
         return self.AVR_list
+    
+    def get_GGAList(self):
+        return self.GGA_list
 
     def start_loop(self):
         super().start_loop() 
