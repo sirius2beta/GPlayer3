@@ -11,6 +11,7 @@ from Dev.AquaDevice import AquaDevice
 from Dev.RS485Device import RS485Device
 from Dev.WinchDevice import WinchDevice
 from Dev.ArduSimpleDevice import ArduSimpleDevice
+from Dev.SonarDevice import SonarDevice
 
 SENSOR = b'\x50'
 
@@ -78,6 +79,8 @@ class DeviceManager(GTool):
 			print("      - no device found")
 		for i in self.device_list:
 			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
+		# 不是從USB中創建的 device
+		sonarDevice = SonarDevice(self.toolBox())
 	
 	def processControl(self, control_type, cmd):
 		print(f"control type: {control_type}")

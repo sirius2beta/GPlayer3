@@ -47,6 +47,8 @@ class WinchDevice(Device):
         
     # process command for control
     def processCMD(self, control_type ,cmd):
+        if self.isSerialInit == False:
+            return
         if control_type == self.control_type:
             command_type = int(cmd[0])
             print(f"control:{control_type}, command type:{command_type}, ")
@@ -54,15 +56,20 @@ class WinchDevice(Device):
                 print("  - set")
                 # 待新增
             elif command_type == 1:  # 讀取部分參數
-                steps = int.from_bytes(cmd[1:], 'little', signed=True)
-                print(f"  - steps:{steps}")
-                if self.isSerialInit == True:
-                    self.send(f'c,{steps}')
+                pass
             elif command_type == 2:  # 寫入全部參數
-                print("  - stop")
+                pass
 
             elif command_type == 3: #寫入部分參數
-                pass
+                index = int(cmd[1])
+                print(f"write index:{index}")
+                if index == 0: #maxspeed
+                    maxSpeed = int(struct.unpack("<I", cmd[2:])[0])
+                    if maxSpeed>2000: #  maxspeed cant exceed 2000
+                        pass
+                    self.send(f's,{maxSpeed} {maxSpeed/2}')
+                    print(f"set maxspeed:{maxSpeed}")
+
             elif command_type == 4: #回傳全部參數
                 pass
             elif command_type == 5: #回傳部分參數
@@ -73,9 +80,13 @@ class WinchDevice(Device):
                 if self.isSerialInit == True:
                     self.send(f'c,{step}')
             elif command_type == 7: #stop
+                self.send(f'z,')
                 print("WinchDevice: stop")
             elif command_type == 8: # report step tension
                 pass
+            elif command_type == 9: # reset position
+                self.send(f're')
+                print("WinchDevic: reset")
 
             
     def _io_loop(self):
@@ -98,18 +109,11 @@ class WinchDevice(Device):
                         status = 3
             except:
                 pass
-            
             time.sleep(0.2)
-            
             data = struct.pack("<B", self.control_type)
             data += struct.pack("<B", 8)
             data += struct.pack("<i", step)
             data += struct.pack("<i", tension)
             data += struct.pack("<B", status)
             self.networkManager.sendMsg(b'\x05', data)
-    def setStep(step):
-        if self.isSerialInit == True:
-            self.send(f'c,{step}')
-    def stop():
-        if self.isSerialInit == True:
-            self.send('z,2')
+
