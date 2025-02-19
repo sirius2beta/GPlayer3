@@ -39,6 +39,7 @@ class DataLogger(GTool):
         acc_data = [-1, -1, -1]  # [lat_acc, lon_acc, alt_acc]
         rmc_data = []
         avr_data = []
+        gga_data = []
 
         # 嘗試從工具箱中調用數據
         try:
@@ -61,8 +62,9 @@ class DataLogger(GTool):
                 acc_data = self._toolBox.deviceManager.ardusimple_device.get_ACCList()
                 rmc_data = self._toolBox.deviceManager.ardusimple_device.get_RMCList()
                 avr_data = self._toolBox.deviceManager.ardusimple_device.get_AVRList()
+                gga_data = self._toolBox.deviceManager.ardusimple_device.get_GGAList()
         except Exception as e:
-            print(f'DataLogger exception: acc_data: msg:{e}')
+            print(f'DataLogger exception: ardusimple_device: msg:{e}')
 
         # 更新 Log 資料
         try:
@@ -89,6 +91,9 @@ class DataLogger(GTool):
             self.log_data.gps_speed = rmc_data[5]
             self.log_data.gps_tilt = avr_data[4]
             self.log_data.gps_yaw = avr_data[2]
+            # V3新增
+            self.log_data.gps_orthometric_height = gga_data[9]
+            self.log_data.geoid_separation = gga_data[11]
 
             # Aqua Data
             self.log_data.temperature = aqua_data[0]                         # 1. 水溫
