@@ -81,6 +81,7 @@ class DeviceManager(GTool):
 			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
 		# 不是從USB中創建的 device
 		sonarDevice = SonarDevice(self.toolBox())
+		self.device_list.append(sonarDevice)
 	
 	def processControl(self, control_type, cmd):
 		print(f"control type: {control_type}")

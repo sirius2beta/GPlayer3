@@ -96,6 +96,7 @@
             <field name="Steps" type="uint_32" ></field>
         </entry>
         <entry value="1" name="COOLING_SYSTEM_POWER"></entry>
+        <entry value="2" name="SONAR_SINGLEBEAM_BR"></entry>
     </enum>
     <enum name="DATA_TYPE">
         <entry value="0" name="uint_32"></entry>
