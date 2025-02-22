@@ -19,6 +19,7 @@ class SonarDevice(Device):
         if self._toolBox.OS == 'buster':
             print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
             import RPi.GPIO as GPIO
+            self.GPIO = GPIO
             #GPIO.cleanup()
             GPIO.setmode(GPIO.BCM)
             GPIO.setup(11, GPIO.OUT)
