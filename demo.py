@@ -8,5 +8,5 @@ if __name__ == '__main__':
   print("*********************************")
   print(f"Program started in: {now}")
   print("*********************************")
-  
+   
   gplayer = GPlayer.GPlayer()
