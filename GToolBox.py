@@ -5,7 +5,6 @@ from NetworkManager import NetworkManager
 from VideoManager import VideoManager
 from DeviceManager import DeviceManager
 from MavManager import MavManager
-from SensorManager import SensorManager
 from config import Config
 
 # from OakCam import OakCam
@@ -39,9 +38,6 @@ class GToolBox:
 
 		# Initialize all modules here
 		print("GPlayer initializing...")
-		self.sensorManager = SensorManager(self)
-		self.sensorManager.sensor_group_list = self.config.sensor_group_list
-		
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in

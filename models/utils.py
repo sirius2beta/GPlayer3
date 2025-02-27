@@ -9,6 +9,9 @@ from numpy import ndarray
 SUFFIXS = ('.bmp', '.dng', '.jpeg', '.jpg', '.mpo', '.png', '.tif', '.tiff',
            '.webp', '.pfm')
 
+# angle scale
+ANGLE_SCALE = 1 / np.pi * 180.0
+
 
 def letterbox(im: ndarray,
               new_shape: Union[Tuple, List] = (640, 640),
@@ -45,6 +48,7 @@ def letterbox(im: ndarray,
 
 
 def blob(im: ndarray, return_seg: bool = False) -> Union[ndarray, Tuple]:
+    seg = None
     if return_seg:
         seg = im.astype(np.float32) / 255
     im = im.transpose([2, 0, 1])
@@ -56,7 +60,7 @@ def blob(im: ndarray, return_seg: bool = False) -> Union[ndarray, Tuple]:
         return im
 
 
-def sigmoid(x):
+def sigmoid(x: ndarray) -> ndarray:
     return 1. / (1. + np.exp(-x))
 
 
@@ -84,10 +88,58 @@ def crop_mask(masks: ndarray, bboxes: ndarray) -> ndarray:
     return masks * ((r >= x1) * (r < x2) * (c >= y1) * (c < y2))
 
 
+def box_iou(box1: ndarray, box2: ndarray) -> float:
+    x11, y11, x21, y21 = box1
+    x12, y12, x22, y22 = box2
+    x1 = max(x11, x12)
+    y1 = max(y11, y12)
+    x2 = min(x21, x22)
+    y2 = min(y21, y22)
+    inter_area = max(0, x2 - x1) * max(0, y2 - y1)
+    union_area = (x21 - x11) * (y21 - y11) + (x22 - x12) * (y22 -
+                                                            y12) - inter_area
+    return max(0, inter_area / union_area)
+
+
+def NMSBoxes(boxes: ndarray,
+             scores: ndarray,
+             labels: ndarray,
+             iou_thres: float,
+             agnostic: bool = False):
+    num_boxes = boxes.shape[0]
+    order = np.argsort(scores)[::-1]
+    boxes = boxes[order]
+    labels = labels[order]
+
+    indices = []
+
+    for i in range(num_boxes):
+        box_a = boxes[i]
+        label_a = labels[i]
+        keep = True
+        for j in indices:
+            box_b = boxes[j]
+            label_b = labels[j]
+            if not agnostic and label_a != label_b:
+                continue
+            if box_iou(box_a, box_b) > iou_thres:
+                keep = False
+        if keep:
+            indices.append(i)
+
+    indices = np.array(indices, dtype=np.int32)
+    return order[indices]
+
+
 def det_postprocess(data: Tuple[ndarray, ndarray, ndarray, ndarray]):
     assert len(data) == 4
     num_dets, bboxes, scores, labels = (i[0] for i in data)
     nums = num_dets.item()
+    if nums == 0:
+        return np.empty((0, 4), dtype=np.float32), np.empty(
+            (0, ), dtype=np.float32), np.empty((0, ), dtype=np.int32)
+    # check score negative
+    scores[scores < 0] = 1 + scores[scores < 0]
     bboxes = bboxes[:nums]
     scores = scores[:nums]
     labels = labels[:nums]
@@ -106,6 +158,12 @@ def seg_postprocess(
     bboxes, scores, labels, maskconf = np.split(outputs, [4, 5, 6], 1)
     scores, labels = scores.squeeze(), labels.squeeze()
     idx = scores > conf_thres
+    if not idx.any():  # no bounding boxes or seg were created
+        return np.empty((0, 4), dtype=np.float32), \
+            np.empty((0,), dtype=np.float32), \
+            np.empty((0,), dtype=np.int32), \
+            np.empty((0, 0, 0, 0), dtype=np.int32)
+
     bboxes, scores, labels, maskconf = \
         bboxes[idx], scores[idx], labels[idx], maskconf[idx]
     cvbboxes = np.concatenate([bboxes[:, :2], bboxes[:, 2:] - bboxes[:, :2]],
@@ -128,3 +186,57 @@ def seg_postprocess(
     masks = masks.transpose(2, 0, 1)
     masks = np.ascontiguousarray((masks > 0.5)[..., None], dtype=np.float32)
     return bboxes, scores, labels, masks
+
+
+def pose_postprocess(
+        data: Union[Tuple, ndarray],
+        conf_thres: float = 0.25,
+        iou_thres: float = 0.65) \
+        -> Tuple[ndarray, ndarray, ndarray]:
+    if isinstance(data, tuple):
+        assert len(data) == 1
+        data = data[0]
+    outputs = np.transpose(data[0], (1, 0))
+    bboxes, scores, kpts = np.split(outputs, [4, 5], 1)
+    scores, kpts = scores.squeeze(), kpts.squeeze()
+    idx = scores > conf_thres
+    if not idx.any():  # no bounding boxes or seg were created
+        return np.empty((0, 4), dtype=np.float32), np.empty(
+            (0, ), dtype=np.float32), np.empty((0, 0, 0), dtype=np.float32)
+    bboxes, scores, kpts = bboxes[idx], scores[idx], kpts[idx]
+    xycenter, wh = np.split(bboxes, [
+        2,
+    ], -1)
+    cvbboxes = np.concatenate([xycenter - 0.5 * wh, wh], -1)
+    idx = cv2.dnn.NMSBoxes(cvbboxes, scores, conf_thres, iou_thres)
+    cvbboxes, scores, kpts = cvbboxes[idx], scores[idx], kpts[idx]
+    cvbboxes[:, 2:] += cvbboxes[:, :2]
+    return cvbboxes, scores, kpts.reshape(idx.shape[0], -1, 3)
+
+
+def obb_postprocess(
+        data: Union[Tuple, ndarray],
+        conf_thres: float = 0.25,
+        iou_thres: float = 0.65) \
+        -> Tuple[ndarray, ndarray, ndarray]:
+    if isinstance(data, tuple):
+        assert len(data) == 1
+        data = data[0]
+    outputs = np.transpose(data[0], (1, 0))
+    num_cls = outputs.shape[-1] - 5
+    bboxes, scores, angles = np.split(outputs, [4, num_cls + 4], 1)
+    scores, labels = scores.max(-1), scores.argmax(-1)
+    scores, labels, angles = scores.squeeze(), labels.squeeze(
+    ), angles.squeeze()
+    idx = scores > conf_thres
+    if not idx.any():  # no obbs were created
+        return np.empty((0, 4, 2), dtype=np.float32), np.empty(
+            (0, ), dtype=np.float32), np.empty((0, ), dtype=np.int32)
+    bboxes, scores, labels, angles = bboxes[idx], scores[idx], labels[
+        idx], angles[idx] * ANGLE_SCALE
+    cvrbboxes = [[(xc, yc), (w, h), a]
+                 for (xc, yc, w, h), a in zip(bboxes, angles)]
+    idx = cv2.dnn.NMSBoxesRotated(cvrbboxes, scores, conf_thres, iou_thres)
+    points = np.array([cv2.boxPoints(cvrbboxes[i]) for i in idx],
+                      dtype=np.float32)
+    return points, scores, labels
