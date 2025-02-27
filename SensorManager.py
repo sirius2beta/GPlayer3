@@ -1,4 +1,4 @@
-from GTool import GTool
+import GTool
 
 SENSOR = b'\x04'
 

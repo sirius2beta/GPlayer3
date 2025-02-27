@@ -37,23 +37,23 @@ class MavManager(GTool):
 			'yaw': 0
 		}
 		self.gps_raw = {
-                'time_usec': 0,
-                'fix_type': 0,
-                'lat': 0,
-                'lon': 0,
-                'alt': 0,
-                'HDOP': 0,
-                'VDOP': 0
+			'time_usec': 0,
+			'fix_type': 0,
+			'lat': 0,
+			'lon': 0,
+			'alt': 0,
+			'HDOP': 0,
+			'VDOP': 0
         }
 		self.sys_status = {
-                'voltage_battery': 0,
-                'current_battery': 0,
-				'battery_remaining': 0
+			'voltage_battery': 0,
+			'current_battery': 0,
+			'battery_remaining': 0
         }
 		self.vfr_hud = {
 			'groundspeed' : 0
 		}
-		self.depth = 0
+		self._depth = 0
 		
 		self.mav_connected = False
 		self.GCS_connected = False
@@ -100,12 +100,12 @@ class MavManager(GTool):
 		self.FC_connected = True
 		
 		msg = self.vehicle_conn.mav.request_data_stream_encode(
-                0,
-                0,
-				24, # massage ID
-                1, # rate(Hz)
-                1, # Turn on
-				)
+			0,
+			0,
+			24, # massage ID
+			1, # rate(Hz)
+			1, # Turn on
+		)
 		self.vehicle_conn.mav.send(msg)
 		print(f"MavManager: FC connected to {dev}")
 
@@ -164,6 +164,10 @@ class MavManager(GTool):
 				self.gps_raw['alt'] = msg.alt
 				self.gps_raw['HDOP'] = msg.eph
 				self.gps_raw['VDOP'] = msg.epv
+				self.gps_raw['HACC'] = msg.h_acc
+				self.gps_raw['VACC'] = msg.v_acc
+				self.gps_raw['SACC'] = msg.vel_acc
+				self.gps_raw['YACC'] = msg.hdg_acc
 				self.gps_raw['yaw'] = msg.yaw
 				self.lock2.release()
 
@@ -173,7 +177,7 @@ class MavManager(GTool):
 			elif msg.get_type() == 'DISTANCE_SENSOR':
 				self.lock2.acquire()
 				self.data ='DISTANCE_SENSOR'
-				self.depth = msg.current_distance
+				self._depth = msg.current_distance
 				self.lock2.release()
 
 			elif msg.get_type() == 'SYS_STATUS':
@@ -188,7 +192,7 @@ class MavManager(GTool):
 			elif msg.get_type() == 'VFR_HUD':
 				self.lock2.acquire()
 				self.data ='VFR_HUD'
-				self.vfr_hud['groundspeed'] = msg.groundspeed
+				self.vfr_hud['groundspeed'] = round(msg.groundspeed,2)
 				
 				self.lock2.release()
 
@@ -227,7 +231,7 @@ class MavManager(GTool):
 			self.sensor_group_list[4].get_sensor(6).data = self.attitude['roll']
 			self.sensor_group_list[4].get_sensor(7).data = self.vfr_hud['groundspeed']
 
-			self.sensor_group_list[3].get_sensor(0).data = self.depth
+			self.sensor_group_list[3].get_sensor(0).data = self._depth
 			self.sensor_group_list[3].get_sensor(1).data = self.sys_status['voltage_battery']
 			self.sensor_group_list[3].get_sensor(2).data = self.sys_status['current_battery']
 			self.sensor_group_list[3].get_sensor(3).data = self.sys_status['battery_remaining']
@@ -236,12 +240,25 @@ class MavManager(GTool):
 			self.toolBox.networkManager.sendMsg(SENSOR, self.sensor_group_list[3].pack())
 			#self.send_distance_sensor_data(25,10)
 			time.sleep(0.3)
-				
+
+	# getter method
+	@property	
 	def gps_data(self):
-		self.lock2.acquire()
-		gdata = self.gps_raw
-		self.lock2.release()
-		return gdata
+		return self.gps_raw
+	
+	@property
+	def depth(self):
+		return self._depth
+	
+	@property
+	def mav_attitude(self):
+		return self.attitude
+	
+	@property
+	def mav_gps(self):
+		return self.gps
+
+
 	
 	def send_distance_sensor_data(self, direction = 0, d = 0):
 		try:

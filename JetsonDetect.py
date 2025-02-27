@@ -14,7 +14,6 @@ from models.torch_utils import det_postprocess
 from models.utils import blob, letterbox, path_to_list
 from GTool import GTool
 
-
 class JetsonDetect(GTool):
     def __init__(self, toolbox):
         super().__init__(toolbox)
@@ -56,7 +55,7 @@ class JetsonDetect(GTool):
             #self.toolBox.mavManager.send_distance_sensor_data(1, int(min(distances[6:])))
             d = self.out_conn.get()
             #print(d)
-            self.toolBox().sensorManager.send_detection_result(d)
+            ##### TODO self.toolBox().sensorManager.send_detection_result(d)
             time.sleep(0.1)
     def exitProcess(self):
         self.out_conn.send('x')
@@ -86,7 +85,7 @@ class JetsonDetect(GTool):
         self.w = self.cap_send.get(cv2.CAP_PROP_FRAME_WIDTH)
         self.h = self.cap_send.get(cv2.CAP_PROP_FRAME_HEIGHT)
         fps = self.cap_send.get(cv2.CAP_PROP_FPS)
-        self.out_send = cv2.VideoWriter('appsrc ! videoconvert ! video/x-raw,format=I420 ! nvvideoconvert ! video/x-raw(memory:NVMM) ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.99 port=5201'\
+        self.out_send = cv2.VideoWriter('appsrc ! videoconvert ! video/x-raw,format=I420 ! nvvideoconvert ! video/x-raw(memory:NVMM) ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host=192.168.0.110 port=5201'\
             ,cv2.CAP_GSTREAMER\
             ,0\
             , int(fps)\
@@ -135,11 +134,11 @@ class JetsonDetect(GTool):
                 cls_id = int(label)
                 cls = CLASSES[cls_id]
                 color = COLORS[cls]
-                #cv2.rectangle(draw,tuple(bbox[:2]), tuple(bbox[2:]), color, 2)
-                #cv2.putText(draw,
-                 #           f'{cls}:{score:.3f}', (bbox[0], bbox[1] - 2),
-                  #          cv2.FONT_HERSHEY_SIMPLEX,
-                   #         0.75, [225, 255, 255], thickness=2)
+                cv2.rectangle(draw,tuple(bbox[:2]), tuple(bbox[2:]), color, 2)
+                cv2.putText(draw,
+                            f'{cls}:{score:.3f}', (bbox[0], bbox[1] - 2),
+                            cv2.FONT_HERSHEY_SIMPLEX,
+                            0.75, [225, 255, 255], thickness=2)
                 
                 if count < 10:
                     self.detectionMetric[count*6] = cls_id

@@ -57,67 +57,16 @@
             <sensor value="6" name="ROLL" type="float"></sensor>
             <sensor value="7" name="GROUNDSPEED" type="float"></sensor>
         </sensorgroup>
-        <sensorgroup value="5" name="DETECTION">
-            <sensor value="0" name="LABEL1" type="uint_8"></sensor>
-            <sensor value="1" name="X1" type="int_16"></sensor>
-            <sensor value="2" name="Y1" type="int_16"></sensor>
-            <sensor value="3" name="W1" type="int_16"></sensor>
-            <sensor value="4" name="H1" type="int_16"></sensor>
-            <sensor value="5" name="Z1" type="int_16"></sensor>
-            <sensor value="6" name="LABEL2" type="uint_8"></sensor>
-            <sensor value="7" name="X2" type="int_16"></sensor>
-            <sensor value="8" name="Y2" type="int_16"></sensor>
-            <sensor value="9" name="W2" type="int_16"></sensor>
-            <sensor value="10" name="H2" type="int_16"></sensor>
-            <sensor value="11" name="Z2" type="int_16"></sensor>
-            <sensor value="12" name="LABEL3" type="uint_8"></sensor>
-            <sensor value="13" name="X3" type="int_16"></sensor>
-            <sensor value="14" name="Y3" type="int_16"></sensor>
-            <sensor value="15" name="W3" type="int_16"></sensor>
-            <sensor value="16" name="H3" type="int_16"></sensor>
-            <sensor value="17" name="Z3" type="int_16"></sensor>
-            <sensor value="18" name="LABEL4" type="uint_8"></sensor>
-            <sensor value="19" name="X4" type="int_16"></sensor>
-            <sensor value="20" name="Y4" type="int_16"></sensor>
-            <sensor value="21" name="W4" type="int_16"></sensor>
-            <sensor value="22" name="H4" type="int_16"></sensor>
-            <sensor value="23" name="Z4" type="int_16"></sensor>
-            <sensor value="24" name="LABEL5" type="uint_8"></sensor>
-            <sensor value="25" name="X5" type="int_16"></sensor>
-            <sensor value="26" name="Y5" type="int_16"></sensor>
-            <sensor value="27" name="W5" type="int_16"></sensor>
-            <sensor value="28" name="H5" type="int_16"></sensor>
-            <sensor value="29" name="Z5" type="int_16"></sensor>
-            <sensor value="30" name="LABEL6" type="uint_8"></sensor>
-            <sensor value="31" name="X1" type="int_16"></sensor>
-            <sensor value="32" name="Y1" type="int_16"></sensor>
-            <sensor value="33" name="W1" type="int_16"></sensor>
-            <sensor value="34" name="H1" type="int_16"></sensor>
-            <sensor value="35" name="Z1" type="int_16"></sensor>
-            <sensor value="36" name="LABEL7" type="uint_8"></sensor>
-            <sensor value="37" name="X2" type="int_16"></sensor>
-            <sensor value="38" name="Y2" type="int_16"></sensor>
-            <sensor value="39" name="W2" type="int_16"></sensor>
-            <sensor value="40" name="H2" type="int_16"></sensor>
-            <sensor value="41" name="Z2" type="int_16"></sensor>
-            <sensor value="42" name="LABEL8" type="uint_8"></sensor>
-            <sensor value="43" name="X3" type="int_16"></sensor>
-            <sensor value="44" name="Y3" type="int_16"></sensor>
-            <sensor value="45" name="W3" type="int_16"></sensor>
-            <sensor value="46" name="H3" type="int_16"></sensor>
-            <sensor value="47" name="Z3" type="int_16"></sensor>
-            <sensor value="48" name="LABEL9" type="uint_8"></sensor>
-            <sensor value="49" name="X4" type="int_16"></sensor>
-            <sensor value="50" name="Y4" type="int_16"></sensor>
-            <sensor value="51" name="W4" type="int_16"></sensor>
-            <sensor value="52" name="H4" type="int_16"></sensor>
-            <sensor value="53" name="Z4" type="int_16"></sensor>
-            <sensor value="54" name="LABEL10" type="uint_8"></sensor>
-            <sensor value="55" name="X5" type="int_16"></sensor>
-            <sensor value="56" name="Y5" type="int_16"></sensor>
-            <sensor value="57" name="W5" type="int_16"></sensor>
-            <sensor value="58" name="H5" type="int_16"></sensor>
-            <sensor value="59" name="Z5" type="int_16"></sensor>
+        <sensorgroup value="5" name="KBEST">
+            <sensor value="0" name="BOAT_RSSI" type="int_32"></sensor>
+            <sensor value="1" name="GROUND_RSSI" type="int_32"></sensor>
+            <sensor value="2" name="BOAT_RATE" type="float"></sensor>
+            <sensor value="3" name="GROUND_RATE" type="float"></sensor>
+        </sensorgroup>
+        <sensorgroup value="6" name="ARDUSIMPLE">
+            <sensor value="0" name="LAT_ACC" type="int_32"></sensor>
+            <sensor value="1" name="LON_ACC" type="int_32"></sensor>
+            <sensor value="2" name="ALT_ACC" type="int_32"></sensor>
         </sensorgroup>
     </enum>
     <enum name="CONTROL">
@@ -133,10 +82,12 @@
     <enum name="DEVICE_TYPE">
         <entry value="0" name="Pixhawk" idVendor="1209" idProduct="5740" ></entry>
         <entry value="1" name="AT600" idVendor="1d6b" idProduct="3431"></entry>
-        <entry value="2" name="ESP32BT" idVendor="1d6b" idProduct="0002"></entry>
+        <entry value="2" name="WINCH" idVendor="1d6b" idProduct="0002"></entry>
         <entry value="3" name="NodeMCU" idVendor="10c4" idProduct="ea60"></entry>
         <entry value="4" name="RS485Module" idVendor="0403" idProduct="6001"></entry>
         <entry value="5" name="TestDev" idVendor="2341" idProduct="8037"></entry>
+        <entry value="6" name="ArduSimple" idVendor="152a" idProduct="85c0"></entry>
+        <entry value="7" name="Aqua" idVendor="0403" idProduct="6001"></entry>
     </enum>
     <enum name="CONTROL_TYPE">
         <entry value="0" name="WINCH">
@@ -145,6 +96,7 @@
             <field name="Steps" type="uint_32" ></field>
         </entry>
         <entry value="1" name="COOLING_SYSTEM_POWER"></entry>
+        <entry value="2" name="SONAR_SINGLEBEAM_BR"></entry>
     </enum>
     <enum name="DATA_TYPE">
         <entry value="0" name="uint_32"></entry>

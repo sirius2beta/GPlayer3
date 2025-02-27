@@ -70,6 +70,7 @@ class NetworkManager(GTool):
         # Send message from outside
         
         msg = topic + chr(self.BOAT_ID).encode() + msg
+        #print(f"sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
         #print(f'primary timeout: {now-self.primaryLastHeartBeat}')
         #print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
         if now-self.primaryLastHeartBeat < 2:
@@ -218,17 +219,9 @@ class NetworkManager(GTool):
                 if formatStr == "":
                     continue
                 ip = addr[0]
-                
                 formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-                self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
-                
-                #print(quality, ip, port)
-                
-
-                gstring = VF.getFormatCMD('buster', videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
-                print(gstring)
-                
+                self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
                 
 
             elif header == SENSOR[0]:
@@ -246,5 +239,3 @@ class NetworkManager(GTool):
                 boat_id = int(indata[0])
                 control_type = int(indata[1])
                 self._toolBox.deviceManager.processControl(control_type, indata[2:])
-                
-                
