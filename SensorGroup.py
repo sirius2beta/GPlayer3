@@ -17,7 +17,7 @@ class Sensor:
         elif self.data_type == 'uint_16':
             data += struct.pack("<H", self.data)
         elif self.data_type == 'int_16':
-            data += struct.pack("<j", self.data)
+            data += struct.pack("<h", self.data)
         elif self.data_type == 'uint_32':
             data += struct.pack("<I", self.data)
         elif self.data_type == 'int_32':

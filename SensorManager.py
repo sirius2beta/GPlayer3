@@ -1,6 +1,8 @@
 import GTool
 
-class DeviceManager(GTool):
+SENSOR = b'\x04'
+
+class SensorManager(GTool):
     def __init__(self, toolBox):
         super().__init__(toolBox)
         self.device_list = [] # store all devices
@@ -19,6 +21,18 @@ class DeviceManager(GTool):
         return self.sensor_group_list[index] 
     def get_sensor_group_list(self): # get sensor_group_list
         return self.sensor_group_list 
+    
+    def send_detection_result(self, detectionMatrix):
+        data = b''
+        for i in range(10):
 
+            self.sensor_group_list[5].get_sensor(i*6).data = detectionMatrix[i*6]
+            self.sensor_group_list[5].get_sensor(i*6+1).data = detectionMatrix[i*6+1]
+            self.sensor_group_list[5].get_sensor(i*6+2).data = detectionMatrix[i*6+2]
+            self.sensor_group_list[5].get_sensor(i*6+3).data = detectionMatrix[i*6+3]
+            self.sensor_group_list[5].get_sensor(i*6+4).data = detectionMatrix[i*6+4]
+            self.sensor_group_list[5].get_sensor(i*6+5).data = detectionMatrix[i*6+5]
+
+        self.toolBox().networkManager.sendMsg(SENSOR, self.sensor_group_list[5].pack())
     def io_loop(self):
         pass

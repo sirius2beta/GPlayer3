@@ -10,6 +10,8 @@ import VideoFormat
 class VideoManager(GTool):
 	def __init__(self, toolbox):
 		super().__init__(toolbox)
+		self.sys = 'buster'
+
 
 		self.pipelinesexist = []
 		self.pipelines = []
@@ -36,6 +38,8 @@ class VideoManager(GTool):
 			for video in self.videoFormatList[form]:
 				print(f"      - {index}:  video{video[0]} {video[1]}")
 			index += 1
+		#if self.toolBox().oakCam.hasCamera:
+		#	print("      - OAK camera connected")
 
 	def createPipelines(self):
 		for i in range(0, 10):
