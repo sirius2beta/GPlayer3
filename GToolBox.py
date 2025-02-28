@@ -13,7 +13,7 @@ from KBestReader import KBestReader
 # from CoolingModule import CoolingModule
 
 #from OakCam import OakCam
-from JetsonDetect import JetsonDetect
+
 
 
 
@@ -51,6 +51,7 @@ class GToolBox:
 		#self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
 		if self.OS != 'buster':
+			from JetsonDetect import JetsonDetect
 			self.jetsonDetect = JetsonDetect(self)
 			self.jetsonDetect.startLoop()
 		
