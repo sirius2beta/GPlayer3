@@ -22,61 +22,7 @@ from distance import distance, getR0
 
 multiprocessing.set_start_method('spawn', force=True)
 
-def draw_horizon_and_grid(image, K, R, h, max_dist=10, grid_spacing=2):
-    """
-    在影像上繪製地平線和等距線
-    
-    :param image: 原始影像 (numpy array)
-    :param K: 相機內部參數矩陣 (3x3)
-    :param R: 相機旋轉矩陣 (3x3)
-    :param h: 相機離地高度 (m)
-    :param max_dist: 最大距離，超過這個範圍不畫 (m)
-    :param grid_spacing: 等距線間距，例如每 2m 畫一條 (m)
-    :return: 帶有地平線與等距線的影像
-    """
-    img_h, img_w, _ = image.shape
-    img_with_grid = image.copy()
-    h = 0.45
-    depth0 = distance(K, R, h, 320, 480)
-    depth1 = distance(K, R, h, 320, 360)
-    depth2 = distance(K, R, h, 320, 300)
-    depth3 = distance(K, R, h, 320, 275)
 
-    # 計算地平線的位置
-    R = Rotation.from_euler('x', np.pi / 2, degrees=False).as_matrix()
-    ground_normal = np.array([1, 0, 0])  # 地面法向量 (Z 軸朝上)
-    horizon_dir = R@ground_normal  # 轉換到相機座標系
-    point = np.array([[0], [10], [3]])
-    ppoint = R @ point
-    #ppoint/= ppoint[2]
-    #print(f"horizon_dir: {ppoint}")
-    #cv2.line(img_with_grid, (320-4, 480), (320+4, 480), (0, 0, 255), 2)  # 紅色地平線
-    #cv2.putText(img_with_grid,
-    #        f'{depth0:.2f}', (320, 460),
-     #       cv2.FONT_HERSHEY_SIMPLEX,
-     #       0.75, [225, 255, 255], thickness=2)
-    
-    return img_with_grid
-    if horizon_dir[2] == 0:
-        return img_with_grid  # 避免除以 0
-    
-    y_horizon = int((K[1, 2] - K[1, 1] * h / horizon_dir[2]))  # 計算地平線 y 座標
-    print(f"y_horizon: {y_horizon}")
-    
-
-    # 繪製等距線
-    for d in range(grid_spacing, max_dist + 1, grid_spacing):
-        ground_point = np.array([0, d, 0])  # (X, Y, 0) 在地面上的點
-        cam_point = R.T @ ground_point  # 轉換到相機座標系
-        
-        if cam_point[2] == 0:
-            continue  # 避免除 0
-        
-        img_y = int((K[1, 2] - K[1, 1] * h / cam_point[2]))  # 計算影像 y 座標
-        if 0 <= img_y < img_h:
-            cv2.line(img_with_grid, (0, img_y), (img_w, img_y), (0, 255, 0), 1)  # 綠色等距線
-    
-    return img_with_grid
 
 def detectTask(os, conn, input): # Thread that read data from oak camera
     enabled = True
@@ -172,10 +118,9 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
             #    cv2.FONT_HERSHEY_SIMPLEX,
             #    0.75, [225, 255, 255], thickness=2)
             detect_matrix.append([int(clas), int(x1), int(y1), int(x2)-int(x1), int(y2)-int(y1), coord[0], coord[1]])
-        image_with_grid = draw_horizon_and_grid(frame, K0, R0, cam_height)
 
         if out_send.isOpened():
-            out_send.write(image_with_grid)
+            out_send.write(frame)
         if conn.empty():
             if not conn.full():
                 conn.put(detect_matrix, block= False)
