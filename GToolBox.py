@@ -12,7 +12,7 @@ from DataLogger import DataLogger
 from KBestReader import KBestReader
 # from CoolingModule import CoolingModule
 
-from JetsonDetect import JetsonDetect
+
 
 
 
@@ -51,6 +51,7 @@ class GToolBox:
 		self.dataLogger = DataLogger(self)
 
 		if self.OS != 'buster':
+			from JetsonDetect import JetsonDetect
 			self.jetsonDetect = JetsonDetect(self)
 			self.jetsonDetect.startLoop()
 			pass

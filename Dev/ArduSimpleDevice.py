@@ -15,6 +15,7 @@ class ArduSimpleDevice(Device):
         self.ACC_list = [None, None, None]
         # [message_id, utc_position_fix, Status , Latitude, Longitude, Speed , Track_angle, Date, Magnetic_variation, checksum]
         self.RMC_list = [None, None, None, None, None, None, None, None, None, None]
+        
         # [message_id, utc_vector_fix, yaw_angle, yaw, tilt_angle, tilt, None, None, range_meters, gps_quality_indicator, pdop, num_satellites_used, checksum]
         self.AVR_list = [None, None, None, None, None, None, None, None, None, None, None, None, None]
 

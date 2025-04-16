@@ -11,10 +11,11 @@ class AquaDevice(Device):
         super().__init__(device_type, dev_path, sensor_group_list, networkManager)
        
         self.wake_up_command = ['01', '0D', 'C1', 'E5' ] # 喚醒 Aqua
+        self.cmd_special = ['01', '10', '25', '24', '00', '01', '02', '07', 'D0', 'D7', 'DA'] # 0:讀取所有數據
         
         # command 對應 config 文件
         self.command_set = [
-            ['01', '03', '15', '4A', '00', '07', '21', 'D2'], # 0:溫度
+            ['01', '03', '15', '4A', '00', '05', 'A0', '13'], # 0:溫度
             ['01', '03', '15', '51', '00', '07', '51', 'D5'], # 壓力
             ['01', '03', '15', '58', '00', '07', '81', 'D7'], # 深度
             ['01', '03', '15', '5F', '00', '07', '30', '16'], # 水位，對水的深度
@@ -46,19 +47,20 @@ class AquaDevice(Device):
     def get_aqua_data(self):
         return self.data_list
 
-    def send(self, command): # send command to device and get response, command is a list of hex values.
+    def send(self, command, receive = 19): # send command to device and get response, command is a list of hex values.
         # print(f"Request:{command}")
         command = bytes([int(x, 16) for x in command]) # commnad: list to bytes
         self.ser.write(command) # write command to device
-        response = self.ser.read(19) # read response from device
+        response = self.ser.read(receive) # read response from device
         response = [format(x, '02x') for x in response] # convert to hex
-        # print(f"response:{response}")
+        print(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.
         try:
             data = self.send(command = self.wake_up_command) # 喚醒 Aqua
-            self.ser.timeout = 6 # 將 timeout 改為6秒
+            data = self.send(command = self.cmd_special, receive=8)
+            self.ser.timeout = 6
             while(True):
                 if(self.read_all): # if read_all is True, read all data
                     for i in range(len(self.command_set)):

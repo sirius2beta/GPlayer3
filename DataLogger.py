@@ -36,10 +36,10 @@ class DataLogger(GTool):
         mav_gps = {'yaw': 0}
         mav_vfr_hud = {'groundspeed' : 0}
         aqua_data = {key: -1 for key in range(21)}  # 初始化 21 個 Aqua 屬性為 -1
-        acc_data = [-1, -1, -1]  # [lat_acc, lon_acc, alt_acc]
-        rmc_data = []
-        avr_data = []
-        gga_data = []
+        acc_data = [-1]*3  # [lat_acc, lon_acc, alt_acc]
+        rmc_data = [-1]*10
+        avr_data = [-1]*13
+        gga_data = [-1]*16
 
         # 嘗試從工具箱中調用數據
         try:
@@ -94,6 +94,8 @@ class DataLogger(GTool):
             # V3新增
             self.log_data.gps_orthometric_height = gga_data[9]
             self.log_data.geoid_separation = gga_data[11]
+
+
 
             # Aqua Data
             self.log_data.temperature = aqua_data[0]                         # 1. 水溫
