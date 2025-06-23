@@ -10,6 +10,7 @@ import numpy as np
 
 import VideoFormat as VF
 import MavManager
+from IOTest import IOTest
 from GTool import GTool
 
 # definition of all the headers
@@ -43,6 +44,8 @@ class NetworkManager(GTool):
         self.secondaryLastHeartBeat = 0
         self.isSecondaryConnected = False
         self.isPrimaryConnected = False
+
+        self.ioTest = IOTest(self.toolBox())
 
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -96,10 +99,13 @@ class NetworkManager(GTool):
                 print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
     
     # sending heartbeat to ground control station
-    def aliveLoop(self):        
+    def aliveLoop(self):    
+            
         while True:
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
+
+            #self.ioTest.send_test_Msg()
                         
             # Check primary/secondary heartBeat from PC, check if disconnected
             if now-self.primaryLastHeartBeat >3:

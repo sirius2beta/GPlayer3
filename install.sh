@@ -8,7 +8,7 @@ PATH=/home/pi/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin
 export PATH
 
 echo "start downloading pymavlink..."
-sudo pip3 install pymavlink pyserial scipy supervision==0.1.0
+sudo pip3 install pymavlink pyserial 
 sudo cp GPlayer3.service /etc/systemd/system/
 #sudo cp GPlayer3.conf /etc/rsyslog.d/
 sudo cp GPlayer3.log /var/log/
