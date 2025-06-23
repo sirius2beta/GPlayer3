@@ -1,0 +1,94 @@
+import time
+import serial
+import struct
+import threading
+
+class AquaDevice():           
+    def __init__(self, dev_path=""):
+        self.dev_path = dev_path
+        self.wake_up_command = ['01', '0D', 'C1', 'E5' ] # 喚醒 Aqua
+        self.cmd_special = ['01', '10', '25', '24', '00', '01', '02', '07', 'D0', 'D7', 'DA'] # 0:讀取所有數據
+        self.command_set = [
+            ['01', '03', '00', '25', '00', '05', '94', '02'], # 0:濁度
+            ['01', '03', '00', 'FF', '00', '05', 'B5', 'F9'], # pH 
+            ['01', '03', '01', '07', '00', '05', '35', 'F4'], # pH毫伏 
+            ['01', '03', '01', '0F', '00', '05', 'B4', '36'], # 氧化還原電位（ORP）
+            ['01', '03', '01', 'd9', '00', '05', '55', 'CE'], # 溶解氧濃度
+            ['01', '03', '01', 'E1', '00', '05', 'D4', '03'], # 5:溶解氧飽和度百分比 
+            ['01', '03', '01', 'E9', '00', '05', '55', 'C1'], # 氧分壓
+            ['01', '03', '02', 'BB', '00', '05', 'F4', '54'], # 實際導電率 **
+            ['01', '03', '02', 'C3', '00', '05', '74', '4D'], # 特定導電率
+            ['01', '03', '02', 'CB', '00', '05', 'F5', '8F'], # 鹽度
+            ['01', '03', '02', 'D3', '00', '05', '75', '88'], # 10:電阻率
+            ['01', '03', '02', 'DB', '00', '05', 'F4', '4A'], # 水密度
+            ['01', '03', '02', 'E3', '00', '05', '75', '87'], # 總溶解固體
+            ['01', '03', '03', '8D', '00', '05', '15', 'A6'], # 溫度
+            ['01', '03', '03', '95', '00', '05', '95', 'A1'], # 外部電壓
+            ['01', '03', '03', '9D', '00', '05', '14', '63'], # 15:電池剩餘容量
+            ['01', '03', '04', '67', '00', '05', '35', '26'], # 壓力(barometric pressure)大氣壓力
+            ['01', '03', '05', '41', '00', '05', 'D5', '11'], # 壓力(Pressure)
+            ['01', '03', '05', '49', '00', '05', '54', 'D3'], # 深度
+            ['01', '03', '15', '5F', '00', '05', 'B1', 'D7'], # 水位，對水的深度
+            ['01', '03', '15', '66', '00', '05', '61', 'DA'], # 20:表面高程
+        ]
+        self.data_list = [0.0] * 21 # sensor data list (empty list, length = 22)
+        self.read_all = True # If read_all as False, only read depth data.
+        self.ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 2)
+        threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
+    
+    def get_aqua_data(self):
+        return self.data_list
+
+    def send(self, command): # send command to device and get response, command is a list of hex values.
+        #print(f"Request:{command}")
+        command = bytes([int(x, 16) for x in command]) # commnad: list to bytes
+        self.ser.write(command) # write command to device
+        response = self.ser.read(15) # read response from device
+        response = [format(x, '02x') for x in response] # convert to hex
+        #print(f"response:{response}")
+        return response 
+
+    def reader(self): # read data from the device and store it in the data_list.
+        try: 
+            data = self.send(command = self.wake_up_command) # 喚醒 Aqua
+            data = self.send(command = self.cmd_special)
+            #self.ser.timeout = 6
+            
+            while(True):
+                if(self.read_all): # if read_all is True, read all data
+                    tt1 = time.time()
+                    for i in range(len(self.command_set)):
+                        t1 = time.time()
+                        data = self.send(command = self.command_set[i]) # send command to device
+                        try:
+                            value = data[3] + data[4] + data[5] + data[6] # get the value
+                            value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
+                            self.data_list[i] = value # store the value
+                        except Exception as e:
+                            print(f"{i}:{e}")
+                            continue
+                        t2 = time.time()
+
+                        print(f"用時:{t2 - t1}")
+                    tt2 = time.time()
+                    print(f"完成讀取一圈，用時:{tt2-tt1}")
+                else:
+                    data = self.send(command = self.command_set[3]) # send command to device
+                    try:
+                        value = data[3] + data[4] + data[5] + data[6] # get the value
+                        value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
+                        self.data_list[3] = value # store the value
+                    except Exception as e:
+                        print(f"{3}:{e}")
+                        continue
+
+        except serial.serialutil.SerialException: # if serial error
+            print("Serial Error...")
+            print("Trying to reconnect...")
+
+        except Exception as e: # if other error
+            print(e)
+
+if(__name__ == "__main__" ):
+    aqua = AquaDevice("COM6")     
+    time.sleep(1000)
