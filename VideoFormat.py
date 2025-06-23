@@ -10,7 +10,7 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				if sys == 'buster':
 					gstring +='videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 				else: # for jetson
-					gstring +='nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
+					#gstring +='nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 					# Software encode, more stable?
 					gstring +='videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 			
@@ -39,7 +39,7 @@ def getFormatCMD(sys, cam, format, width, height, framerate, encoder, IP, port):
 				if sys == 'buster':
 					gstring +='videoconvert ! omxh264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 				else: # for jetson
-					gstring +='videoconvert !  nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
+					#gstring +='videoconvert !  nvvideoconvert ! nvv4l2h264enc ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)
 					# Software encode, more stable?
 					gstring +='videoconvert ! x264enc tune=zerolatency speed-preset=superfast ! rtph264pay pt=96 config-interval=1 ! udpsink host={} port={}'.format(IP, port)	
 			

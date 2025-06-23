@@ -10,12 +10,6 @@ import torch
 
 os.environ['CUDA_MODULE_LOADING'] = 'LAZY'
 
-tensorrt_version = trt.__version__
-major_version = int(tensorrt_version.split('.')[0])
-minor_version = int(tensorrt_version.split('.')[1])
-device = torch.cuda.current_device()
-total_memory = torch.cuda.get_device_properties(device).total_memory
-
 
 class EngineBuilder:
     seg = False
@@ -47,18 +41,8 @@ class EngineBuilder:
         trt.init_libnvinfer_plugins(logger, namespace='')
         builder = trt.Builder(logger)
         config = builder.create_builder_config()
-
-        if major_version >= 10:
-            config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE,
-                                         total_memory // 2)
-            config.set_memory_pool_limit(trt.MemoryPoolType.DLA_MANAGED_SRAM,
-                                         total_memory // 4)
-        elif major_version >= 8:
-            config.set_memory_pool_limit(trt.MemoryPoolType.WORKSPACE,
-                                         total_memory)
-        else:
-            config.max_workspace_size = total_memory
-
+        config.max_workspace_size = torch.cuda.get_device_properties(
+            self.device).total_memory
         flag = (1 << int(trt.NetworkDefinitionCreationFlag.EXPLICIT_BATCH))
         network = builder.create_network(flag)
 
@@ -74,30 +58,12 @@ class EngineBuilder:
         self.weight = self.checkpoint.with_suffix('.engine')
 
         if with_profiling:
-            if major_version <= 8:
-                config.profiling_verbosity = trt.ProfilingVerbosity.VERBOSE
-            else:
-                config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
-
-        if major_version >= 8:
-            serialized_engine = builder.build_serialized_network(
-                network, config)
-            if serialized_engine is None:
-                raise RuntimeError('Failed to build serialized engine')
-            with trt.Runtime(logger) as runtime:
-                engine = runtime.deserialize_cuda_engine(serialized_engine)
-        else:
-            engine = builder.build_engine(network, config)
-            if engine is None:
-                raise RuntimeError('Failed to build engine')
-
-        if engine is not None:
+            config.profiling_verbosity = trt.ProfilingVerbosity.DETAILED
+        with self.builder.build_engine(self.network, config) as engine:
             self.weight.write_bytes(engine.serialize())
-            self.logger.log(
-                trt.Logger.WARNING, f'Build TensorRT engine finished.\n'
-                f'Saved to {str(self.weight.absolute())}')
-        else:
-            raise RuntimeError('Engine creation failed')
+        self.logger.log(
+            trt.Logger.WARNING, f'Build tensorrt engine finish.\n'
+            f'Save in {str(self.weight.absolute())}')
 
     def build(self,
               fp16: bool = True,
@@ -122,7 +88,7 @@ class EngineBuilder:
 
         if not parser.parse(onnx_model.SerializeToString()):
             raise RuntimeError(
-                f'Failed to load ONNX file: {str(self.checkpoint)}')
+                f'failed to load ONNX file: {str(self.checkpoint)}')
         inputs = [
             self.network.get_input(i) for i in range(self.network.num_inputs)
         ]
@@ -248,7 +214,7 @@ class TRTModule(torch.nn.Module):
         super(TRTModule, self).__init__()
         self.weight = Path(weight) if isinstance(weight, str) else weight
         self.device = device if device is not None else torch.device('cuda:0')
-        self.stream = torch.cuda.Stream(device=self.device)
+        self.stream = torch.cuda.Stream(device=device)
         self.__init_engine()
         self.__init_bindings()
 
@@ -259,24 +225,19 @@ class TRTModule(torch.nn.Module):
             model = runtime.deserialize_cuda_engine(self.weight.read_bytes())
 
         context = model.create_execution_context()
+        num_bindings = model.num_bindings
+        names = [model.get_binding_name(i) for i in range(num_bindings)]
 
-        if major_version >= 10:
-            num_io_tensors = model.num_io_tensors
-            names = [model.get_tensor_name(i) for i in range(num_io_tensors)]
-            num_inputs = sum(
-                1 for name in names
-                if model.get_tensor_mode(name) == trt.TensorIOMode.INPUT)
-            num_outputs = num_io_tensors - num_inputs
-        else:
-            num_bindings = model.num_bindings
-            names = [model.get_binding_name(i) for i in range(num_bindings)]
-            num_inputs = sum(1 for i in range(num_bindings)
-                             if model.binding_is_input(i))
-            num_outputs = num_bindings - num_inputs
+        self.bindings: List[int] = [0] * num_bindings
+        num_inputs, num_outputs = 0, 0
 
-        self.bindings: List[int] = [0] * (num_inputs + num_outputs
-                                          )  # คงไว้เพื่อ TensorRT 8
-        self.num_bindings = num_inputs + num_outputs
+        for i in range(num_bindings):
+            if model.binding_is_input(i):
+                num_inputs += 1
+            else:
+                num_outputs += 1
+
+        self.num_bindings = num_bindings
         self.num_inputs = num_inputs
         self.num_outputs = num_outputs
         self.model = model
@@ -291,25 +252,17 @@ class TRTModule(torch.nn.Module):
         inp_info = []
         out_info = []
         for i, name in enumerate(self.input_names):
-            if major_version >= 10:
-                dtype = self.dtypeMapping[self.model.get_tensor_dtype(name)]
-                shape = tuple(self.model.get_tensor_shape(name))
-            else:
-                assert self.model.get_binding_name(i) == name
-                dtype = self.dtypeMapping[self.model.get_binding_dtype(i)]
-                shape = tuple(self.model.get_binding_shape(i))
+            assert self.model.get_binding_name(i) == name
+            dtype = self.dtypeMapping[self.model.get_binding_dtype(i)]
+            shape = tuple(self.model.get_binding_shape(i))
             if -1 in shape:
                 idynamic |= True
             inp_info.append(Tensor(name, dtype, shape))
         for i, name in enumerate(self.output_names):
-            j = i + self.num_inputs
-            if major_version >= 10:
-                dtype = self.dtypeMapping[self.model.get_tensor_dtype(name)]
-                shape = tuple(self.model.get_tensor_shape(name))
-            else:
-                assert self.model.get_binding_name(j) == name
-                dtype = self.dtypeMapping[self.model.get_binding_dtype(j)]
-                shape = tuple(self.model.get_binding_shape(j))
+            i += self.num_inputs
+            assert self.model.get_binding_name(i) == name
+            dtype = self.dtypeMapping[self.model.get_binding_dtype(i)]
+            shape = tuple(self.model.get_binding_shape(i))
             if -1 in shape:
                 odynamic |= True
             out_info.append(Tensor(name, dtype, shape))
@@ -325,8 +278,8 @@ class TRTModule(torch.nn.Module):
         self.out_info = out_info
 
     def set_profiler(self, profiler: Optional[trt.IProfiler]):
-        self.context.profiler = profiler if profiler is not None else \
-            trt.Profiler()
+        self.context.profiler = profiler \
+            if profiler is not None else trt.Profiler()
 
     def set_desired(self, desired: Optional[Union[List, Tuple]]):
         if isinstance(desired,
@@ -334,57 +287,33 @@ class TRTModule(torch.nn.Module):
             self.idx = [self.output_names.index(i) for i in desired]
 
     def forward(self, *inputs) -> Union[Tuple, torch.Tensor]:
+
         assert len(inputs) == self.num_inputs
         contiguous_inputs: List[torch.Tensor] = [
             i.contiguous() for i in inputs
         ]
 
-        if major_version >= 10:
-            for i, name in enumerate(self.input_names):
-                self.context.set_tensor_address(
-                    name, contiguous_inputs[i].data_ptr())
-                if self.idynamic:
-                    self.context.set_input_shape(
-                        name, tuple(contiguous_inputs[i].shape))
+        for i in range(self.num_inputs):
+            self.bindings[i] = contiguous_inputs[i].data_ptr()
+            if self.idynamic:
+                self.context.set_binding_shape(
+                    i, tuple(contiguous_inputs[i].shape))
 
-            outputs: List[torch.Tensor] = []
-            for i, name in enumerate(self.output_names):
-                if self.odynamic:
-                    shape = tuple(self.context.get_tensor_shape(name))
-                    output = torch.empty(size=shape,
-                                         dtype=self.out_info[i].dtype,
-                                         device=self.device)
-                else:
-                    output = self.output_tensor[i]
-                self.context.set_tensor_address(name, output.data_ptr())
-                outputs.append(output)
+        outputs: List[torch.Tensor] = []
 
-            success = self.context.execute_async_v3(self.stream.cuda_stream)
-            if not success:
-                raise RuntimeError('TensorRT execution failed')
-        else:
-            for i in range(self.num_inputs):
-                self.bindings[i] = contiguous_inputs[i].data_ptr()
-                if self.idynamic:
-                    self.context.set_binding_shape(
-                        i, tuple(contiguous_inputs[i].shape))
+        for i in range(self.num_outputs):
+            j = i + self.num_inputs
+            if self.odynamic:
+                shape = tuple(self.context.get_binding_shape(j))
+                output = torch.empty(size=shape,
+                                     dtype=self.out_info[i].dtype,
+                                     device=self.device)
+            else:
+                output = self.output_tensor[i]
+            self.bindings[j] = output.data_ptr()
+            outputs.append(output)
 
-            outputs: List[torch.Tensor] = []
-            for i in range(self.num_outputs):
-                j = i + self.num_inputs
-                if self.odynamic:
-                    shape = tuple(self.context.get_binding_shape(j))
-                    output = torch.empty(size=shape,
-                                         dtype=self.out_info[i].dtype,
-                                         device=self.device)
-                else:
-                    output = self.output_tensor[i]
-                self.bindings[j] = output.data_ptr()
-                outputs.append(output)
-
-            self.context.execute_async_v2(self.bindings,
-                                          self.stream.cuda_stream)
-
+        self.context.execute_async_v2(self.bindings, self.stream.cuda_stream)
         self.stream.synchronize()
 
         return tuple(outputs[i]
@@ -394,7 +323,7 @@ class TRTModule(torch.nn.Module):
 class TRTProfilerV1(trt.IProfiler):
 
     def __init__(self):
-        super().__init__()
+        trt.IProfiler.__init__(self)
         self.total_runtime = 0.0
         self.recorder = defaultdict(float)
 
@@ -415,7 +344,7 @@ class TRTProfilerV1(trt.IProfiler):
 class TRTProfilerV0(trt.IProfiler):
 
     def __init__(self):
-        super().__init__()
+        trt.IProfiler.__init__(self)
 
     def report_layer_time(self, layer_name: str, ms: float):
         f = '\t%40s\t\t\t\t%10.4fms'

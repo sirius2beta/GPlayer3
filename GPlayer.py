@@ -7,6 +7,7 @@ class GPlayer:
 		print(f"GPlayer version {version}")
 		self.toolBox = GToolBox.GToolBox(self) # initiate all modules
 		
+		
 		self.mainLoop()	# keep main thread alive
 
 	def mainLoop(self):

@@ -1,6 +1,7 @@
 import multiprocessing 
 import subprocess
 
+
 from NetworkManager import NetworkManager
 from VideoManager import VideoManager
 from DeviceManager import DeviceManager
@@ -11,9 +12,6 @@ from config import Config
 from DataLogger import DataLogger
 from KBestReader import KBestReader
 # from CoolingModule import CoolingModule
-
-
-
 
 
 # GToolBox stores all the modules and initialize them
@@ -49,16 +47,17 @@ class GToolBox:
 		self.kBestReader = KBestReader(self)
 		#self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
-
+		print("start jetsonDetect")
 		if self.OS != 'buster':
-			from JetsonDetect import JetsonDetect
-			self.jetsonDetect = JetsonDetect(self)
-			self.jetsonDetect.startLoop()
+			self.jetsonDetect = None
+
 			pass
+		print("start jetsonDetect - done")
 		
 		
 		# networkManager is not started until after everything is ready
 		#self.oakCam.startLoop()
+		print("start networkManager loop")
 		self.networkManager.startLoop()
 		
 		print("start loops!!")
