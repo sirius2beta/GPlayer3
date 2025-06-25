@@ -65,7 +65,7 @@ class DeviceManager(GTool):
 					count += 1
 				if count == 3:
 					device = self._deviceFactory(idVendor, idProduct, i)
-					#print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
+					print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
 					if device != None:
 						self.device_list.append(device)
 					break
@@ -116,6 +116,14 @@ class DeviceManager(GTool):
 			self.Pixhawk_exist = True
 			return dev
 		elif(idVendor == "1d6b" and idProduct == "0002"): # Winch device
+			print("      ...Devicefactory create Winch Device")
+			device_type = 2
+			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			self.winch_device = dev
+			dev.isOpened = True
+			dev.start_loop()
+			return dev
+		elif(idVendor == "0bda" and idProduct == "5489"): # Winch device loaded with ch34x module
 			print("      ...Devicefactory create Winch Device")
 			device_type = 2
 			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
