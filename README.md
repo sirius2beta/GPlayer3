@@ -11,7 +11,7 @@
 * Support for up to 10 live video channels
 
 ## Info
-* Competable with denovo v3.0
+* Competable with denovo v5.0
 
 ## Install
 ```
