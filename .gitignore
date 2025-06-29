@@ -1,3 +1,15 @@
+# 忽略 Python 快取資料夾
 __pycache__/
+unet/__pycache__/
+
+# 忽略 Python 編譯檔
 *.pyc
 
+# 忽略影片檔
+*.mp4
+
+# 忽略模型檔案
+seagrass_model_4000.pth
+seagrass_model_4000_trt.pth
+seagrass_model_resnet50.pth
+seagrass_model_resnet50_trt.pth
