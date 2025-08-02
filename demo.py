@@ -16,5 +16,6 @@ if __name__ == '__main__':
   toolBox = GToolBox(0) # initiate all modules
   jetsonDetect = JetsonDetect(toolBox) # initiate JetsonDetect
   toolBox.jetsonDetect = jetsonDetect # add to toolbox
-  jetsonDetect.startLoop() # start the JetsonDetect loop
+  if toolBox.OS != "buster":
+    jetsonDetect.startLoop() # start the JetsonDetect loop
   input("Press Enter to exit...")  # Keep the program running until Enter is pressed
