@@ -2,7 +2,7 @@ import time
 import serial
 import struct
 import threading
-from Dev.Device import Device
+from Device import Device
 
 SENSOR = b'\x04'
 
@@ -53,7 +53,7 @@ class AquaDevice(Device):
         self.ser.write(command) # write command to device
         response = self.ser.read(receive) # read response from device
         response = [format(x, '02x') for x in response] # convert to hex
-        #print(f"response:{response}")
+        print(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.
@@ -70,7 +70,7 @@ class AquaDevice(Device):
                             value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
                             self.data_list[i] = value # store the value
                         except Exception as e:
-                            #print(f"{i}:{e}")
+                            print(f"{i}:{e}")
                             continue
                 else:
                     data = self.send(command = self.command_set[3]) # send command to device
@@ -106,7 +106,7 @@ class AquaDevice(Device):
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
 
 if(__name__ == "__main__" ):
-    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB2", sensor_group_list = [], networkManager = None)     
+    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB1", sensor_group_list = [], networkManager = None)     
     while(True):
         print(aqua.get_aqua_data())
         time.sleep(1)

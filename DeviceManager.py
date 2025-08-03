@@ -2,6 +2,7 @@ import time
 import threading
 import subprocess
 import serial
+import shlex
 
 from GTool import GTool
 
@@ -42,46 +43,57 @@ class DeviceManager(GTool):
 			elif i.find("ttyAMA") != -1:
 				devlist.append(i)
 
-		# find device detail
-		idProduct = ''
-		for i in devlist:
-			cmd = f"udevadm info -a -p  $(udevadm info -q path -n {i})"
-			returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-			dlist = returncode.split('\n')
-			count = 0
-			for j in dlist:
-				word = j.split("==")
-				if word[0].find("KERNELS") != -1: # not used
-					kernals = word[1]
-					count = 0
-				elif word[0].find("idProduct") != -1:
-					idProduct = word[1][1:-1]
-					count += 1
-				elif word[0].find("idVendor") != -1:
-					idVendor = word[1][1:-1]
-					count += 1
-				elif word[0].find("manufacturer") != -1:
-					manufacturer = word[1][1:-1] # only take first word for identification
-					count += 1
-				if count == 3:
-					device = self._deviceFactory(idVendor, idProduct, i)
-					print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
-					if device != None:
-						self.device_list.append(device)
-					break
+		SUPPORTED_VENDORS = {
+			"10c4": "CP210x (Silicon Labs)",
+			"1a86": "CH340 (WCH)",
+			"0403": "FTDI",
+			"1209": "Pixhawk4",
+		}
 
-		if self.SITL_connect == True:
-			self._toolBox.mavManager.connectVehicle("udp:127.0.0.1:14550")
-			print("Running SITL..")	
-				
-		print(f"[o] DeviceManager: started, current device:")
-		if len(self.device_list) == 0:
-			print("      - no device found")
-		for i in self.device_list:
-			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
-		# 不是從USB中創建的 device
-		sonarDevice = SonarDevice(self.toolBox())
-		self.device_list.append(sonarDevice)
+		for dev_path in devlist:
+			try:
+				# 取得該 device 的 udev path
+				path_cmd = ["udevadm", "info", "-q", "path", "-n", dev_path]
+				udev_path = subprocess.check_output(path_cmd).decode("utf-8").strip()
+
+				# 查詢該裝置的所有屬性
+				info_cmd = ["udevadm", "info", "-a", "-p", udev_path]
+				output = subprocess.check_output(info_cmd).decode("utf-8")
+
+				# 分析各層級，直到找到第一個有 idVendor 和 idProduct 的有效裝置層
+				idVendor = None
+				idProduct = None
+				manufacturer = None
+
+				for line in output.splitlines():
+					line = line.strip()
+
+					if line.startswith("looking at"):
+						idVendor = idProduct = manufacturer = None  # reset on each block
+						continue
+
+					if 'ATTRS{idVendor}' in line:
+						idVendor = line.split("==")[1].strip().strip('"')
+					elif 'ATTRS{idProduct}' in line:
+						idProduct = line.split("==")[1].strip().strip('"')
+					elif 'ATTRS{manufacturer}' in line or 'ATTRS{product}' in line:
+						manufacturer = line.split("==")[1].strip().strip('"')
+
+					if idVendor and idProduct:
+						if idVendor in SUPPORTED_VENDORS:
+							device = self._deviceFactory(idVendor, idProduct, dev_path)
+							print(f"[INFO] Device found: idVendor={idVendor}, idProduct={idProduct}, "
+									f"manufacturer={manufacturer}, path={dev_path}")
+							if device is not None:
+								self.device_list.append(device)
+						else:
+							print(f"[SKIP] Non-serial device: {manufacturer}, idVendor={idVendor}")
+						break  # 找到有效層就結束這個 device 的解析
+
+			except subprocess.CalledProcessError as e:
+				print(f"[ERROR] udevadm failed for {dev_path}: {e}")
+			except Exception as e:
+				print(f"[ERROR] Unexpected error for {dev_path}: {e}")
 	
 	def processControl(self, control_type, cmd):
 		print(f"control type: {control_type}")
@@ -124,6 +136,14 @@ class DeviceManager(GTool):
 			dev.start_loop()
 			return dev
 		elif(idVendor == "0bda" and idProduct == "5489"): # Winch device loaded with ch34x module
+			print("      ...Devicefactory create Winch Device")
+			device_type = 2
+			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
+			self.winch_device = dev
+			dev.isOpened = True
+			dev.start_loop()
+			return dev
+		elif(idVendor == "1a86" and idProduct == "7523"): # Winch device loaded with ch34x module (jetson xavier)
 			print("      ...Devicefactory create Winch Device")
 			device_type = 2
 			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
