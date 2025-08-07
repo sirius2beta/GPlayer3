@@ -48,8 +48,9 @@ class DeviceManager(GTool):
 			"1a86": "CH340 (WCH)",
 			"0403": "FTDI",
 			"1209": "Pixhawk4",
+			"152a": "Septentrio"
 		}
-
+		found_device = []
 		for dev_path in devlist:
 			try:
 				# 取得該 device 的 udev path
@@ -122,8 +123,7 @@ class DeviceManager(GTool):
 			device_type = 0
 			dev = Device(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
 			# Pixhawk device don't need to start loop
-			dev.isOpened = True
-			
+			dev.isOpened = True			
 			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
 			self.Pixhawk_exist = True
 			return dev

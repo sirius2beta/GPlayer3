@@ -95,7 +95,7 @@ class WinchDevice(Device):
         status = 0
         while True:
             input = self.serialOut.readline()
-            print(input)
+            #print(input)
             try:
                 input = input.decode().split(",")
                 if input[0] == "cs":
