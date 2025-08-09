@@ -42,6 +42,14 @@ class DeviceManager(GTool):
 				devlist.append(i)
 			elif i.find("ttyAMA") != -1:
 				devlist.append(i)
+			elif i.find("video") != -1:
+				devlist.append(i)
+
+		cmd = "ls /dev/video*"
+		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
+		codelist = returncode.split()
+		for i in codelist:
+				devlist.append(i)
 
 		SUPPORTED_VENDORS = {
 			"10c4": "CP210x (Silicon Labs)",
@@ -51,6 +59,7 @@ class DeviceManager(GTool):
 			"152a": "Septentrio"
 		}
 		found_device = []
+		sonarDevice = SonarDevice(toolBox) # create sonar device
 		for dev_path in devlist:
 			try:
 				# 取得該 device 的 udev path
@@ -88,7 +97,7 @@ class DeviceManager(GTool):
 							if device is not None:
 								self.device_list.append(device)
 						else:
-							print(f"[SKIP] Non-serial device: {manufacturer}, idVendor={idVendor}")
+							print(f"[SKIP] Non-serial device: {manufacturer}, idVendor={idVendor}, idProduct={idProduct}, path={dev_path}")
 						break  # 找到有效層就結束這個 device 的解析
 
 			except subprocess.CalledProcessError as e:

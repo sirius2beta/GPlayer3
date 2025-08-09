@@ -21,18 +21,18 @@ class SonarDevice(Device):
             import RPi.GPIO as GPIO
             self.GPIO = GPIO
             #GPIO.cleanup()
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(11, GPIO.OUT)
-            GPIO.output(11, GPIO.LOW)
+            self.GPIO.setmode(GPIO.BCM)
+            self.GPIO.setup(11, GPIO.OUT)
+            self.GPIO.output(11, GPIO.LOW)
         elif self._toolBox.OS == "focal":
             print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
             import Jetson.GPIO as GPIO
             self.GPIO = GPIO
-            GPIO.setmode(GPIO.BCM)
-            GPIO.setup(13, GPIO.OUT)
-            GPIO.output(13, GPIO.LOW)
+            self.GPIO.setmode(GPIO.BCM)
+            self.GPIO.setup(13, GPIO.OUT)
+            self.GPIO.output(13, GPIO.LOW)
     def __del__(self):
-        GPIO.cleanup()
+        self.GPIO.cleanup()
     def processCMD(self, control_type ,cmd):
         if control_type == self.control_type:
             print("SonarDevice::getMsg")

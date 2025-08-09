@@ -171,6 +171,9 @@ class VideoManager(GTool):
 		if self.pipelines_state[cam] == True:
 			self.pipelines[cam].set_state(Gst.State.NULL)
 		if ai_enabled == 1:
+			if self._toolBox.jetsonDetect == None:
+				print("JetsonDetect not ready, please wait...")
+				return
 			if cam not in self.ai_cam:
 				YUYVfps = self.getYUYVFrameRate(cam, width, height)
 				if YUYVfps != "":
@@ -207,6 +210,7 @@ class VideoManager(GTool):
 			# stop ai cam
 			print(f"stop ai on cam:{cam}")
 			self._toolBox.jetsonDetect.stop()
+			#self._toolBox.seagrassDetect.stop()
 			self.ai_cam.remove(cam)
 			pass
 		if self.pipelines_state[cam] == True:

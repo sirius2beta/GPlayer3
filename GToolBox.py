@@ -47,14 +47,10 @@ class GToolBox:
 		self.kBestReader = KBestReader(self)
 		#self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
-		print("start jetsonDetect")
-		if self.OS != 'buster':
-			self.jetsonDetect = None
-
-			pass
-		print("start jetsonDetect - done")
 		
-		
+		self.jetsonDetect = None
+		self.seagrassDetect = None
+	
 		# networkManager is not started until after everything is ready
 		#self.oakCam.startLoop()
 		print("start networkManager loop")
