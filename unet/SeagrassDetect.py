@@ -24,9 +24,11 @@ class SeagrassDetect(GTool):
         
 
     def play(self, msg):
-        msg.insert(0, "p")
-        self.video_no = msg[1]
-        self.in_conn.put(msg)
+        msg_cpy = msg.copy()
+        msg_cpy.insert(0, "p")
+        self.video_no = msg_cpy[1]
+        self.in_conn.put(msg_cpy)
+
     def stop(self):
         self.in_conn.put(["x"])
         self.video_no = -1
@@ -94,14 +96,19 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
         encode_string = 'video/x-raw,format=I420 ! nvvideoconvert ! video/x-raw(memory:NVMM) ! nvv4l2h264enc'
     else:
         return
+    # import here to avoid import time in profiling
     import os
     import torch
     from .unet import Unet
     from torch2trt import TRTModule
-    
+    # 找到 SeagrassDetect.py 所在的資料夾
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(current_dir, "model", "seagrass_model_resnet50.pth")
+    print("model path:", model_path)
     while True:
-        if not playing:
+        if not input.empty():
             msg = input.get()
+            print("Received message:", msg)
             if msg[0] == "p": # play
                 msg = msg[1:]
                 if cap_send != None:
@@ -127,11 +134,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                     print('VideoWriter not opened')
                     continue
                 playing = True
-                # 找到 SeagrassDetect.py 所在的資料夾
                 
-                
-                current_dir = os.path.dirname(os.path.abspath(__file__))
-                model_path = os.path.join(current_dir, "model", "seagrass_model_resnet50.pth")
                 # Initialize Unet model (still needed even if we're loading a TensorRT-optimized model)
                 model = Unet(
                     model_path=model_path,  # This path is not important after TRT is loaded
@@ -141,7 +144,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                     mix_type=0,
                     cuda=True
                 )
-
+                
                 # If model is wrapped in DataParallel (multi-GPU), unwrap it
                 if isinstance(model.net, torch.nn.DataParallel):
                     model.net = model.net.module
@@ -152,12 +155,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                 trt_model.load_state_dict(torch.load("unet/model/seagrass_model_resnet50_trt.pth"))
                 model.net = trt_model
                 print("✅ TensorRT model loaded!")
-
-            else:
-                continue
-        elif not input.empty():
-            msg = input.get()
-            if msg[0] == "x":
+            elif msg[0] == "x":
                 if cap_send != None:
                     cap_send.release()
                 if out_send != None:
@@ -169,7 +167,10 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                 roll = float(msg[2])   # 直接使用 roll
                 R0 = getR0(pitch, roll)
                 #print(R0)
-            
+
+        if not playing:
+            time.sleep(0.1)
+            continue    
         ret,frame = cap_send.read()
         if not ret:
             print('JetsonDetect: Error!! empty frame')

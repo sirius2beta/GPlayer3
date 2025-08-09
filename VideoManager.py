@@ -20,7 +20,9 @@ class VideoManager(GTool):
 		self.camera_format = []
 		self.videoFormatList = {}
 		self.videoWithYUYV = []
-		self.ai_cam = []
+		self.ai_cam = -1
+		self.seagrass_cam = -1
+		self.seagrass_cam_format = None
 		
 		if(self._toolBox.OS == 'bionic'): # for Ubuntu 18.04 (Jetson Nano
 				self.get_video_format_Ubuntu_18_04()
@@ -154,64 +156,86 @@ class VideoManager(GTool):
 				return format[4]
 		return ""
 
-	def play(self, cam, format, width, height, framerate, encoder, IP, port, ai_enabled):
+	def play(self, cam, format, width, height, framerate, encoder, IP, port, YOLO_detection_enabled):
 		gstring = VideoFormat.getFormatCMD(self._toolBox.OS, cam, format, width, height, framerate, encoder, IP, port)
 		print(gstring)
+		
 		if port in self.portOccupied:
 			videoToStop = self.portOccupied[port]
-			if cam in self.ai_cam:
-				# stop ai cam
-				print(f"stop ai on cam:{cam}")
-				self.ai_cam.remove(cam)
-			self.pipelines[videoToStop].set_state(Gst.State.NULL)
-			self.pipelines_state[videoToStop] = False
-			print("  -quit occupied: video"+str(videoToStop))
-		self.portOccupied[port] = cam
+			self.stop(videoToStop)
 			
+			print("  -quit occupied: video"+str(videoToStop))
+		
 		if self.pipelines_state[cam] == True:
 			self.pipelines[cam].set_state(Gst.State.NULL)
-		if ai_enabled == 1:
+		if self.seagrass_cam == cam:
+			if self._toolBox.seagrassDetect == None:
+				print("seagrassDetect not ready, please wait...")
+				return	
+			print(self.seagrass_cam_format)
+			self._toolBox.seagrassDetect.play(self.seagrass_cam_format)
+			print(self.seagrass_cam_format)
+			print(f"start seagrass camera on cam:{cam}")
+
+		elif YOLO_detection_enabled == 1:
 			if self._toolBox.jetsonDetect == None:
 				print("JetsonDetect not ready, please wait...")
 				return
-			if cam not in self.ai_cam:
+			if cam != self.ai_cam:
 				YUYVfps = self.getYUYVFrameRate(cam, width, height)
 				if YUYVfps != "":
 					self._toolBox.jetsonDetect.play([cam, "YUYV", width, height, YUYVfps, IP, port])
 					print(f"start ai on cam:{cam}")
-					self.ai_cam.append(cam)
+					self.ai_cam = cam
 				else:
 					print(f"video{cam} had no YUYV format")
+					return
 
 				# start ai camera
 			else:
 				print(f"restart ai on cam:{cam}")
 				# restart ai camera
-				pass
-			pass
+				return
+
 		else:
-			if cam in self.ai_cam:
+			if cam == self.ai_cam:
 				# stop ai cam
 
 				print(f"stop ai on cam:{cam}")
 				self._toolBox.jetsonDetect.stop()
-				self.ai_cam.remove(cam)
-				pass
+				self.ai_cam = -1
+				return
 			else:
 				self.pipelines[cam] = Gst.parse_launch(gstring)
 				self.pipelines[cam].set_state(Gst.State.PLAYING)
 				self.pipelines_state[cam] = True
+		self.portOccupied[port] = cam
+	def setSeagrassCamera(self, cam, format, width, height, framerate, encoder, IP, port):
+		print(f"set seagrass camera: {cam} {format} {width} {height} {framerate} {encoder} {IP} {port}")
+		YUYVfps = self.getYUYVFrameRate(cam, width, height)
+		if YUYVfps != "":
+			self.seagrass_cam_format = [cam, "YUYV", width, height, YUYVfps, IP, port]
+			print(f"start ai on cam:{cam}")
+			self.seagrass_cam = cam
+		else:
+			print(f"video{cam} had no YUYV format")
+
 	def stop(self, cam):
 		for port in self.portOccupied:
 			if self.portOccupied[port] == cam:
 				self.portOccupied.pop(port, None)
 				break
-		if cam in self.ai_cam:
+		if cam == self.seagrass_cam:
+			self._toolBox.seagrassDetect.stop()
+			#self.seagrass_cam = -1
+			print(f"stop seagrass on cam:{cam}")
+			return
+		if cam == self.ai_cam:
 			# stop ai cam
 			print(f"stop ai on cam:{cam}")
 			self._toolBox.jetsonDetect.stop()
 			#self._toolBox.seagrassDetect.stop()
-			self.ai_cam.remove(cam)
+			self.ai_cam = -1
 			pass
 		if self.pipelines_state[cam] == True:
 			self.pipelines[cam].set_state(Gst.State.NULL)

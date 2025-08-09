@@ -20,6 +20,7 @@ QUIT = b'\x03'
 SENSOR = b'\x04'
 CONTROL = b'\x05'
 DETECT = b'\x06'
+SEAGRASS = b'\x07'
 
 # For dual ip auto switching mechanism, all internet traffics are going through NetworkManager
 class NetworkManager(GTool):
@@ -248,3 +249,38 @@ class NetworkManager(GTool):
                 print("[DETECT]")
                 boat_id = int(indata[0])
                 self._toolBox.videoManager.processDetection(indata[1:])
+            
+            elif header == SEAGRASS[0]:
+                indata = indata[1:]
+                print("[SEAGRASS]")
+                opeartion = int(indata[0])
+                print(indata)
+                
+                if len(indata)<2:
+                    continue
+
+                videoNo = int(indata[1])
+                formatIndex = int(indata[2])
+                encoder = int(indata[3])
+                if encoder == 0:
+                    encoder = 'h264'
+                else:
+                    encoder = 'mjpeg'
+                #port = int(np.fromstring(indata[2:], dtype='<u4'))
+                port = int.from_bytes(indata[4:8], 'little')
+                ai_enabled = int(indata[8])
+                print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}, ai: {ai_enabled}")
+
+                if formatIndex not in self._toolBox.videoManager.videoFormatList:
+                    print('format error')
+                    continue
+                formatStr = ""
+                for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
+                    if formatpair[0] == videoNo:
+                        formatStr = formatpair[1]
+                if formatStr == "":
+                    continue
+                ip = addr[0]
+                formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
+                print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
+                self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)

@@ -46,6 +46,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
     cam_height = 0.4
     R0 = getR0(0, 0)
 
+    # import here to avoid import time in profiling
     from ultralytics import YOLO
     from models.torch_utils import det_postprocess
     from models.utils import blob, letterbox, path_to_list
@@ -96,6 +97,8 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                 roll = float(msg[2])   # 直接使用 roll
                 R0 = getR0(pitch, roll)
                 #print(R0)
+            elif msg[0] == "p": # play
+                pass # already handled above
             
         ret,frame = cap_send.read()
         if not ret:
