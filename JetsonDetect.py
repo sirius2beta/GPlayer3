@@ -10,13 +10,17 @@ import cv2
 import numpy as np
 
 from config import CLASSES, COLORS
-from models.torch_utils import det_postprocess
-from models.utils import blob, letterbox, path_to_list
+
 from GTool import GTool
 from distance import distance, getR0
 
-multiprocessing.set_start_method('spawn', force=True)
-
+def prepare_multiprocessing():
+    """
+    僅在主程式中呼叫這個函數以設定 multiprocessing。
+    避免在 import 階段就設置 start method，減少 profiling 時的不必要延遲。
+    """
+    multiprocessing.set_start_method('spawn', force=True)
+    
 def detectTask(os, conn, input): # Thread that read data from oak camera
     enabled = True
     cap_send = None
@@ -41,6 +45,10 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
     )
     cam_height = 0.4
     R0 = getR0(0, 0)
+
+    from ultralytics import YOLO
+    from models.torch_utils import det_postprocess
+    from models.utils import blob, letterbox, path_to_list
     
     while True:
         if not playing:
@@ -70,7 +78,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                     print('VideoWriter not opened')
                     continue
                 playing = True
-                from ultralytics import YOLO
+                
                 model = YOLO(engine)
             else:
                 continue
@@ -168,8 +176,3 @@ class JetsonDetect(GTool):
             data += struct.pack("<f", result[6])
         self._toolBox.networkManager.sendMsg(b'\x06', data)
 
-
-if __name__ == '__main__':
-    jd = JetsonDetect(0)
-    jd.startLoop()
-    input()

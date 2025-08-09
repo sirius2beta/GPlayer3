@@ -1,13 +1,9 @@
-from .unet import Unet
-from torch2trt import TRTModule
+
+import time
 from PIL import Image
 import multiprocessing 
-
-
 import cv2
 import numpy as np
-import torch
-import time
 import struct
 from scipy.spatial.transform import Rotation
 import math
@@ -16,10 +12,8 @@ import threading
 import argparse
 import os
 
-
 from GTool import GTool
 
-multiprocessing.set_start_method('spawn', force=True)
 
 class SeagrassDetect(GTool):
     def __init__(self, toolbox):
@@ -100,7 +94,10 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
         encode_string = 'video/x-raw,format=I420 ! nvvideoconvert ! video/x-raw(memory:NVMM) ! nvv4l2h264enc'
     else:
         return
-
+    import os
+    import torch
+    from .unet import Unet
+    from torch2trt import TRTModule
     
     while True:
         if not playing:
@@ -131,7 +128,8 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                     continue
                 playing = True
                 # 找到 SeagrassDetect.py 所在的資料夾
-                import os
+                
+                
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 model_path = os.path.join(current_dir, "model", "seagrass_model_resnet50.pth")
                 # Initialize Unet model (still needed even if we're loading a TensorRT-optimized model)
