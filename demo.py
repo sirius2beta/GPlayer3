@@ -51,4 +51,5 @@ if __name__ == '__main__':
     jetsonDetect.startLoop() # start the JetsonDetect loop
     seagrassDetect.startLoop() # start the SeagrassDetect loop
     
+    toolBox.startLoop()
   input("Press Enter to exit...")  # Keep the program running until Enter is pressed

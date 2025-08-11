@@ -39,7 +39,7 @@ class GToolBox:
 		self.mavManager = MavManager(self)
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
 		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
-		self.mavManager.startLoop()
+		
 		#self.oakCam = OakCam(self)
 		
 		self.videoManager = VideoManager(self)
@@ -53,10 +53,15 @@ class GToolBox:
 	
 		# networkManager is not started until after everything is ready
 		#self.oakCam.startLoop()
-		print("start networkManager loop")
-		self.networkManager.startLoop()
+		
+		
 		
 		print("start loops!!")
+	def startLoop(self):
+		self.mavManager.startLoop()
+		self.networkManager.startLoop()
+		print("start networkManager loop")
+
 
 	def core(self):
 		return self.core

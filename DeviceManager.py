@@ -59,7 +59,6 @@ class DeviceManager(GTool):
 			"152a": "Septentrio"
 		}
 		found_device = []
-		sonarDevice = SonarDevice(toolBox) # create sonar device
 		for dev_path in devlist:
 			try:
 				# 取得該 device 的 udev path
@@ -99,6 +98,9 @@ class DeviceManager(GTool):
 						else:
 							print(f"[SKIP] Non-serial device: {manufacturer}, idVendor={idVendor}, idProduct={idProduct}, path={dev_path}")
 						break  # 找到有效層就結束這個 device 的解析
+			
+			#sonarDevice = SonarDevice(toolBox) # create sonar device
+			#self.device_list.append(sonarDevice) # add sonar device to device_list
 
 			except subprocess.CalledProcessError as e:
 				print(f"[ERROR] udevadm failed for {dev_path}: {e}")

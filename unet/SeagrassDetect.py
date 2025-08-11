@@ -74,10 +74,6 @@ class SeagrassDetect(GTool):
             data += struct.pack("<f", result[6])
         self._toolBox.networkManager.sendMsg(b'\x06', data)
 
-
-
-
-
 # Define the streaming generator function
 
 
