@@ -14,6 +14,9 @@ from GTool import GTool
 # cannot be resent, because they become Python strings (not bytestrings)
 # This converts those messages so your code doesn't crash when
 # you try to send the message again.
+# sudo modprobe cdc_acm
+# echo '1-2.4.3' | sudo tee /sys/bus/usb/drivers/usb/unbind
+# echo '1-2.4.3' | sudo tee /sys/bus/usb/drivers/usb/bind
 def fixMAVLinkMessageForForward(msg):
 	msg_type = msg.get_type()
 
@@ -107,6 +110,7 @@ class MavManager(GTool):
 			1, # rate(Hz)
 			1, # Turn on
 		)
+		print("start request data stream")
 		self.vehicle_conn.mav.send(msg)
 		print(f"MavManager: FC connected to {dev}")
 

@@ -32,7 +32,8 @@ class NetworkManager(GTool):
         self.P_CLIENT_IP = '127.0.0.1' #PC IP
         self.S_CLIENT_IP = '127.0.0.1'
         self.OUT_PORT = 50008
-        self.IN_PORT = 50006 
+        self.IN_PORT = 50006 #sudo lsof -i :50006
+        # sudo kill -9 <PID>
         self.primaryNewConnection = False
         self.secondaryNewConnection = False
         self.mavLastConnectedIP = ''
@@ -180,6 +181,7 @@ class NetworkManager(GTool):
             elif header == FORMAT[0]:
                 print("[FORMAT]")
                 msg = b''
+                self._toolBox.videoManager.get_video_format()
                 if len(self._toolBox.videoManager.videoFormatList) == 0:
                     print("no videoformat")
                     continue
@@ -254,33 +256,36 @@ class NetworkManager(GTool):
                 indata = indata[1:]
                 print("[SEAGRASS]")
                 opeartion = int(indata[0])
-                print(indata)
+                if opeartion == 0:
                 
-                if len(indata)<2:
-                    continue
+                    if len(indata)<2:
+                        continue
 
-                videoNo = int(indata[1])
-                formatIndex = int(indata[2])
-                encoder = int(indata[3])
-                if encoder == 0:
-                    encoder = 'h264'
-                else:
-                    encoder = 'mjpeg'
-                #port = int(np.fromstring(indata[2:], dtype='<u4'))
-                port = int.from_bytes(indata[4:8], 'little')
-                ai_enabled = int(indata[8])
-                print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}, ai: {ai_enabled}")
+                    videoNo = int(indata[1])
+                    formatIndex = int(indata[2])
+                    encoder = int(indata[3])
+                    if encoder == 0:
+                        encoder = 'h264'
+                    else:
+                        encoder = 'mjpeg'
+                    #port = int(np.fromstring(indata[2:], dtype='<u4'))
+                    port = int.from_bytes(indata[4:8], 'little')
+                    print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}")
 
-                if formatIndex not in self._toolBox.videoManager.videoFormatList:
-                    print('format error')
-                    continue
-                formatStr = ""
-                for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
-                    if formatpair[0] == videoNo:
-                        formatStr = formatpair[1]
-                if formatStr == "":
-                    continue
-                ip = addr[0]
-                formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-                print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
-                self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
+                    if formatIndex not in self._toolBox.videoManager.videoFormatList:
+                        print('format error')
+                        continue
+                    formatStr = ""
+                    for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
+                        if formatpair[0] == videoNo:
+                            formatStr = formatpair[1]
+                    if formatStr == "":
+                        continue
+                    ip = addr[0]
+                    formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
+                    print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
+                    self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
+                elif opeartion == 1:
+                    self._toolBox.videoManager.startSeagrassRecording()
+                elif opeartion == 2:
+                    self._toolBox.videoManager.stopSeagrassRecording()

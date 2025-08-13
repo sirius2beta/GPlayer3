@@ -173,7 +173,7 @@ class VideoManager(GTool):
 				print("seagrassDetect not ready, please wait...")
 				return	
 			print(self.seagrass_cam_format)
-			self._toolBox.seagrassDetect.play(self.seagrass_cam_format)
+			self._toolBox.seagrassDetect.play()
 			print(self.seagrass_cam_format)
 			print(f"start seagrass camera on cam:{cam}")
 
@@ -217,9 +217,18 @@ class VideoManager(GTool):
 			self.seagrass_cam_format = [cam, "YUYV", width, height, YUYVfps, IP, port]
 			print(f"start ai on cam:{cam}")
 			self.seagrass_cam = cam
+			self._toolBox.seagrassDetect.setFormat(self.seagrass_cam_format)
 		else:
 			print(f"video{cam} had no YUYV format")
-
+	def startSeagrassRecording(self):
+		if self.seagrass_cam_format == None:
+			print("seagrass camera not set, please set first")
+			return
+		print(f"start seagrass recording")
+		self._toolBox.seagrassDetect.startRecording()
+	def stopSeagrassRecording(self):
+		print(f"stop seagrass recording")
+		self._toolBox.seagrassDetect.stopRecording()
 	def stop(self, cam):
 		for port in self.portOccupied:
 			if self.portOccupied[port] == cam:

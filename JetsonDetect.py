@@ -8,6 +8,8 @@ import struct
 from scipy.spatial.transform import Rotation
 import cv2
 import numpy as np
+import queue as _queue  # 用於捕捉 Full
+
 
 from config import CLASSES, COLORS
 
@@ -130,17 +132,42 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
 class JetsonDetect(GTool):
     def __init__(self, toolbox):
         super().__init__(toolbox)
-        self.out_conn = multiprocessing.Queue(1)
-        self.in_conn = multiprocessing.Queue(1)
+        self.out_conn = multiprocessing.Queue()
+        self.in_conn = multiprocessing.Queue()
         self.video_no = -1
         self.enabled = True
 
     def play(self, msg):
-        msg.insert(0, "p")
-        self.video_no = msg[1]
-        self.in_conn.put(msg)
+        msg_cpy = msg.copy()
+        msg_cpy.insert(0, "p")
+        self.video_no = msg_cpy[1]
+        self.in_conn.put(msg_cpy)
+        try:
+            self.in_conn.put_nowait(msg_cpy)
+        except _queue.Full:
+            # 若真的滿了，選擇丟棄舊指令或先清掉再放
+            try:
+                self.in_conn.get_nowait()
+            except Exception:
+                pass
+            try:
+                self.in_conn.put_nowait(msg_cpy)
+            except Exception:
+                print("Warning: failed to enqueue play msg")
     def stop(self):
-        self.in_conn.put(["x"])
+        try:
+            self.in_conn.put_nowait(["x"])
+        except _queue.Full:
+            # 若真的滿了，選擇丟棄舊指令或先清掉再放
+            try:
+                self.in_conn.get_nowait()
+            except Exception:
+                pass
+            try:
+                self.in_conn.put_nowait(msg_cpy)
+            except Exception:
+                print("Warning: failed to enqueue play msg")
+        #self.in_conn.put(["x"])
         self.video_no = -1
     def updateIMU(self, msg): #[pitch, roll]
         msg.insert(0, "i")
