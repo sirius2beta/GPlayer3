@@ -191,6 +191,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
         os.makedirs(seagrass_directory)                                 # 建立路徑
     
     recording = False
+    modelLoaded = False
     while True:
         if not input.empty():
             msg = input.get()
@@ -243,6 +244,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                 trt_model.load_state_dict(torch.load("unet/model/seagrass_model_resnet50_trt.pth"))
                 model.net = trt_model
                 print("✅ TensorRT model loaded!")
+                modelLoaded = True
             elif msg[0] == "p": # play
                 if format == None:
                     print("format not set, please set first")
@@ -261,9 +263,14 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                 recording = True
             elif msg[0] == "s":
                 recording = False
-
+        
         if not recording and not playing:
             time.sleep(0.1)
+            continue
+            
+        if not modelLoaded:
+            print("Model not loaded yet, waiting...")
+            time.sleep(1)
             continue
 
         if time.time() - ta < 0.5:
