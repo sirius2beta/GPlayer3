@@ -6,286 +6,248 @@ import threading
 import socket
 import struct
 import sys
+import logging
 import numpy as np
 
 import VideoFormat as VF
 import MavManager
 from GTool import GTool
 
-# definition of all the headers
+# Headers
 HEARTBEAT = b'\x00'
-FORMAT = b'\x01'
-COMMAND = b'\x02'
-QUIT = b'\x03'
-SENSOR = b'\x04'
-CONTROL = b'\x05'
-DETECT = b'\x06'
-SEAGRASS = b'\x07'
+FORMAT    = b'\x01'
+COMMAND   = b'\x02'
+QUIT      = b'\x03'
+SENSOR    = b'\x04'
+CONTROL   = b'\x05'
+DETECT    = b'\x06'
+SEAGRASS  = b'\x07'
 
-# For dual ip auto switching mechanism, all internet traffics are going through NetworkManager
+
 class NetworkManager(GTool):
     def __init__(self, toolbox):
-        super().__init__(toolbox)  
+        super().__init__(toolbox)
+
+        # Connection info
         self.BOAT_ID = 0
-        self.PC_IP='10.10.10.205'
+        self.PC_IP = '10.10.10.205'
         self.SERVER_IP = ''
-        self.P_CLIENT_IP = '127.0.0.1' #PC IP
+        self.P_CLIENT_IP = '127.0.0.1'
         self.S_CLIENT_IP = '127.0.0.1'
         self.OUT_PORT = 50008
-        self.IN_PORT = 50006 #sudo lsof -i :50006
-        # sudo kill -9 <PID>
+        self.IN_PORT = 50006
+
+        # State
         self.primaryNewConnection = False
         self.secondaryNewConnection = False
         self.mavLastConnectedIP = ''
-
-        self.mavPre = time.time()
-        self.mavCurrent = self.mavPre
-
         self.primaryLastHeartBeat = 0
         self.secondaryLastHeartBeat = 0
         self.isSecondaryConnected = False
         self.isPrimaryConnected = False
 
+        # Socket setup
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.client = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server.bind((self.SERVER_IP, self.IN_PORT))
-        self.server.setblocking(0)
+        self.server.settimeout(0.1)  # avoid busy loop
 
         self.thread_terminate = False
         self.lock = threading.Lock()
 
-    def __del__(self):
-        print("------------------------del")
+        # Packet handlers
+        self.handlers = {
+            HEARTBEAT[0]: self.handleHeartbeat,
+            FORMAT[0]:    self.handleFormat,
+            COMMAND[0]:   self.handleCommand,
+            SENSOR[0]:    self.handleSensor,
+            QUIT[0]:      self.handleQuit,
+            CONTROL[0]:   self.handleControl,
+            DETECT[0]:    self.handleDetect,
+            SEAGRASS[0]:  self.handleSeagrass
+        }
 
-    # startLoop need to be called to start internet communication
     def startLoop(self):
-        self.thread_cli = threading.Thread(target=self.aliveLoop)
-        self.thread_ser = threading.Thread(target=self.listenLoop)
-        self.thread_cli.daemon = True
-        self.thread_ser.daemon = True
+        self.thread_cli = threading.Thread(target=self.aliveLoop, daemon=True)
+        self.thread_ser = threading.Thread(target=self.listenLoop, daemon=True)
         self.thread_cli.start()
         self.thread_ser.start()
-        print("[o] NetworkManager started")
+        logging.info("NetworkManager started")
 
-    # send message with topic
+    def stopLoop(self):
+        self.thread_terminate = True
+        logging.info("Stopping NetworkManager threads...")
+
     def sendMsg(self, topic, msg):
         now = time.time()
-        # Send message from outside
-        
         msg = topic + chr(self.BOAT_ID).encode() + msg
-        #print(f"sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
-        #print(f'primary timeout: {now-self.primaryLastHeartBeat}')
-        #print(f'secondary timeout: {now-self.secondaryLastHeartBeat}')
-        if now-self.primaryLastHeartBeat < 2:
-            #print(f"P sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
-            try:
-                self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
 
-            except:
-                print(f"Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}")
-        # Send secondary heartbeat every 0.5s
-        elif now-self.secondaryLastHeartBeat < 2:
-            #print(f"S sendMsg:\n -topic:{msg[0]}\n -msg: {msg}")
-            try:
-                self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
-            except:
-                print(f"Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
+        target_ip = None
+        if now - self.primaryLastHeartBeat < 2:
+            target_ip = self.P_CLIENT_IP
+        elif now - self.secondaryLastHeartBeat < 2:
+            target_ip = self.S_CLIENT_IP
         else:
-            try:
-                self.client.sendto(msg,(self.P_CLIENT_IP,self.OUT_PORT))
-                #self.client.sendto(msg,(self.S_CLIENT_IP, self.OUT_PORT))
-            except:
-                print(f"Secondary/Primary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}")
-    
-    # sending heartbeat to ground control station
-    def aliveLoop(self):        
-        while True:
+            target_ip = self.P_CLIENT_IP  # default to primary
+
+        try:
+            self.client.sendto(msg, (target_ip, self.OUT_PORT))
+        except Exception as e:
+            logging.warning(f"Send failed to {target_ip}:{self.OUT_PORT} - {e}")
+
+    def aliveLoop(self):
+        while not self.thread_terminate:
             now = time.time()
             beat = HEARTBEAT + chr(self.BOAT_ID).encode()
-                        
-            # Check primary/secondary heartBeat from PC, check if disconnected
-            if now-self.primaryLastHeartBeat >3:
-                if self.mavLastConnectedIP != 's' and self.isSecondaryConnected == True:
-                    self._toolBox.mavManager.connectGCS(self.S_CLIENT_IP)
-                    self.mavLastConnectedIP = 's'
-                self.isPrimaryConnected = False
-            else:
-                self.isPrimaryConnected = True
-            if now-self.secondaryLastHeartBeat >3:
-                self.isSecondaryConnected = False
-            else:
-                self.isSecondaryConnected = True
-                
-            # Check newConnection 
+
+            # Connection status
+            self.isPrimaryConnected = now - self.primaryLastHeartBeat <= 3
+            self.isSecondaryConnected = now - self.secondaryLastHeartBeat <= 3
+
+            # New connections
             if self.primaryNewConnection:
-                print(f"\n=== New connection ===\n -Primary send to: {self.P_CLIENT_IP}:{self.OUT_PORT}\n", flush=True)
+                logging.info(f"New primary connection: {self.P_CLIENT_IP}:{self.OUT_PORT}")
                 self._toolBox.mavManager.connectGCS(self.P_CLIENT_IP)
                 self.mavLastConnectedIP = 'p'
-                self.primaryLastHeartBeat = time.time()
                 self.primaryNewConnection = False
             if self.secondaryNewConnection:
-                print(f"\n=== New connection ===\n -Secondarysend to: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
+                logging.info(f"New secondary connection: {self.S_CLIENT_IP}:{self.OUT_PORT}")
                 if not self.isPrimaryConnected:
                     self._toolBox.mavManager.connectGCS(self.S_CLIENT_IP)
                     self.mavLastConnectedIP = 's'
                 self.secondaryNewConnection = False
-            
-            # Send primary heartbeat every 0.5s
-            try:
-                self.client.sendto(beat,(self.P_CLIENT_IP,self.OUT_PORT))
-                #self._toolBox.mavManager.send_distance_sensor_data()
-                #self.client.sendto(sns1,(self.P_CLIENT_IP,self.OUT_PORT))
-                #self.client.sendto(sns2,(self.P_CLIENT_IP,self.OUT_PORT))
-                time.sleep(0.5)
-            except:
-                print(f"\n=== Bad connection ===\n -Primary unreached: {self.P_CLIENT_IP}:{self.OUT_PORT}\n")
-            # Send secondary heartbeat every 0.5s
-            try:
-                self.client.sendto(beat,(self.S_CLIENT_IP, self.OUT_PORT))
-                time.sleep(0.5)
-            except:
-                print(f"\n=== Bad connection ===\n -Secondary unreached: {self.S_CLIENT_IP}:{self.OUT_PORT}\n")
 
-    # handle all incomming traffic, sending them to corresponding module for processing
-    def listenLoop(self):        
-        while True:
+            # Send heartbeats
+            for ip in [self.P_CLIENT_IP, self.S_CLIENT_IP]:
+                try:
+                    self.client.sendto(beat, (ip, self.OUT_PORT))
+                except Exception as e:
+                    logging.warning(f"Heartbeat failed to {ip}:{self.OUT_PORT} - {e}")
+                time.sleep(0.5)
+
+    def listenLoop(self):
+        while not self.thread_terminate:
             try:
-                indata, addr = self.server.recvfrom(1024) 
-            except:
+                indata, addr = self.server.recvfrom(1024)
+            except socket.timeout:
+                continue
+            except Exception as e:
+                logging.error(f"Socket recv error: {e}")
                 continue
 
-            now = time.time()
-            #print(f'[GP] => message from: {str(addr)}, data: {indata}')
-            
-            indata = indata
             header = indata[0]
-            if header == HEARTBEAT[0]:
-                indata = indata[1:]
-                ip = addr[0]
-                self.BOAT_ID = indata[0]
-                primary = indata[1:].decode()
-                #print("[HEARTBEAT]")
-                #print(f" -id:{self.BOAT_ID}, primary:{primary}")
-                if primary == 'P':
-                    if self.P_CLIENT_IP != ip or now-self.primaryLastHeartBeat > 3:
-                        self.P_CLIENT_IP = ip
-                        self.primaryNewConnection = True
-                    self.primaryLastHeartBeat = now
-                else:
-                    if self.S_CLIENT_IP != ip or now-self.secondaryLastHeartBeat > 3:
-                        print(f"S:{self.S_CLIENT_IP}, s:{ip}")
-                        self.S_CLIENT_IP = ip
-                        self.secondaryNewConnection = True
-                    self.secondaryLastHeartBeat = now
+            handler = self.handlers.get(header)
+            if handler:
+                handler(indata[1:], addr)
+            else:
+                logging.warning(f"Unknown packet header: {header}")
 
-            elif header == FORMAT[0]:
-                print("[FORMAT]")
-                msg = b''
-                self._toolBox.videoManager.get_video_format()
-                if len(self._toolBox.videoManager.videoFormatList) == 0:
-                    print("no videoformat")
-                    continue
-                else:
-                    for form in self._toolBox.videoManager.videoFormatList:
-                        for video in self._toolBox.videoManager.videoFormatList[form]:
-                            videoIndex = video[0]
-                            msg += struct.pack("<2B", videoIndex, form)   
-                    print("send videoformat")
-                    print(msg)
-                    self.sendMsg(FORMAT, msg)
+    # === Packet handlers ===
 
-                
-            elif header == COMMAND[0]:
-                indata = indata[1:]
-                print("[COMMAND]")
-                print(indata)
-                
-                if len(indata)<2:
-                    continue
+    def handleHeartbeat(self, data, addr):
+        ip = addr[0]
+        if len(data) < 2:
+            return
+        self.BOAT_ID = data[0]
+        primary = data[1:].decode()
 
-                videoNo = int(indata[0])
-                formatIndex = int(indata[1])
-                encoder = int(indata[2])
-                if encoder == 0:
-                    encoder = 'h264'
-                else:
-                    encoder = 'mjpeg'
-                #port = int(np.fromstring(indata[2:], dtype='<u4'))
-                port = int.from_bytes(indata[3:7], 'little')
-                ai_enabled = int(indata[7])
-                print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}, ai: {ai_enabled}")
+        if primary == 'P':
+            if self.P_CLIENT_IP != ip or time.time() - self.primaryLastHeartBeat > 3:
+                self.P_CLIENT_IP = ip
+                self.primaryNewConnection = True
+            self.primaryLastHeartBeat = time.time()
+        else:
+            if self.S_CLIENT_IP != ip or time.time() - self.secondaryLastHeartBeat > 3:
+                self.S_CLIENT_IP = ip
+                self.secondaryNewConnection = True
+            self.secondaryLastHeartBeat = time.time()
 
-                if formatIndex not in self._toolBox.videoManager.videoFormatList:
-                    print('format error')
-                    continue
-                formatStr = ""
-                for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
-                    if formatpair[0] == videoNo:
-                        formatStr = formatpair[1]
-                if formatStr == "":
-                    continue
-                ip = addr[0]
-                formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-                print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
-                self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port, ai_enabled)
-                
+    def handleFormat(self, data, addr):
+        self._toolBox.videoManager.get_video_format()
+        if not self._toolBox.videoManager.videoFormatList:
+            logging.info("No video format available")
+            return
 
-            elif header == SENSOR[0]:
-                print("[SENSOR]")
-                
-            elif header == QUIT[0]:
-                print("[QUIT]")
-                video = int(indata[6:].decode())
-                self._toolBox.videoManager.stop(video)
-                print("  -quit : video"+str(video))
+        msg = b''
+        for form in self._toolBox.videoManager.videoFormatList:
+            for video in self._toolBox.videoManager.videoFormatList[form]:
+                videoIndex = video[0]
+                msg += struct.pack("<2B", videoIndex, form)
+        self.sendMsg(FORMAT, msg)
 
-            elif header == CONTROL[0]:
-                indata = indata[1:]
-                print("[CONTROL]")
-                boat_id = int(indata[0])
-                control_type = int(indata[1])
-                self._toolBox.deviceManager.processControl(control_type, indata[2:])
+    def handleCommand(self, data, addr):
+        if len(data) < 8:
+            logging.warning("COMMAND packet too short")
+            return
+        videoNo = int(data[0])
+        formatIndex = int(data[1])
+        encoder = 'h264' if int(data[2]) == 0 else 'mjpeg'
+        port = int.from_bytes(data[3:7], 'little')
+        ai_enabled = int(data[7])
 
-            elif header == DETECT[0]:
-                indata = indata[1:]
-                print("[DETECT]")
-                boat_id = int(indata[0])
-                self._toolBox.videoManager.processDetection(indata[1:])
-            
-            elif header == SEAGRASS[0]:
-                indata = indata[1:]
-                print("[SEAGRASS]")
-                opeartion = int(indata[0])
-                if opeartion == 0:
-                
-                    if len(indata)<2:
-                        continue
+        if formatIndex not in self._toolBox.videoManager.videoFormatList:
+            logging.warning("Invalid format index")
+            return
 
-                    videoNo = int(indata[1])
-                    formatIndex = int(indata[2])
-                    encoder = int(indata[3])
-                    if encoder == 0:
-                        encoder = 'h264'
-                    else:
-                        encoder = 'mjpeg'
-                    #port = int(np.fromstring(indata[2:], dtype='<u4'))
-                    port = int.from_bytes(indata[4:8], 'little')
-                    print(f"videoNo: {videoNo}, formatIndex: {formatIndex}, port: {port}")
+        formatStr = ""
+        for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
+            if formatpair[0] == videoNo:
+                formatStr = formatpair[1]
+        if not formatStr:
+            return
 
-                    if formatIndex not in self._toolBox.videoManager.videoFormatList:
-                        print('format error')
-                        continue
-                    formatStr = ""
-                    for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
-                        if formatpair[0] == videoNo:
-                            formatStr = formatpair[1]
-                    if formatStr == "":
-                        continue
-                    ip = addr[0]
-                    formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-                    print(f"play: video{videoNo}, {formatStr}, {formatInfo[0]}x{formatInfo[1]} {formatInfo[2]}/1, encoder={encoder}, ip={ip}, port={port}")
-                    self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2], encoder, ip, port)
-                elif opeartion == 1:
-                    self._toolBox.videoManager.startSeagrassRecording()
-                elif opeartion == 2:
-                    self._toolBox.videoManager.stopSeagrassRecording()
+        ip = addr[0]
+        formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
+        self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2],
+                                        encoder, ip, port, ai_enabled)
+
+    def handleSensor(self, data, addr):
+        logging.info("SENSOR packet received")
+
+    def handleQuit(self, data, addr):
+        try:
+            video = int(data.decode()[5:])
+            self._toolBox.videoManager.stop(video)
+            logging.info(f"Stopped video {video}")
+        except Exception as e:
+            logging.warning(f"QUIT packet parse error: {e}")
+
+    def handleControl(self, data, addr):
+        if len(data) < 2:
+            return
+        boat_id = int(data[0])
+        control_type = int(data[1])
+        self._toolBox.deviceManager.processControl(control_type, data[2:])
+
+    def handleDetect(self, data, addr):
+        boat_id = int(data[0])
+        self._toolBox.videoManager.processDetection(data[1:])
+
+    def handleSeagrass(self, data, addr):
+        if not data:
+            return
+        operation = int(data[0])
+        if operation == 0 and len(data) >= 8:
+            videoNo = int(data[1])
+            formatIndex = int(data[2])
+            encoder = 'h264' if int(data[3]) == 0 else 'mjpeg'
+            port = int.from_bytes(data[4:8], 'little')
+
+            if formatIndex not in self._toolBox.videoManager.videoFormatList:
+                return
+
+            formatStr = ""
+            for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
+                if formatpair[0] == videoNo:
+                    formatStr = formatpair[1]
+            if not formatStr:
+                return
+
+            ip = addr[0]
+            formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
+            self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1],
+                                                         formatInfo[2], encoder, ip, port)
+        elif operation == 1:
+            self._toolBox.videoManager.startSeagrassRecording()
+        elif operation == 2:
+            self._toolBox.videoManager.stopSeagrassRecording()
