@@ -45,12 +45,6 @@ class DeviceManager(GTool):
 			elif i.find("video") != -1:
 				devlist.append(i)
 
-		cmd = "ls /dev/video*"
-		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-		codelist = returncode.split()
-		for i in codelist:
-				devlist.append(i)
-
 		SUPPORTED_VENDORS = {
 			"10c4": "CP210x (Silicon Labs)",
 			"1a86": "CH340 (WCH)",
