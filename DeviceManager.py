@@ -12,7 +12,6 @@ from Dev.WinchDevice import WinchDevice
 from Dev.ArduSimpleDevice import ArduSimpleDevice
 from Dev.SonarDevice import SonarDevice
 
-logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 DEVICE_TYPES = {
 	("1209", "5740"): ("Pixhawk", Device, 0, False),
