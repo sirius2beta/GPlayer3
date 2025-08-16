@@ -163,43 +163,21 @@ class NetworkManager(GTool):
             self.secondaryLastHeartBeat = time.time()
 
     def handleFormat(self, data, addr):
-        self._toolBox.videoManager.get_video_format()
-        if not self._toolBox.videoManager.videoFormatList:
-            logging.info("No video format available")
-            return
+            # 使用新 pipelines，但產生舊版格式列表
+            formatList = self._toolBox.videoManager.get_videoFormatList_legacy()
+            if not formatList:
+                logging.info("No video format available")
+                return
 
-        msg = b''
-        for form in self._toolBox.videoManager.videoFormatList:
-            for video in self._toolBox.videoManager.videoFormatList[form]:
-                videoIndex = video[0]
-                msg += struct.pack("<2B", videoIndex, form)
-        self.sendMsg(FORMAT, msg)
+            msg = b''
+            for form in formatList:
+                for video in formatList[form]:
+                    videoIndex = video[0]
+                    msg += struct.pack("<2B", videoIndex, form)
+            self.sendMsg(FORMAT, msg)
 
     def handleCommand(self, data, addr):
-        if len(data) < 8:
-            logging.warning("COMMAND packet too short")
-            return
-        videoNo = int(data[0])
-        formatIndex = int(data[1])
-        encoder = 'h264' if int(data[2]) == 0 else 'mjpeg'
-        port = int.from_bytes(data[3:7], 'little')
-        ai_enabled = int(data[7])
-
-        if formatIndex not in self._toolBox.videoManager.videoFormatList:
-            logging.warning("Invalid format index")
-            return
-
-        formatStr = ""
-        for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
-            if formatpair[0] == videoNo:
-                formatStr = formatpair[1]
-        if not formatStr:
-            return
-
-        ip = addr[0]
-        formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-        self._toolBox.videoManager.play(videoNo, formatStr, formatInfo[0], formatInfo[1], formatInfo[2],
-                                        encoder, ip, port, ai_enabled)
+        self._toolBox.videoManager.handleMsg(data, addr)
 
     def handleSensor(self, data, addr):
         logging.info("SENSOR packet received")
@@ -226,28 +204,40 @@ class NetworkManager(GTool):
     def handleSeagrass(self, data, addr):
         if not data:
             return
+
         operation = int(data[0])
+        ip = addr[0]
+
         if operation == 0 and len(data) >= 8:
             videoNo = int(data[1])
             formatIndex = int(data[2])
             encoder = 'h264' if int(data[3]) == 0 else 'mjpeg'
             port = int.from_bytes(data[4:8], 'little')
 
-            if formatIndex not in self._toolBox.videoManager.videoFormatList:
+            # 取得解析度
+            fmtMap = self._toolBox.videoManager.getFormatInfoByIndexMap()
+            if formatIndex not in fmtMap:
+                logging.warning(f"No resolution mapping for formatIndex {formatIndex}")
+                return
+            width, height, fps = fmtMap[formatIndex]
+
+            # 檢查相機是否存在，並找對應格式
+            if videoNo not in self._toolBox.videoManager.pipelines:
+                logging.warning(f"video{videoNo} not found")
                 return
 
-            formatStr = ""
-            for formatpair in self._toolBox.videoManager.videoFormatList[formatIndex]:
-                if formatpair[0] == videoNo:
-                    formatStr = formatpair[1]
-            if not formatStr:
+            cam_formats = self._toolBox.videoManager.pipelines[videoNo]["formats"]
+            fmtFound = next((f for f, w2, h2, f2 in cam_formats if w2 == width and h2 == height and f2 == fps), None)
+            if not fmtFound:
+                logging.warning(f"video{videoNo} does not support {width}x{height}@{fps}")
                 return
 
-            ip = addr[0]
-            formatInfo = self._toolBox.config.getFormatInfo(formatIndex)
-            self._toolBox.videoManager.setSeagrassCamera(videoNo, formatStr, formatInfo[0], formatInfo[1],
-                                                         formatInfo[2], encoder, ip, port)
+            self._toolBox.videoManager.setSeagrassCamera(
+                videoNo, fmtFound, width, height, fps, encoder, ip, port
+            )
+
         elif operation == 1:
             self._toolBox.videoManager.startSeagrassRecording()
         elif operation == 2:
             self._toolBox.videoManager.stopSeagrassRecording()
+    

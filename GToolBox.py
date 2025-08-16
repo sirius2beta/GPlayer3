@@ -78,7 +78,7 @@ class GToolBox:
 		#self.oakCam.startLoop()
 		
 		
-		
+
 
 	def startLoop(self):
 		logging.info("start all loop")
@@ -87,7 +87,5 @@ class GToolBox:
 		self.mavManager.startLoop()
 		self.networkManager.startLoop()
 		
-
-
 	def core(self):
 		return self.core
