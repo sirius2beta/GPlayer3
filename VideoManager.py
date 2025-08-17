@@ -37,9 +37,6 @@ class VideoManager(GTool):
 		print("[o] VideoManager: started")
 
 	def getFormatInfoByIndex(self, formatIndex):
-		"""
-		舊版 formatIndex 對應解析度
-		"""
 		formatMap = {
 			0: (1920, 1080, 30),
 			1: (1280, 720, 30),
@@ -49,15 +46,6 @@ class VideoManager(GTool):
 		return formatMap.get(formatIndex, None)  # 找不到回 None
 	
 	def getFormatInfoByIndexMap(self):
-		"""
-		回傳舊版 formatIndex 對應解析度的字典
-		{
-			0: (1920,1080,30),
-			1: (1280,720,30),
-			2: (640,480,30),
-			3: (320,240,30),
-		}
-		"""
 		return {
 			0: (1920, 1080, 30),
 			1: (1280, 720, 30),
@@ -92,7 +80,7 @@ class VideoManager(GTool):
 				continue
 
 			fmt = None
-			temp_formats = {}
+			all_formats = []
 			for line in output.splitlines():
 				line = line.strip()
 				if line.startswith("[") and "]" in line:
@@ -104,35 +92,9 @@ class VideoManager(GTool):
 						w, h = map(int, toks)
 						fps = 30
 						key = (w, h, fps)
-
-						# MJPEG > YUYV，h264 忽略
-						if fmt == "h264":
-							continue
-						if key not in temp_formats:
-							temp_formats[key] = fmt
-						else:
-							existing = temp_formats[key]
-							if existing == "YUYV" and fmt == "MJPEG":
-								temp_formats[key] = "MJPEG"
-
-			for (w, h, fps), f in temp_formats.items():
-				self.pipelines[cam]["formats"].append((f, w, h, fps))
-
-	def get_video_format_list(self):
-		"""
-		相容舊版的 videoFormatList，從 self.pipelines 生成。
-		回傳格式：
-			[
-				(cam, format, width, height, fps),
-				(cam, format, width, height, fps),
-				...
-			]
-		"""
-		videoFormatList = []
-		for cam, info in self.pipelines.items():
-			for fmt, w, h, fps in info.get("formats", []):
-				videoFormatList.append((cam, fmt, w, h, fps))
-		return videoFormatList
+						all_formats.append((fmt, w, h, fps	))
+			logging.info(f"video{cam} formats: {all_formats}")
+			self.pipelines[cam]["formats"] = all_formats
 	def get_videoFormatList_legacy(self):
 		"""
 		產生舊版 videoFormatList 結構：
@@ -143,6 +105,8 @@ class VideoManager(GTool):
 		legacyList = {}
 		for cam, info in self.pipelines.items():
 			for fmt, w, h, fps in info["formats"]:
+				if fmt == "H264":
+					continue
 				# 找到對應 formatIndex
 				formatIndex = None
 				for idx, res in self.getFormatInfoByIndexMap().items():
@@ -162,14 +126,16 @@ class VideoManager(GTool):
 							legacyList[formatIndex][i][1] = "MJPEG"
 						add = False
 						break
+						
 				if add:
 					legacyList[formatIndex].append([cam, fmt])
 		return legacyList
 	def getYUYVFrameRate(self, cam, width=None, height=None):
 		"""
-		從系統抓出 cam 支援的 YUYV 格式 fps。
+		從系統抓出 cam 支援的 YUYV 格式最高 fps。
 		如果 width/height 提供，就限定解析度。
 		"""
+		import re, subprocess
 		dev = f"/dev/video{cam}"
 		try:
 			output = subprocess.check_output(
@@ -181,24 +147,42 @@ class VideoManager(GTool):
 			return ""
 
 		fmt = None
+		match_res = False
+		fps_list = []
+
 		for line in output.splitlines():
 			line = line.strip()
+
+			# --- 找格式 ---
 			if line.startswith("[") and "]" in line:
+				# e.g. [0]: 'YUYV' (YUYV 4:2:2)
 				parts = line.split("'")
 				fmt = parts[1] if len(parts) > 1 else None
-			elif fmt == "YUYV" and "Size:" in line:
+				continue
+
+			# --- 找尺寸 ---
+			if fmt == "YUYV" and line.startswith("Size: Discrete"):
+				# e.g. Size: Discrete 1280x720
 				toks = line.replace("Size: Discrete", "").strip().split("x")
 				if len(toks) == 2:
 					w, h = map(int, toks)
-					if (width is not None and w != width) or (height is not None and h != height):
-						continue
-					# 取第一個 fps
-					for l in output.splitlines():
-						l = l.strip()
-						if l.startswith("Interval:") and l.find("fps") != -1:
-							fps_str = l.split()[3][1:].split(".")[0]
-							return int(fps_str)
+					if (width is None or w == width) and (height is None or h == height):
+						match_res = True
+					else:
+						match_res = False
+				continue
+
+			# --- 找 fps ---
+			if match_res and line.startswith("Interval: Discrete"):
+				# e.g. Interval: Discrete 0.033s (30.000 fps)
+				m = re.search(r"\(([\d\.]+)\s*fps\)", line)
+				if m:
+					fps_list.append(float(m.group(1)))
+
+		if fps_list:
+			return int(max(fps_list))  # 回傳最高 fps
 		return ""
+
 
 	# ---------------- Pipeline 管理 ---------------- #
 	def _create_pipeline(self, cam, gstring, port, encoder):
@@ -207,12 +191,11 @@ class VideoManager(GTool):
 			self._stop_pipeline(cam)
 
 		pipeline = Gst.parse_launch(gstring)
-		self.pipelines[cam] = {
-			"pipeline": pipeline,
-			"state": False,
-			"port": port,
-			"encoder": encoder,
-		}
+		self.pipelines[cam]['pipeline'] = pipeline
+		self.pipelines[cam]['state'] = False
+		self.pipelines[cam]['port'] = port
+		self.pipelines[cam]['encoder'] = encoder
+		
 		return pipeline
 
 	def _start_pipeline(self, cam):
@@ -298,7 +281,7 @@ class VideoManager(GTool):
 			if self._toolBox.jetsonDetect is None:
 				print("JetsonDetect not ready")
 				return
-			if cam != self.ai_cam:
+			if cam != self.ai_cam:		
 				YUYVfps = self.getYUYVFrameRate(cam, width, height)
 				if YUYVfps != "":
 					self._toolBox.jetsonDetect.play([cam, "YUYV", width, height, YUYVfps, IP, port])
@@ -340,6 +323,7 @@ class VideoManager(GTool):
 		print(f"set seagrass camera: {cam} {format} {width} {height} {framerate} {encoder} {IP} {port}")
 		YUYVfps = self.getYUYVFrameRate(cam, width, height)
 		if YUYVfps != "":
+			logging.info(f"YUYV fps for video{cam}: {YUYVfps}")
 			self.seagrass_cam_format = [cam, "YUYV", width, height, YUYVfps, IP, port]
 			print(f"start ai on cam:{cam}")
 			self.seagrass_cam = cam

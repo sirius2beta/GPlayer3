@@ -1,6 +1,7 @@
 import time
 import serial
 import struct
+import logging
 from Dev.Device import Device
 
 # This device will connect to arduino, which canc accept command for winch control
@@ -24,11 +25,11 @@ class WinchDevice(Device):
             self.send(f's,2000 1000')
 
         except serial.serialutil.SerialException: # if serial error
-            print("Serial Error...")
-            print("Trying to reconnect...")
+            logging.error("Serial Error...")
+            logging.info("Trying to reconnect...")
 
         except Exception as e: # if other error
-            print(e) 
+            logging.error(e) 
     
     def start_loop(self):
         super().start_loop()
@@ -51,9 +52,9 @@ class WinchDevice(Device):
             return
         if control_type == self.control_type:
             command_type = int(cmd[0])
-            print(f"control:{control_type}, command type:{command_type}, ")
+            logging.info(f"control:{control_type}, command type:{command_type}, ")
             if command_type == 0:  # 讀取全部參數
-                print("  - set")
+                logging.info("  - set")
                 # 待新增
             elif command_type == 1:  # 讀取部分參數
                 pass
@@ -62,13 +63,13 @@ class WinchDevice(Device):
 
             elif command_type == 3: #寫入部分參數
                 index = int(cmd[1])
-                print(f"write index:{index}")
+                logging.info(f"write index:{index}")
                 if index == 0: #maxspeed
                     maxSpeed = int(struct.unpack("<I", cmd[2:])[0])
                     if maxSpeed>2000: #  maxspeed cant exceed 2000
                         pass
                     self.send(f's,{maxSpeed} {maxSpeed/2}')
-                    print(f"set maxspeed:{maxSpeed}")
+                    logging.info(f"set maxspeed:{maxSpeed}")
 
             elif command_type == 4: #回傳全部參數
                 pass
@@ -76,17 +77,17 @@ class WinchDevice(Device):
                 pass
             elif command_type == 6: #move
                 step = int(struct.unpack("<i", cmd[1:])[0])
-                print(f"WinchDevice: move step {step}")
+                logging.info(f"WinchDevice: move step {step}")
                 if self.isSerialInit == True:
                     self.send(f'c,{step}')
             elif command_type == 7: #stop
                 self.send(f'z,')
-                print("WinchDevice: stop")
+                logging.info("WinchDevice: stop")
             elif command_type == 8: # report step tension
                 pass
             elif command_type == 9: # reset position
                 self.send(f're')
-                print("WinchDevic: reset")
+                logging.info("WinchDevic: reset")
 
             
     def _io_loop(self):
@@ -95,7 +96,7 @@ class WinchDevice(Device):
         status = 0
         while True:
             input = self.serialOut.readline()
-            #print(input)
+            #logging.info(input)
             try:
                 input = input.decode().split(",")
                 if input[0] == "cs":

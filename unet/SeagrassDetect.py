@@ -7,11 +7,11 @@ import math
 import queue as _queue
 import numpy as np
 from PIL import Image
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 import multiprocessing
 import threading
-
+import logging
 from GTool import GTool
 
 class SeagrassDetect(GTool):
@@ -24,6 +24,7 @@ class SeagrassDetect(GTool):
         self.is_recording = False
 
         today_str = datetime.now().strftime("%Y%m%d")
+        
         base_path = "../record/seagrass"
         self.seagrass_directory = os.path.join(os.path.expanduser(base_path), today_str)
         os.makedirs(self.seagrass_directory, exist_ok=True)
@@ -42,7 +43,7 @@ class SeagrassDetect(GTool):
             try:
                 queue.put_nowait(msg)
             except Exception:
-                print(f"Warning: failed to enqueue message {msg}")
+                logging.warning(f"Warning: failed to enqueue message {msg}")
 
     def setFormat(self, msg):
         msg_cpy = ["f"] + msg
@@ -75,7 +76,7 @@ class SeagrassDetect(GTool):
 
         self.outputLoop = threading.Thread(target=self.OutputLoop, daemon=True)
         self.outputLoop.start()
-        print("SeagrassDetect initialized")
+        logging.info("SeagrassDetect initialized")
 
     def OutputLoop(self):
         while True:
@@ -88,7 +89,7 @@ class SeagrassDetect(GTool):
         with self.csv_lock:
             with open(index_path, mode='a', newline='') as f:
                 csv.writer(f).writerow([results[0], results[1]])
-        print("Detection results:", results)
+        logging.info(f"Detection results:{results}")
 
     def startRecording(self):
         self.safe_enqueue(self.in_conn, ["r"])
@@ -120,7 +121,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         trt_model = TRTModule()
         trt_model.load_state_dict(torch.load(trt_path))
         model.net = trt_model
-        print("✅ TensorRT model loaded!")
+        logging.info("✅ TensorRT model loaded!")
         return model
 
 
@@ -138,7 +139,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         }.get(os_type, None)
 
         if not encode_string:
-            print("Unsupported OS type")
+            logging.warning("Unsupported OS type")
             return
     encode_string = {
             'jammy': 'x264enc tune=zerolatency speed-preset=superfast',
@@ -146,7 +147,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         }.get(os_type, None)
 
     if not encode_string:
-        print("Unsupported OS type")
+        logging.warning("Unsupported OS type")
         return
     cap_send = None
     out_send = None
@@ -158,12 +159,17 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
     device_id = 0
     frame_count = 0
     last_infer_time = time.time()
+    # 設定為 +8 時區
+    tz = timezone(timedelta(hours=+8))
+    hourtime_str = datetime.now(tz).strftime("%H%M")
+    
 
+    
     while True:
         # Process incoming commands
         while not input_q.empty():
             msg = input_q.get()
-            print("Received:", msg)
+            logging.info(f"Received:{msg}")
 
             if msg[0] == "f":
                 device_id, vformat, width, height, fps, host, port = msg[1:]
@@ -198,10 +204,13 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         last_infer_time = time.time()
 
         ret, frame = cap_send.read()
+        file_name = ""
         if not ret or frame is None:
-            print("⚠️ Camera disconnected...")
+            logging.warning("⚠️ Camera disconnected...")
             cap_send = reopen_camera(device_id, video_pipeline)
             continue
+        
+            
 
         t1 = time.time()
         frame = cv2.resize(frame, (640, 480))
@@ -213,18 +222,20 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         latency = time.time() - t1
 
         result_bgr = cv2.cvtColor(np.array(result_pil), cv2.COLOR_RGB2BGR)
+        result_bgr = cv2.resize(result_bgr, (int(width), int(height)))
+        frame = cv2.resize(frame, (int(width), int(height)))
         cv2.putText(result_bgr, f"Seagrass: {ratio:.2f}%, Time: {latency:.2f}s",
                     (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
-
+        if recording:
+            frame_count += 1
+            file_name = f"seagrass_{hourtime_str}_{frame_count:07d}.jpg"
+            cv2.imwrite(os.path.join(seagrass_dir, file_name), frame)
+            if not conn.full():
+                conn.put([file_name, ratio], block=False)
         if out_send.isOpened() and playing:
             out_send.write(result_bgr)
 
-        if recording:
-            frame_count += 1
-            file_name = f"seagrass_{frame_count:07d}.jpg"
-            cv2.imwrite(os.path.join(seagrass_dir, file_name), result_bgr)
-            if not conn.full():
-                conn.put([file_name, ratio], block=False)
+        
 
     if out_send: out_send.release()
     if cap_send: cap_send.release()
