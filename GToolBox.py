@@ -35,14 +35,13 @@ class GToolBox:
 			cmd = " grep '^VERSION_CODENAME=' /etc/os-release"
 			returned_value = subprocess.check_output(cmd,shell=True,stderr=subprocess.DEVNULL).replace(b'\t',b'').decode("utf-8") 
 		except:
-			returned_value = '0'
+			logging.error("Failed to get OS information. Defaulting to 'None'.")
+			returned_value = ''
 		if(len(returned_value) > 1): 
 			self.OS = returned_value.split('=')[1].strip()
-		logging.info(f"Operating System: {self.OS}")
+			logging.info(f"Operating System: {self.OS}")
 		# ===============================================================================
-		self.AIDetection = False
 		self.config = Config(self)
-		self.core = core # core is GPlayer main function itself
 		self.mav_conn, self.child_conn = multiprocessing.Pipe() # Pipe for modules with multiprocess
 
 		# Initialize all modules here
@@ -50,14 +49,10 @@ class GToolBox:
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
-		self.mavManager.setSensorGroupList(self.config.sensor_group_list)
-		
-		#self.oakCam = OakCam(self)
-		
+		self.mavManager.setSensorGroupList(self.config.sensor_group_list)		
 		self.videoManager = VideoManager(self)
 		self.deviceManager = DeviceManager(self)
 		self.kBestReader = KBestReader(self)
-		#self.oakCam = OakCam(self)
 		self.dataLogger = DataLogger(self)
 		
 		if self.OS != "buster":
@@ -72,20 +67,9 @@ class GToolBox:
 
 			self.seagrassDetect = seagrassDetect # add to toolbox
 			self.jetsonDetect = jetsonDetect # add to toolbox
+			self.jetsonDetect.startLoop() # start the JetsonDetect loop
+			self.seagrassDetect.startLoop() # start the SeagrassDetect loop
 
-			
-		# networkManager is not started until after everything is ready
-		#self.oakCam.startLoop()
-		
-		
-
-
-	def startLoop(self):
-		logging.info("start all loop")
-		self.jetsonDetect.startLoop() # start the JetsonDetect loop
-		self.seagrassDetect.startLoop() # start the SeagrassDetect loop
 		self.mavManager.startLoop()
 		self.networkManager.startLoop()
 		
-	def core(self):
-		return self.core

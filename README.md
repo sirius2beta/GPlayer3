@@ -16,4 +16,5 @@
 ## Install
 ```
 bash install.sh
+sudo timedatectl set-timezone Asia/Taipei
 ```

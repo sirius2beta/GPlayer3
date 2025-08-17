@@ -7,7 +7,7 @@ from datetime import datetime
 from GToolBox import GToolBox
 
 
-log_folder_path = "../GPlayerLog/output"  # Changed to a subfolder for better organization
+log_folder_path = "../GPlayerLog/debug"  # Changed to a subfolder for better organization
 log_directory = os.path.expanduser(log_folder_path)       # 設定log存放路徑
 if(not os.path.exists(log_directory)):                         # 如果路徑不存在，則建立
     os.makedirs(log_directory)                                 # 建立路徑
@@ -55,7 +55,4 @@ if __name__ == '__main__':
   logging.info("*********************************")
    
   toolBox = GToolBox(0) # initiate all modules
-  
-    
-  toolBox.startLoop()
   input("Press Enter to exit...")  # Keep the program running until Enter is pressed

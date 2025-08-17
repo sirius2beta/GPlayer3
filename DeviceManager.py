@@ -60,7 +60,7 @@ class DeviceManager(GTool):
 			sonar_device = SonarDevice(self._toolBox)
 			devices.append(sonar_device)
 		except Exception as e:
-			self._toolBox.logger.error(f"建立 SonarDevice 失敗: {e}")
+			logging.error(f"建立 SonarDevice 失敗: {e}")
 		return devices
 
 	def _scan_devices(self):
