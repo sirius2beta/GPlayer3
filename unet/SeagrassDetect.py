@@ -55,7 +55,6 @@ class SeagrassDetect(GTool):
         self.is_playing = True
     def stop(self):
         self.safe_enqueue(self.in_conn, ["x"])
-        self.video_no = -1
         self.is_playing = False
 
     def updateIMU(self, msg):

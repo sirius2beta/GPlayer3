@@ -48,12 +48,12 @@ class AquaDevice(Device):
         return self.data_list
 
     def send(self, command, receive = 19): # send command to device and get response, command is a list of hex values.
-        # print(f"Request:{command}")
+        print(f"Request:{command}")
         command = bytes([int(x, 16) for x in command]) # commnad: list to bytes
         self.ser.write(command) # write command to device
         response = self.ser.read(receive) # read response from device
         response = [format(x, '02x') for x in response] # convert to hex
-        #print(f"response:{response}")
+        print(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.

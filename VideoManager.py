@@ -312,7 +312,6 @@ class VideoManager(GTool):
 
 		if cam == self.ai_cam:
 			self._toolBox.jetsonDetect.stop()
-			self.ai_cam = -1
 			print(f"stop ai on cam:{cam}")
 			return
 

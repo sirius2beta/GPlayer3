@@ -1,15 +1,20 @@
 [Unit]
 Description=GPlayer3
+After=multi-user.target
+Wants=multi-user.target
 
 
 [Service]
-Type=idle
-ExecStart=sudo /usr/bin/python3 /home/pi/GPlayer3/demo.py
-WorkingDirectory=/home/pi/GPlayer3
-User=pi
-
-StandardOutput=append:/var/log/GPlayer3.log
-StandardError=append:/var/log/GPlayer3.log
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/home/sirius2beta/GPlayer3
+ExecStart=/usr/bin/python3 /home/sirius2beta/GPlayer3/demo.py
+Restart=always
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=10
+Environment=PYTHONUNBUFFERED=1
 
 [Install]
 WantedBy=multi-user.target

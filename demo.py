@@ -3,6 +3,7 @@ import warnings
 import logging
 import sys
 import os
+import time
 from datetime import datetime
 from GToolBox import GToolBox
 
@@ -46,13 +47,17 @@ logger.addHandler(console_handler)
 
 if __name__ == '__main__':
 
-  warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
+    warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
 
-  logging.info("GPlayer initialized successfully.")
-  now = datetime.now()
-  logging.info("*********************************")
-  logging.info(f"Program started in: {now}")
-  logging.info("*********************************")
-   
-  toolBox = GToolBox(0) # initiate all modules
-  input("Press Enter to exit...")  # Keep the program running until Enter is pressed
+    logging.info("GPlayer initialized successfully.")
+    now = datetime.now()
+    logging.info("*********************************")
+    logging.info(f"Program started in: {now}")
+    logging.info("*********************************")
+
+    toolBox = GToolBox(0) # initiate all modules
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        print("Exiting...")
