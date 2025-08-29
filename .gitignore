@@ -1,4 +1,7 @@
 __pycache__/
 *.pyc
 *.mp4
-*.pth
+seagrass_model_4000.pth
+seagrass_model_4000_trt.pth
+seagrass_model_resnet50.pth
+seagrass_model_resnet50_trt.pth
