@@ -31,6 +31,13 @@ class SonarDevice(Device):
             self.GPIO.setmode(GPIO.BCM)
             self.GPIO.setup(13, GPIO.OUT)
             self.GPIO.output(13, GPIO.LOW)
+        elif self._toolBox.OS == "jammy":
+            print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
+            import Jetson.GPIO as GPIO
+            self.GPIO = GPIO
+            self.GPIO.setmode(GPIO.BCM)
+            self.GPIO.setup(13, GPIO.OUT)
+            self.GPIO.output(13, GPIO.LOW)
     def __del__(self):
         self.GPIO.cleanup()
     def processCMD(self, control_type ,cmd):
