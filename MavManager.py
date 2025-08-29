@@ -180,14 +180,12 @@ class MavManager(GTool):
 				#print(f"     fix_type:{msg.fix_type}, h_acc:{msg.h_acc}, v_acc:{msg.v_acc}")
 
 			elif msg.get_type() == 'DISTANCE_SENSOR':
-				print("...")
 				self.lock2.acquire()
 				self.data ='DISTANCE_SENSOR'
 				self._depth = msg.current_distance
 				self.lock2.release()
 
 			elif msg.get_type() == 'SYS_STATUS':
-				print("...")
 				self.lock2.acquire()
 				self.data ='SYS_STATUS'
 				self.sys_status['voltage_battery'] = msg.voltage_battery

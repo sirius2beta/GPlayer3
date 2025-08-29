@@ -9,10 +9,9 @@ from scipy.spatial.transform import Rotation
 import cv2
 import numpy as np
 import queue as _queue  # 用於捕捉 Full
-
+import logging
 
 from config import CLASSES, COLORS
-
 from GTool import GTool
 from distance import distance, getR0
 
@@ -22,7 +21,85 @@ def prepare_multiprocessing():
     避免在 import 階段就設置 start method，減少 profiling 時的不必要延遲。
     """
     multiprocessing.set_start_method('spawn', force=True)
-    
+
+class JetsonDetect(GTool):
+    def __init__(self, toolbox):
+        super().__init__(toolbox)
+        self.out_conn = multiprocessing.Queue()
+        self.in_conn = multiprocessing.Queue()
+        self.video_no = -1
+        self.enabled = True
+
+    def play(self, msg):
+        msg_cpy = msg.copy()
+        msg_cpy.insert(0, "p")
+        self.video_no = msg_cpy[1]
+        self.in_conn.put(msg_cpy)
+        try:
+            self.in_conn.put_nowait(msg_cpy)
+        except _queue.Full:
+            # 若真的滿了，選擇丟棄舊指令或先清掉再放
+            try:
+                self.in_conn.get_nowait()
+            except Exception:
+                pass
+            try:
+                self.in_conn.put_nowait(msg_cpy)
+            except Exception:
+                print("Warning: failed to enqueue play msg")
+    def stop(self):
+        try:
+            self.in_conn.put_nowait(["x"])
+        except _queue.Full:
+            # 若真的滿了，選擇丟棄舊指令或先清掉再放
+            try:
+                self.in_conn.get_nowait()
+            except Exception:
+                pass
+            try:
+                self.in_conn.put_nowait(msg_cpy)
+            except Exception:
+                print("Warning: failed to enqueue play msg")
+        #self.in_conn.put(["x"])
+        self.video_no = -1
+    def updateIMU(self, msg): #[pitch, roll]
+        msg.insert(0, "i")
+        self.in_conn.put(msg)
+    def sendMsg(self, msg):
+        self.in_conn.put(msg)
+
+    def startLoop(self):
+        self.p = multiprocessing.Process(target = detectTask, args = (self._toolBox.OS, self.out_conn, self.in_conn))
+        #self.p = multiprocessing.Process(target = work)
+        self.p.start()
+        self.outputLoop = threading.Thread(target=self.OutputLoop)
+        self.outputLoop.daemon = True
+        self.outputLoop.start()
+        logging.info("JetsonDetect initialized")
+
+    def OutputLoop(self): # Thread that send data to the networkmanager
+        while True:
+            #self.toolBox.mavManager.send_distance_sensor_data(7, int(min(distances[:3])))
+            #self.toolBox.mavManager.send_distance_sensor_data(0, int(min(distances[3:6])))
+            #self.toolBox.mavManager.send_distance_sensor_data(1, int(min(distances[6:])))
+            d = self.out_conn.get()
+            self.sendDetectionResult(d)
+            time.sleep(0.1)
+    def sendDetectionResult(self, results):
+        data = struct.pack("<B", 1) #cmd id
+        if self.video_no == -1:
+            return
+        data += struct.pack("<B", int(self.video_no)) #video no
+        for result in results:
+            data += struct.pack("<B", result[0])
+            data += struct.pack("<H", result[1])
+            data += struct.pack("<H", result[2])
+            data += struct.pack("<H", result[3])
+            data += struct.pack("<H", result[4])
+            data += struct.pack("<f", result[5])
+            data += struct.pack("<f", result[6])
+        self._toolBox.networkManager.sendMsg(b'\x06', data)
+
 def detectTask(os, conn, input): # Thread that read data from oak camera
     enabled = True
     cap_send = None
@@ -127,82 +204,3 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
 
     out_send.release()
     cap_send.release()
-
-
-class JetsonDetect(GTool):
-    def __init__(self, toolbox):
-        super().__init__(toolbox)
-        self.out_conn = multiprocessing.Queue()
-        self.in_conn = multiprocessing.Queue()
-        self.video_no = -1
-        self.enabled = True
-
-    def play(self, msg):
-        msg_cpy = msg.copy()
-        msg_cpy.insert(0, "p")
-        self.video_no = msg_cpy[1]
-        self.in_conn.put(msg_cpy)
-        try:
-            self.in_conn.put_nowait(msg_cpy)
-        except _queue.Full:
-            # 若真的滿了，選擇丟棄舊指令或先清掉再放
-            try:
-                self.in_conn.get_nowait()
-            except Exception:
-                pass
-            try:
-                self.in_conn.put_nowait(msg_cpy)
-            except Exception:
-                print("Warning: failed to enqueue play msg")
-    def stop(self):
-        try:
-            self.in_conn.put_nowait(["x"])
-        except _queue.Full:
-            # 若真的滿了，選擇丟棄舊指令或先清掉再放
-            try:
-                self.in_conn.get_nowait()
-            except Exception:
-                pass
-            try:
-                self.in_conn.put_nowait(msg_cpy)
-            except Exception:
-                print("Warning: failed to enqueue play msg")
-        #self.in_conn.put(["x"])
-        self.video_no = -1
-    def updateIMU(self, msg): #[pitch, roll]
-        msg.insert(0, "i")
-        self.in_conn.put(msg)
-    def sendMsg(self, msg):
-        self.in_conn.put(msg)
-
-    def startLoop(self):
-        self.p = multiprocessing.Process(target = detectTask, args = (self._toolBox.OS, self.out_conn, self.in_conn))
-        #self.p = multiprocessing.Process(target = work)
-        self.p.start()
-        self.outputLoop = threading.Thread(target=self.OutputLoop)
-        self.outputLoop.daemon = True
-        self.outputLoop.start()
-
-    def OutputLoop(self): # Thread that send data to the networkmanager
-        while True:
-            #self.toolBox.mavManager.send_distance_sensor_data(7, int(min(distances[:3])))
-            #self.toolBox.mavManager.send_distance_sensor_data(0, int(min(distances[3:6])))
-            #self.toolBox.mavManager.send_distance_sensor_data(1, int(min(distances[6:])))
-            d = self.out_conn.get()
-            self.sendDetectionResult(d)
-            time.sleep(0.1)
-    def sendDetectionResult(self, results):
-        data = struct.pack("<B", 1) #cmd id
-        if self.video_no == -1:
-            return
-        data += struct.pack("<B", int(self.video_no)) #video no
-        for result in results:
-            data += struct.pack("<B", result[0])
-            data += struct.pack("<H", result[1])
-            data += struct.pack("<H", result[2])
-            data += struct.pack("<H", result[3])
-            data += struct.pack("<H", result[4])
-            data += struct.pack("<f", result[5])
-            data += struct.pack("<f", result[6])
-        self._toolBox.networkManager.sendMsg(b'\x06', data)
-
