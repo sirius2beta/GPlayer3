@@ -37,6 +37,12 @@ class DeviceManager(GTool):
 		self.Pixhawk_exist = False
 		self.ardusimple_exist = False
 		self.SITL_connect = False
+		self.device_status = [
+			0,  # 0: Flight control
+			0,  # 1: GPS
+			0,  # 2: Winch
+			0,  # 3: Aqua
+		]
 
 		# 掃描 USB 裝置
 		devlist = self._scan_devices()
@@ -46,8 +52,6 @@ class DeviceManager(GTool):
 			for device in executor.map(self._inspect_device, devlist):
 				if device:
 					self.device_list.append(device)
-		for device in self._createGPIODevice():
-			self.device_list.append(device)
 
 		# 建立 GPIO 類裝置（例：Sonar）
 		for device in self._createGPIODevice():
@@ -135,15 +139,18 @@ class DeviceManager(GTool):
 
 		if name == "Pixhawk":
 			self._toolBox.mavManager.connectVehicle(dev_path)
+			self.device_status[0] = 1  # Flight control connected
 			self.Pixhawk_exist = True
 		elif name == "ArduSimple":
 			self.ardusimple_device = dev
+			self.device_status[1] = 1  # GPS connected
 			self.ardusimple_exist = True
 		elif name == "Aqua":
 			self.aqua_device = dev
+			self.device_status[3] = 1  # Aqua connected
 		elif name == "Winch":
 			self.winch_device = dev
-
+			self.device_status[2] = 1  # Winch connected
 		return dev
 
 	def processControl(self, control_type, cmd):
@@ -168,3 +175,7 @@ class DeviceManager(GTool):
 					d.stop_loop()
 			except Exception as e:
 				logging.error(f"Error stopping device {d}: {e}")
+	def checkDeviceStatus(self):
+		if self.aqua_device:
+			self.device_status[3] = self.aqua_device.status_code
+		return self.device_status

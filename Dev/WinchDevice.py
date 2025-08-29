@@ -25,8 +25,8 @@ class WinchDevice(Device):
             self.send(f's,2000 1000')
 
         except serial.serialutil.SerialException: # if serial error
-            logging.error("Serial Error...")
-            logging.info("Trying to reconnect...")
+            logging.error("WinchDevice: Serial Error...")
+            logging.info("WinchDevice: Trying to reconnect...")
 
         except Exception as e: # if other error
             logging.error(e) 

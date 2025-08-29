@@ -8,6 +8,7 @@ import struct
 import sys
 import logging
 import numpy as np
+import struct
 
 import VideoFormat as VF
 import MavManager
@@ -22,6 +23,7 @@ SENSOR    = b'\x04'
 CONTROL   = b'\x05'
 DETECT    = b'\x06'
 SEAGRASS  = b'\x07'
+SYSTEM   = b'\x09'
 
 
 class NetworkManager(GTool):
@@ -45,6 +47,7 @@ class NetworkManager(GTool):
         self.secondaryLastHeartBeat = 0
         self.isSecondaryConnected = False
         self.isPrimaryConnected = False
+        self.periodicClock = time.time()
 
         # Socket setup
         self.server = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -64,7 +67,8 @@ class NetworkManager(GTool):
             QUIT[0]:      self.handleQuit,
             CONTROL[0]:   self.handleControl,
             DETECT[0]:    self.handleDetect,
-            SEAGRASS[0]:  self.handleSeagrass
+            SEAGRASS[0]:  self.handleSeagrass,
+            SYSTEM[0]:    self.handleSystem,
         }
 
     def startLoop(self):
@@ -124,6 +128,8 @@ class NetworkManager(GTool):
                 except Exception as e:
                     logging.warning(f"Heartbeat failed to {ip}:{self.OUT_PORT} - {e}")
                 time.sleep(0.5)
+            
+            self.periodicWork()
 
     def listenLoop(self):
         while not self.thread_terminate:
@@ -240,4 +246,35 @@ class NetworkManager(GTool):
             self._toolBox.videoManager.startSeagrassRecording()
         elif operation == 2:
             self._toolBox.videoManager.stopSeagrassRecording()
-    
+    def handleSystem(self, data, addr):
+        if not data:
+            return
+
+        command = int(data[0])
+        if command == 0:
+            # restart GPlayer3.service
+            logging.info("Restarting GPlayer3.service as per SYSTEM command")
+            try:
+                subprocess.run(['systemctl', 'restart', 'GPlayer3.service'], check=True)
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to restart GPlayer3.service: {e}")
+        elif command == 1:
+            # reboot computer
+            logging.info("Rebooting system as per SYSTEM command")
+            try:
+                subprocess.run(['reboot'], check=True)
+            except subprocess.CalledProcessError as e:
+                logging.error(f"Failed to reboot system: {e}")
+    def periodicWork(self):
+        now = time.time()
+        if now - self.periodicClock >= 3: # every 10 seconds
+            self.periodicClock = time.time()
+            self.checkSystemStatus()
+
+    def checkSystemStatus(self):
+        status = self._toolBox.deviceManager.checkDeviceStatus()
+        data = struct.pack("<B", status[0])
+        data += struct.pack("<B", status[1])
+        data += struct.pack("<B", status[2])
+        data += struct.pack("<B", status[3])
+        self.sendMsg(b'\x08', data)

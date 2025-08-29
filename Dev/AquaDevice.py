@@ -2,6 +2,8 @@ import time
 import serial
 import struct
 import threading
+import logging
+
 from Dev.Device import Device
 
 SENSOR = b'\x04'
@@ -9,7 +11,7 @@ SENSOR = b'\x04'
 class AquaDevice(Device):           
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
         super().__init__(device_type, dev_path, sensor_group_list, networkManager)
-       
+        self.status_code = 1 # 1: connected but no response, 2: connected and receiving data
         self.wake_up_command = ['01', '0D', 'C1', 'E5' ] # 喚醒 Aqua
         self.cmd_special = ['01', '10', '25', '24', '00', '01', '02', '07', 'D0', 'D7', 'DA'] # 0:讀取所有數據
         
@@ -48,12 +50,17 @@ class AquaDevice(Device):
         return self.data_list
 
     def send(self, command, receive = 19): # send command to device and get response, command is a list of hex values.
-        print(f"Request:{command}")
+        #logging.info(f"Request:{command}")
         command = bytes([int(x, 16) for x in command]) # commnad: list to bytes
         self.ser.write(command) # write command to device
         response = self.ser.read(receive) # read response from device
         response = [format(x, '02x') for x in response] # convert to hex
-        print(f"response:{response}")
+        if (len(response) == 0):
+            logging.info("No response from device.")
+            self.status_code = 1
+        else:
+            self.status_code = 2
+        #logging.info(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.
@@ -70,7 +77,7 @@ class AquaDevice(Device):
                             value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
                             self.data_list[i] = value # store the value
                         except Exception as e:
-                            #print(f"{i}:{e}")
+                            #logging.info(f"{i}:{e}")
                             continue
                 else:
                     data = self.send(command = self.command_set[3]) # send command to device
@@ -79,15 +86,15 @@ class AquaDevice(Device):
                         value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
                         self.data_list[3] = value # store the value
                     except Exception as e:
-                        print(f"{3}:{e}")
+                        logging.info(f"{3}:{e}")
                         continue
 
         except serial.serialutil.SerialException: # if serial error
-            print("Serial Error...")
-            print("Trying to reconnect...")
+            logging.info("AquaDevice: Serial Error...")
+            logging.info("AquaDevice: Trying to reconnect...")
 
         except Exception as e: # if other error
-            print(e)
+            logging.info(e)
         
     def start_loop(self):
         super().start_loop() 
@@ -100,8 +107,8 @@ class AquaDevice(Device):
             # print the data to the console, for testing
             """
             for i in range((len(self.data_list)-1)):
-                print(f"{self.sensor_group_list[self.device_type].get_sensor(i).data}")  
-            print(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
+                logging.info(f"{self.sensor_group_list[self.device_type].get_sensor(i).data}")  
+            logging.info(f"pack:{SENSOR, self.sensor_group_list[1].pack()}")
             """
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
 
