@@ -1,10 +1,9 @@
-import time
-import threading
+import glob
 import subprocess
-import serial
+import logging
+from concurrent.futures import ThreadPoolExecutor
 
 from GTool import GTool
-
 from Dev.Device import Device
 from Dev.TestDevice import TestDevice
 from Dev.AquaDevice import AquaDevice
@@ -12,161 +11,177 @@ from Dev.RS485Device import RS485Device
 from Dev.WinchDevice import WinchDevice
 from Dev.ArduSimpleDevice import ArduSimpleDevice
 from Dev.SonarDevice import SonarDevice
+from Dev.SuperTaiRaDevice import SuperTaiRaDevice
 
-SENSOR = b'\x50'
 
-class DeviceManager(GTool):	
+DEVICE_TYPES = {
+	("1209", "5740"): ("Pixhawk", Device, 0, False),
+	("1d6b", "0002"): ("Winch", WinchDevice, 2, True),
+	("0bda", "5489"): ("Winch", WinchDevice, 2, True),
+	("1a86", "7523"): ("Winch", WinchDevice, 2, True),
+	("0403", "6001"): ("Aqua", AquaDevice, 7, True),
+	("10c4", "ea60"): ("NodeMCU", Device, 3, True),
+	("067b", "2303"): ("RS485", RS485Device, 4, True),
+	("2341", "8037"): ("Arduino", WinchDevice, 5, True),
+	("152a", "85c0"): ("ArduSimple", ArduSimpleDevice, 6, True),
+	('067b', '23a3'): ('SuperTaiRa', SuperTaiRaDevice, 8, False),  # Example test device
+}
+
+
+class DeviceManager(GTool):
 	def __init__(self, toolBox):
 		super().__init__(toolBox)
-		self.aqua_device = None 		# aqua_device object
-		self.ardusimple_device = None 	# ardusimple_device object
+		self.aqua_device = None
+		self.ardusimple_device = None
 		self.winch_device = None
-		self.sensor_group_list = toolBox.config.sensor_group_list # store all sensor_groups
-		self.device_list = []  		# 目前連在pi上的裝置
-		self.Pixhawk_exist = False 	# 會有出現兩個pixhawk的情形，確保指讀取一個
-		self.ardusimple_exist = False # ArduSimple有兩Port，確保只讀取一個
-		self.SITL_connect = False 	# 如果要測試SITL，此值為True
-		# get all tty* device (ACM, USB..)
-		cmd = "ls /dev/tty*"
-		returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-		codelist = returncode.split()
-		devlist = []
-		for i in codelist:
-			#if i.find("ttyS") != -1:
-			#	devlist.append(i)
-			#	print(i)
-			if i.find("ttyACM") != -1:
-				devlist.append(i)
-			elif i.find("ttyUSB") != -1:
-				devlist.append(i)
-			elif i.find("ttyAMA") != -1:
-				devlist.append(i)
+		self.super_taira_device = None
+		self.sensor_group_list = toolBox.config.sensor_group_list
+		self.device_list = []
+		self.Pixhawk_exist = False
+		self.ardusimple_exist = False
+		self.SITL_connect = False
+		self.device_status = [
+			0,  # 0: Flight control
+			0,  # 1: GPS
+			0,  # 2: Winch
+			0,  # 3: Aqua
+		]
 
-		# find device detail
-		idProduct = ''
-		for i in devlist:
-			cmd = f"udevadm info -a -p  $(udevadm info -q path -n {i})"
-			returncode = subprocess.check_output(cmd,shell=True).decode("utf-8")
-			dlist = returncode.split('\n')
-			count = 0
-			for j in dlist:
-				word = j.split("==")
-				if word[0].find("KERNELS") != -1: # not used
-					kernals = word[1]
-					count = 0
-				elif word[0].find("idProduct") != -1:
-					idProduct = word[1][1:-1]
-					count += 1
-				elif word[0].find("idVendor") != -1:
-					idVendor = word[1][1:-1]
-					count += 1
-				elif word[0].find("manufacturer") != -1:
-					manufacturer = word[1][1:-1] # only take first word for identification
-					count += 1
-				if count == 3:
-					device = self._deviceFactory(idVendor, idProduct, i)
-					#print(f" - dev:: idProduct:{idProduct}, idVendor:{idVendor}, Path:{i}, ID:{j}")
-					if device != None:
-						self.device_list.append(device)
+		# 掃描 USB 裝置
+		devlist = self._scan_devices()
+
+		# 平行檢查 USB 裝置並建立物件
+		with ThreadPoolExecutor() as executor:
+			for device in executor.map(self._inspect_device, devlist):
+				if device:
+					self.device_list.append(device)
+
+		# 建立 GPIO 類裝置（例：Sonar）
+		for device in self._createGPIODevice():
+			self.device_list.append(device)
+		
+	def _createGPIODevice(self):
+		"""建立 GPIO 相關的裝置，例如 SonarDevice"""
+		devices = []
+		try:
+			sonar_device = SonarDevice(self._toolBox)
+			devices.append(sonar_device)
+		except Exception as e:
+			logging.error(f"建立 SonarDevice 失敗: {e}")
+		return devices
+
+	def _scan_devices(self):
+		"""取得所有可能的 serial device 路徑"""
+		patterns = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/ttyAMA*", "/dev/video*"]
+		devlist = []
+		for pattern in patterns:
+			devlist.extend(glob.glob(pattern))
+		return devlist
+
+	def _inspect_device(self, dev_path):
+		"""用 udevadm 查詢裝置資訊並建立對應的 Device 物件"""
+		try:
+			udev_path = subprocess.check_output(
+				["udevadm", "info", "-q", "path", "-n", dev_path]
+			).decode().strip()
+
+			output = subprocess.check_output(
+				["udevadm", "info", "-a", "-p", udev_path]
+			).decode()
+
+			idVendor = idProduct = manufacturer = None
+			for line in output.splitlines():
+				line = line.strip()
+				if line.startswith("looking at"):
+					idVendor = idProduct = manufacturer = None
+					continue
+
+				if "ATTRS{idVendor}" in line:
+					idVendor = line.split("==")[1].strip().strip('"')
+				elif "ATTRS{idProduct}" in line:
+					idProduct = line.split("==")[1].strip().strip('"')
+				elif "ATTRS{manufacturer}" in line or "ATTRS{product}" in line:
+					manufacturer = line.split("==")[1].strip().strip('"')
+
+				if idVendor and idProduct:
+					if (idVendor, idProduct) in DEVICE_TYPES:
+						device = self._deviceFactory(idVendor, idProduct, dev_path)
+						logging.info(
+							f"Device found: {manufacturer}, Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
+						)
+						return device
+					else:
+						logging.info(
+							f"Skip non-supported device: {manufacturer}, Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
+						)
 					break
 
-		if self.SITL_connect == True:
-			self._toolBox.mavManager.connectVehicle("udp:127.0.0.1:14550")
-			print("Running SITL..")	
-				
-		print(f"[o] DeviceManager: started, current device:")
-		if len(self.device_list) == 0:
-			print("      - no device found")
-		for i in self.device_list:
-			print(f"     - devtype:{i.device_type}, path:{i.dev_path}")
-		# 不是從USB中創建的 device
-		sonarDevice = SonarDevice(self.toolBox())
-		self.device_list.append(sonarDevice)
-	
+		except subprocess.CalledProcessError as e:
+			logging.error(f"udevadm failed for {dev_path}: {e}")
+		except Exception as e:
+			logging.exception(f"Unexpected error for {dev_path}: {e}")
+		return None
+
+	def _deviceFactory(self, idVendor, idProduct, dev_path):
+		"""建立對應的 Device 物件"""
+		name, cls, dev_type, start_loop = DEVICE_TYPES[(idVendor, idProduct)]
+
+		# 特殊條件
+		if name == "Pixhawk":
+			if self.SITL_connect or self.Pixhawk_exist:
+				return None
+		elif name == "ArduSimple" and self.ardusimple_exist:
+			return None
+
+		logging.info(f"Creating {name} device on {dev_path}")
+		dev = cls(dev_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
+
+		if start_loop:
+			dev.start_loop()
+		dev.isOpened = True
+
+		if name == "Pixhawk":
+			self._toolBox.mavManager.connectVehicle(dev_path)
+			self.device_status[0] = 1  # Flight control connected
+			self.Pixhawk_exist = True
+		elif name == "ArduSimple":
+			self.ardusimple_device = dev
+			self.device_status[1] = 1  # GPS connected
+			self.ardusimple_exist = True
+		elif name == "Aqua":
+			self.aqua_device = dev
+			self.device_status[3] = 1  # Aqua connected
+		elif name == "Winch":
+			self.winch_device = dev
+			self.device_status[2] = 1  # Winch connected
+		elif name == "SuperTaiRa":
+			self.super_taira_device = dev
+			# Add any specific initialization for SuperTaiRa if needed
+		return dev
+
 	def processControl(self, control_type, cmd):
-		print(f"control type: {control_type}")
+		logging.info(f"Control type: {control_type}")
 		for d in self.device_list:
 			d.processCMD(control_type, cmd)
 
-
 	def processCMD(self, devID, cmd):
-		print(" --dev: processCMD")
+		logging.info(f"Processing command for device ID {devID}")
 		for d in self.device_list:
-			print(f"  - received ID:{devID}, dev.ID:{d.ID}")
-			if d.ID == dev.periID:
+			logging.debug(f"  Checking device {d.ID}")
+			if d.ID == devID:  # 修正原本 dev 未定義的問題
 				if d.type == 2:
-					print("  -stepper cmd--")
-					#d.write(f"s,{dev.type},0,{dev.pinIDList[0]} {dev.pinIDList[1]} {dev.settings[0]} {dev.settings[1]}")
-					#d.write(f"c,{dev.type},{dev.pinIDList[0]},{dev.settings[2]}")
+					logging.info(f"Sending stepper command to {d.ID}")
+					# TODO: 實際寫入的命令依需求加上
 
-	def _deviceFactory(self, idVendor, idProduct, dev_path):
-		# Pixhawk
-		if(idVendor == "1209" and idProduct == "5740"): 
-			if self.SITL_connect == True:
-				return None
-			if self.Pixhawk_exist == True:
-				return None
-			print("      ...Devicefactory create ardupilot FC")
-			device_type = 0
-			dev = Device(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			# Pixhawk device don't need to start loop
-			dev.isOpened = True
-			
-			self._toolBox.mavManager.connectVehicle(f"{dev_path}")
-			self.Pixhawk_exist = True
-			return dev
-		elif(idVendor == "1d6b" and idProduct == "0002"): # Winch device
-			print("      ...Devicefactory create Winch Device")
-			device_type = 2
-			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			self.winch_device = dev
-			dev.isOpened = True
-			dev.start_loop()
-			return dev
-		elif(idVendor == "0403" and idProduct == "6001"): # Aqua 
-			print("      ...Devicefactory create Aqua Device")
-			device_type = 7
-			dev = AquaDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			self.aqua_device = dev
-			dev.start_loop()
-			dev.isOpened = True
-			return dev
-		elif(idVendor == "10c4" and idProduct == "ea60"): # Node MCU
-			print("      ...Devicefactory create Node MCU")
-			device_type = 3
-			dev = Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			dev.start_loop()
-			dev.isOpened = True
-			return dev
-		elif(idVendor == "067b" and idProduct == "2303"): # RS485Module
-			print("      ...Devicefactory create RS485Module")
-			device_type = 4
-			dev = RS485Device(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			dev.start_loop()
-			dev.isOpened = True
-			return dev
-		elif(idVendor == "2341" and idProduct == "8037"): # 保留arduino做為測試用
-			print("      ...Devicefactory create Arduino")
-			device_type = 5
-			dev = WinchDevice(device_type , dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			dev.isOpened = True
-			dev.start_loop()
-			return dev
-
-		elif(idVendor == "152a" and idProduct == "85c0"): # ArduSimple
-			if(self.ardusimple_exist): # ardusimple 存在，就不再呼叫
-				return None
-			print("      ...Devicefactory create ArduSimple")
-			device_type = 6
-			dev = ArduSimpleDevice(device_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
-			self.ardusimple_device = dev
-			dev.start_loop()
-			dev.isOpened = True
-			self.ardusimple_exist = True # 設定 ardusimple 存在
-			return dev
-				
-		else:
-			return None
-		
 	def __del__(self):
-		pass
+		logging.info("Cleaning up DeviceManager...")
+		for d in self.device_list:
+			try:
+				if hasattr(d, "stop_loop"):
+					d.stop_loop()
+			except Exception as e:
+				logging.error(f"Error stopping device {d}: {e}")
+	def checkDeviceStatus(self):
+		if self.aqua_device:
+			self.device_status[3] = self.aqua_device.status_code
+		return self.device_status
