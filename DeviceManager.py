@@ -11,6 +11,7 @@ from Dev.RS485Device import RS485Device
 from Dev.WinchDevice import WinchDevice
 from Dev.ArduSimpleDevice import ArduSimpleDevice
 from Dev.SonarDevice import SonarDevice
+from Dev.SuperTaiRaDevice import SuperTaiRaDevice
 
 
 DEVICE_TYPES = {
@@ -23,6 +24,7 @@ DEVICE_TYPES = {
 	("067b", "2303"): ("RS485", RS485Device, 4, True),
 	("2341", "8037"): ("Arduino", WinchDevice, 5, True),
 	("152a", "85c0"): ("ArduSimple", ArduSimpleDevice, 6, True),
+	('067b', '23a3'): ('SuperTaiRa', SuperTaiRaDevice, 8, False),  # Example test device
 }
 
 
@@ -32,6 +34,7 @@ class DeviceManager(GTool):
 		self.aqua_device = None
 		self.ardusimple_device = None
 		self.winch_device = None
+		self.super_taira_device = None
 		self.sensor_group_list = toolBox.config.sensor_group_list
 		self.device_list = []
 		self.Pixhawk_exist = False
@@ -108,7 +111,7 @@ class DeviceManager(GTool):
 						)
 						return device
 					else:
-						logging.debug(
+						logging.info(
 							f"Skip non-supported device: {manufacturer}, Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
 						)
 					break
@@ -151,6 +154,9 @@ class DeviceManager(GTool):
 		elif name == "Winch":
 			self.winch_device = dev
 			self.device_status[2] = 1  # Winch connected
+		elif name == "SuperTaiRa":
+			self.super_taira_device = dev
+			# Add any specific initialization for SuperTaiRa if needed
 		return dev
 
 	def processControl(self, control_type, cmd):

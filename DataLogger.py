@@ -5,6 +5,7 @@ import threading
 from GTool import GTool
 from datetime import datetime
 from log_format import LogFormat
+from datetime import datetime
 
 class DataLogger(GTool):
     def __init__(self, toolbox):
@@ -40,6 +41,10 @@ class DataLogger(GTool):
         rmc_data = [-1]*10
         avr_data = [-1]*13
         gga_data = [-1]*16
+        super_taira_strength = -1
+        kbest_boat_rssi = -1
+        kbest_ground_rssi = -1
+        super_taira_error_byte = -1
 
         # 嘗試從工具箱中調用數據
         try:
@@ -65,9 +70,20 @@ class DataLogger(GTool):
                 gga_data = self._toolBox.deviceManager.ardusimple_device.get_GGAList()
         except Exception as e:
             print(f'DataLogger exception: ardusimple_device: msg:{e}')
+        try:
+            if self._toolBox.deviceManager.super_taira_device is not None:
+                super_taira_strength = self._toolBox.deviceManager.super_taira_device.strength
+                super_taira_error_byte = self._toolBox.deviceManager.super_taira_device.error_byte
+        except Exception as e:
+            print(f'DataLogger exception: super_taiRa: msg:{e}')
+
+        kbest_ground_rssi = self._toolBox.kBestReader.local_rssi  # 獲取 Kbest 的 RSSI 數據
+        kbest_boat_rssi = self._toolBox.kBestReader.remote_rssi  # 獲取 Kbest 的 Ground RSSI 數據
+
 
         # 更新 Log 資料
         try:
+            self.log_data.timestamp = datetime.now().strftime('%Y%m%d-%H:%M:%S')
             # Pixhawk Data
             self.log_data.time_usec = mav_gps_data['time_usec']
             self.log_data.fix_type = mav_gps_data['fix_type']
@@ -120,8 +136,14 @@ class DataLogger(GTool):
             self.log_data.external_voltage = aqua_data[19]                   # 20. 外部電壓
             self.log_data.battery_capacity_remaining = aqua_data[20]         # 21. 電池剩餘容量
 
+            self.log_data.kbest_boat_rssi = kbest_boat_rssi            # Kbest-船載接收訊號強度指標
+            self.log_data.kbest_ground_rssi = kbest_ground_rssi            # Kbest-基站接收訊
+            self.log_data.super_taira_strength = super_taira_strength      # SuperTaiRa-訊號強度指標
+            self.log_data.super_taira_error_byte = super_taira_error_byte    # SuperTaiRa-錯誤碼
+        
+
             # 保存到日誌檔案
-            with open(self.log_file, 'a') as log:
+            with open(self.log_file, 'a', encoding="utf-8") as log:
                 log.write(self.log_data.get_all())
 
         except Exception as e:

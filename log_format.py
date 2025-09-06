@@ -3,6 +3,7 @@ from io import StringIO
 
 class LogFormat:
     def __init__(self):
+        self.timestamp = None      # 時間戳記 (YYYYMMDD_HHMM)
         # Pixhawk 資料
         self.time_usec = None     # 時間戳記 (微秒)
         self.fix_type = None      # 定位類型
@@ -52,6 +53,12 @@ class LogFormat:
         self.oxygen_partial_pressure = None           # 19. 氧分壓
         self.external_voltage = None                  # 20. 外部電壓
         self.battery_capacity_remaining = None        # 21. 電池剩餘容量
+
+        # Kbest
+        self.kbest_boat_rssi = None            # Kbest-船載接收訊號強度指標
+        self.kbest_ground_rssi = None            # Kbest-基站接收訊
+        self.super_taira_strength = None      # SuperTaiRa-訊號強度指標
+        self.super_taira_error_byte = None    # SuperTaiRa-錯誤碼
 
     def get_all(self):
         """取得所有屬性和值，並返回 CSV 格式"""

@@ -7,6 +7,7 @@ import time
 from datetime import datetime
 from GToolBox import GToolBox
 
+os.environ["GST_DEBUG"] = "0" # set GStreamer debug level
 
 log_folder_path = "../GPlayerLog/debug"  # Changed to a subfolder for better organization
 log_directory = os.path.expanduser(log_folder_path)       # 設定log存放路徑
