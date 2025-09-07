@@ -1,6 +1,8 @@
 import os
 import time
 import threading
+import csv
+import re
 
 from GTool import GTool
 from datetime import datetime
@@ -21,14 +23,34 @@ class DataLogger(GTool):
         # ================================================================================
         self.log_folder_path = "../GPlayerLog"
         
-        self.log_directory = os.path.expanduser(self.log_folder_path)       # 設定log存放路徑
-        if(not os.path.exists(self.log_directory)):                         # 如果路徑不存在，則建立
-            os.makedirs(self.log_directory)                                 # 建立路徑
-        current_time = datetime.now()                                       # 取得目前時間
-        file_name = f"log_{current_time.strftime('%Y%m%d_%H%M')}.txt"       # 設定檔案名稱
-        self.log_file = os.path.join(self.log_directory, file_name)         # 檔案路徑
-        # ================================================================================
 
+        # 設定 log 存放路徑
+        self.log_directory = os.path.expanduser(self.log_folder_path)
+        if not os.path.exists(self.log_directory):
+            os.makedirs(self.log_directory)
+
+        # 找出所有 log_xxxxxxxx.csv 檔案
+        existing_files = [f for f in os.listdir(self.log_directory) if f.startswith("log_") and f.endswith(".csv")]
+
+        # 從檔名抓出數字部分
+        indices = []
+        for f in existing_files:
+            match = re.search(r"log_(\d+)\.csv", f)
+            if match:
+                indices.append(int(match.group(1)))
+
+        # 取最大值 + 1，如果沒有檔案就從 1 開始
+        file_index = max(indices) + 1 if indices else 1
+
+        # 檔名格式：log_00000001.csv
+        file_name = f"log_{file_index:08d}.csv"
+        self.log_file = os.path.join(self.log_directory, file_name)
+        self.log_folder_path = "./GPlayerLog"
+
+        # 建立 CSV 檔案，並寫入欄位名稱
+        with open(self.log_file, 'w', newline='', encoding="utf-8") as csvfile:
+            writer = csv.DictWriter(csvfile, fieldnames=self.log_data.__dict__.keys())
+            writer.writeheader()
         threading.Thread(target = self.looper, daemon = True).start() # 開始log
 
     def save_data(self):
@@ -143,8 +165,9 @@ class DataLogger(GTool):
         
 
             # 保存到日誌檔案
-            with open(self.log_file, 'a', encoding="utf-8") as log:
-                log.write(self.log_data.get_all())
+            with open(self.log_file, 'a', newline='', encoding="utf-8") as csvfile:
+                writer = csv.DictWriter(csvfile, fieldnames=self.log_data.__dict__.keys())
+                writer.writerow(self.log_data.__dict__)
 
         except Exception as e:
             print(f'DataLogger exception: log_entry: msg:{e}')
