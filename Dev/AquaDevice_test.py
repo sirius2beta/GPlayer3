@@ -62,7 +62,10 @@ class AquaDevice(Device):
             data = self.send(command = self.cmd_special, receive=8)
             self.ser.timeout = 6
             while(True):
+                #start time
+                
                 if(self.read_all): # if read_all is True, read all data
+                    time_start = time.time()
                     for i in range(len(self.command_set)):
                         data = self.send(command = self.command_set[i]) # send command to device
                         try:
@@ -72,6 +75,10 @@ class AquaDevice(Device):
                         except Exception as e:
                             print(f"{i}:{e}")
                             continue
+                    # end time
+                    time_end = time.time()
+                    # print the time taken to read all data
+                    print(f"Time taken to read all data: {time_end - time_start} seconds")
                 else:
                     data = self.send(command = self.command_set[3]) # send command to device
                     try:
@@ -106,7 +113,7 @@ class AquaDevice(Device):
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
 
 if(__name__ == "__main__" ):
-    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB1", sensor_group_list = [], networkManager = None)     
+    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB0", sensor_group_list = [], networkManager = None)     
     while(True):
         print(aqua.get_aqua_data())
         time.sleep(1)

@@ -1,19 +1,12 @@
-import time
-import serial
 from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusException
+import time
 import struct
 
-from Dev.Device import Device
-from config import Config as CF
-
-SENSOR = b'\x04'
-
-class RS485Device(Device):
-    def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
-        super().__init__(device_type, dev_path, sensor_group_list, networkManager)
+class RS485Master:
+    def __init__(self, port: str):
         self.client = ModbusSerialClient(
-            port=self.dev_path,
+            port=port,
             baudrate=19200,
             parity='E',
             stopbits=1,
@@ -26,6 +19,7 @@ class RS485Device(Device):
 
         self.node1Connected = False
         self.node2Connected = False
+
     def close(self):
         self.client.close()
     
@@ -158,10 +152,6 @@ class RS485Device(Device):
                     combined = (high << 16) | low
                     float_value = struct.unpack('>f', struct.pack('>I', combined))[0]
                     aqua_data.append(float_value)
-                    #save to sensor group 1
-                    if i//2 < len(self.sensor_group_list[1].sensors):
-                        self.sensor_group_list[1].get_sensor(i//2).data = float_value
-                self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
                 print(f"[Node2] Aqua Data: {aqua_data}")
                 return aqua_data
         except ModbusException as e:
@@ -209,12 +199,13 @@ class RS485Device(Device):
             self.getStatus()
             time.sleep(2)
 
-    def _io_loop(self):
-        while(True):
-            try:
-                self.testMotorManuver()
-            
-            except KeyboardInterrupt:
-                print("Interrupted by user")
-            finally:
-                self.close()
+if __name__ == "__main__":
+    master = RS485Master(port="/dev/ttyUSB0")
+    try:
+        master.testMotorManuver()
+    
+    except KeyboardInterrupt:
+        print("Interrupted by user")
+    finally:
+        master.close()
+

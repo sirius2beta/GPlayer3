@@ -113,7 +113,7 @@ class AquaDevice(Device):
             self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
 
 if(__name__ == "__main__" ):
-    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB2", sensor_group_list = [], networkManager = None)     
+    aqua = AquaDevice(device_type = 1, dev_path="/dev/ttyUSB0", sensor_group_list = [], networkManager = None)     
     while(True):
         print(aqua.get_aqua_data())
         time.sleep(1)
