@@ -8,7 +8,8 @@ from Dev.Device import Device
 from config import Config as CF
 
 SENSOR = b'\x04'
-
+node1_control_type = 2 # sonar control type: 2
+node2_control_type = 0 # winch control type: 0
 class RS485Device(Device):
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
         super().__init__(device_type, dev_path, sensor_group_list, networkManager)
@@ -26,6 +27,9 @@ class RS485Device(Device):
 
         self.node1Connected = False
         self.node2Connected = False
+
+        self.isSerialInit = True
+        self.sonarPWR = 0
     def close(self):
         self.client.close()
     
@@ -35,6 +39,7 @@ class RS485Device(Device):
         try:
             coil_addr = 0  
             self.client.write_coil(coil_addr, on, device_id=self.node1_addr)
+            self.sonarPWR = 1 if on else 0
             print(f"[Node1] Set sonar {'ON' if on else 'OFF'}")
             self.node1Connected = True
         except ModbusException as e:
@@ -131,9 +136,19 @@ class RS485Device(Device):
                 if step & 0x80000000:  # 補 signed
                     step -= 0x100000000
                 runningState = regs[4]
-                print(f"[Node2] Status - Tension: {tension}, Step: {step}, RunningState: {'Running' if runningState==0xFF else 'Stopped'}")
+                #print(f"[Node2] Status - Tension: {tension}, Step: {step}, RunningState: {'Running' if runningState==0xFF else 'Stopped'}")
                 tension = (regs[0] << 16) | regs[1]
-                step    = (regs[2] << 16) | regs[3]
+                if runningState == 0:
+                    status = 0
+                else:
+                    status = 1
+
+                data = struct.pack("<B", node2_control_type)
+                data += struct.pack("<B", 8)
+                data += struct.pack("<i", step)
+                data += struct.pack("<i", tension)
+                data += struct.pack("<B", status)
+                self.networkManager.sendMsg(b'\x05', data)
                 
                 return tension, step
         except ModbusException as e:
@@ -208,13 +223,88 @@ class RS485Device(Device):
         while True:
             self.getStatus()
             time.sleep(2)
+    
+    # process command for control
+    def processCMD(self, control_type ,cmd):
+        if self.isSerialInit == False:
+            return
+        if control_type == node2_control_type:
+            command_type = int(cmd[0])
+            logging.info(f"control:{control_type}, command type:{command_type}, ")
+            if command_type == 0:  # 讀取全部參數
+                logging.info("  - set")
+                # 待新增
+            elif command_type == 1:  # 讀取部分參數
+                pass
+            elif command_type == 2:  # 寫入全部參數
+                pass
+
+            elif command_type == 3: #寫入部分參數
+                index = int(cmd[1])
+                logging.info(f"write index:{index}")
+                if index == 0: #maxspeed
+                    maxSpeed = int(struct.unpack("<I", cmd[2:])[0])
+                    if maxSpeed>2000: #  maxspeed cant exceed 2000
+                        pass
+                    # set maxspeed and acc
+                    self.setMaxSpeed(maxSpeed)
+                    time.sleep(0.1)
+                    self.setAcc(maxSpeed/2)
+                    logging.info(f"set maxspeed:{maxSpeed}")
+
+            elif command_type == 4: #回傳全部參數
+                pass
+            elif command_type == 5: #回傳部分參數
+                pass
+            elif command_type == 6: #move
+                step = int(struct.unpack("<i", cmd[1:])[0])
+                logging.info(f"WinchDevice: move step {step}")
+                if self.isSerialInit == True:
+                    self.setTargetStep(step)
+            elif command_type == 7: #stop
+                self.stopMotor()
+                logging.info("WinchDevice: stop")
+            elif command_type == 8: # report step tension
+                pass
+            elif command_type == 9: # reset position
+                self.setCurrentStep(0)
+                logging.info("WinchDevic: reset")
+        elif control_type == 2:
+            print("SonarDevice::getMsg")
+            command_type = int(cmd[0])
+            print(f"control:{control_type}, command type:{command_type}, ")
+            if command_type == 0:  # 讀取全部參數
+                pass
+            elif command_type == 1:  # 讀取部分參數
+                pass
+            elif command_type == 2:  # 寫入全部參數
+                pass
+            elif command_type == 3: #寫入部分參數
+                pass
+            elif command_type == 4: #回傳全部參數
+                pass
+            elif command_type == 5: #回傳部分參數
+                pass
+            elif command_type == 6: #power
+                self.power = cmd[1]
+                if self.power == 1:
+                    self.setSonarPWR(True)
+                    print("power on")
+                else:
+                    self.setSonarPWR(False)
+                    print("power off")
+            elif command_type == 7: #power
+                data = struct.pack("<B", 2)
+                data += struct.pack("<B", 7)
+                data += struct.pack("<B", self.power)
+                self.networkManager.sendMsg(b'\x05', data)
 
     def _io_loop(self):
-        while(True):
-            try:
-                self.testMotorManuver()
-            
-            except KeyboardInterrupt:
-                print("Interrupted by user")
-            finally:
-                self.close()
+        
+            step = 0
+            tension = 0
+            status = 0
+            while True:
+                self.getStatus()
+                time.sleep(0.2)
+                

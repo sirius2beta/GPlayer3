@@ -18,7 +18,7 @@ DEVICE_TYPES = {
 	("1209", "5740"): ("Pixhawk", Device, 0, False),
 	("1d6b", "0002"): ("Winch", WinchDevice, 2, True),
 	("0bda", "5489"): ("Winch", WinchDevice, 2, True),
-	("1a86", "7523"): ("Winch", RS485Device, 9, True),
+	("1a86", "7523"): ("Winch", RS485Device, 2, True),
 	("0403", "6001"): ("Aqua", AquaDevice, 7, True),
 	("10c4", "ea60"): ("NodeMCU", Device, 3, True),
 	("067b", "2303"): ("RS485", RS485Device, 4, True),
