@@ -24,6 +24,7 @@ DEVICE_TYPES = {
 	("067b", "2303"): ("RS485", RS485Device, 4, True),
 	("2341", "8037"): ("Arduino", WinchDevice, 5, True),
 	("152a", "85c0"): ("ArduSimple", ArduSimpleDevice, 6, True),
+	('067b', '2303'): ('SuperTaiRa', SuperTaiRaDevice, 8, False),  # Example test device
 	('067b', '23a3'): ('SuperTaiRa', SuperTaiRaDevice, 8, False),  # Example test device
 }
 
@@ -147,7 +148,7 @@ class DeviceManager(GTool):
 		elif name == "ArduSimple":
 			self.ardusimple_device = dev
 			self.device_status[1] = 1  # GPS connected
-			self.ardusimple_exist = True
+			#self.ardusimple_exist = True
 		elif name == "Aqua":
 			self.aqua_device = dev
 			self.device_status[3] = 1  # Aqua connected

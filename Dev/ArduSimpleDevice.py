@@ -1,9 +1,35 @@
 import time
 import serial
 import threading
+from pysbf2.sbfreader import SBFReader
+from pysbf2.sbftypes_core import SBF_PROTOCOL, NMEA_PROTOCOL
+import math
+from datetime import datetime, timedelta
 from Dev.Device import Device
 
 SENSOR = b'\x04'
+
+def gps_time_to_utc(wnc, tow):
+    gps_start = datetime(1980, 1, 6)
+    total_seconds = wnc * 7 * 86400 + tow/1000
+    utc_time = gps_start + timedelta(seconds=total_seconds)
+
+    # 注意：GPS 時間比 UTC 多 18 秒（截至目前），要減去 leap seconds
+    LEAP_SECONDS = 18  # 根據當前標準，可能會變
+    utc_time -= timedelta(seconds=LEAP_SECONDS)
+
+    return utc_time
+
+def position_accuracy(cov_latlat, cov_lonlon, cov_heightheight):
+    def safe_sqrt(x):
+        # 如果因浮點誤差導致略小於0，強制設為0
+        return math.sqrt(x) if x >= 0 else math.sqrt(max(0, x))
+    
+    sigma_lat = safe_sqrt(cov_latlat)
+    sigma_lon = safe_sqrt(cov_lonlon)
+    sigma_h   = safe_sqrt(cov_heightheight)
+    
+    return sigma_lat, sigma_lon, sigma_h
 
 class ArduSimpleDevice(Device):           
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
@@ -20,110 +46,90 @@ class ArduSimpleDevice(Device):
         self.AVR_list = [None, None, None, None, None, None, None, None, None, None, None, None, None]
 
         self.GGA_list = [None, None, None, None, None, None, None, None, None, None, None, None, None, None, None, None]
-        self.ser = serial.Serial(port = self.dev_path, baudrate = 115200, timeout = 2)
+        self.utc_time = ""
+        self.lon = 0.0
+        self.lat = 0.0
+        self.alt = 0.0
+        self.undulation = 0.0
+        self.lon_acc = 0.0
+        self.lat_acc = 0.0
+        self.alt_acc = 0.0
+        self.HDOP = 0.0
+        self.VDOP = 0.0
+        self.tilt = 0.0
+        self.yaw = 0.0
+        self.speed = 0.0
+        self.ser = serial.Serial(port = self.dev_path, baudrate = 115200, 
+                                timeout = 2,
+                                bytesize=serial.EIGHTBITS,
+                                parity=serial.PARITY_NONE,
+                                stopbits=serial.STOPBITS_ONE)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
 
     def reader(self):
         while(True):
             try: 
                 # =====這裡做資料處理輸出field List=====
-                raw_data = self.ser.readline()
-                decode_data = raw_data.decode('utf-8').strip().lstrip('$')
-                fields = decode_data.split(',')
-                if('*' in fields[-1]):
-                    checksum_data = fields[-1].split('*')
-                    fields[-1] = checksum_data[0]
-                    checksum = checksum_data[1]
-                else:
-                    checksum = None
-                # ================= When output is GST =================
-                if(fields[0] == "GPGST" or fields[0] == "GLGST" or fields[0] == "GNGST"):
-                    self.GST_list = [
-                        fields[0],  # message_id
-                        fields[1],  # utc_position_fix
-                        fields[2],  # rms_pseudorange_residual
-                        fields[3],  # semi_major_error
-                        fields[4],  # semi_minor_error
-                        fields[5],  # ellipse_orientation
-                        fields[6],  # lat_acc
-                        fields[7],  # lon_acc
-                        fields[8],  # alt_acc
-                        checksum    # checksum
-                    ] 
 
-                    self.ACC_list = [
-                        fields[6],  # lat_acc
-                        fields[7],  # lon_acc
-                        fields[8],  # alt_acc
-                    ]
-                    
-                    # print(f"GST_list:\n{self.GST_list}")
-                    # print(f"ACC_list:\n{self.ACC_list}")
-
-                # ================= When output is RMC =================
-                if(fields[0] == "GPRMC" or fields[0] == "GMRMC"):
-                    self.RMC_list = [
-                        fields[0],  # message_id
-                        fields[1],  # utc_position_fix
-                        fields[2],  # Status
-                        fields[3] + "," + fields[4],  # Latitude
-                        fields[5] + "," + fields[6],  # Longitude
-                        fields[7],  # Speed
-                        fields[8],  # Track_angle
-                        fields[9],  # Date
-                        fields[10], # Magnetic_variation
-                        checksum    # checksum
-                    ] 
-
-                    #print(f"RMC_list:\n{self.RMC_list}")
-                # ================= When output is AVR =================
-                if(fields[0] == "PTNL" and fields[1] == "AVR"):
-                    self.AVR_list = [
-                        fields[0] + "," + fields[1],  # message_id
-                        fields[2],  # utc_vector_fix
-                        fields[3],  # yaw_angle
-                        fields[4],  # yaw
-                        fields[5],  # tilt_angle
-                        fields[6],  # tilt
-                        fields[7],  # None
-                        fields[8],  # None
-                        fields[9],  # range_meters
-                        fields[10], # gps_quality_indicator
-                        fields[11], # pdop
-                        fields[12], # num_satellites_used
-                        checksum    # checksum
-                    ] 
-                    
-                    #print(f"AVR_list:\n{self.AVR_list}")
+                reader = SBFReader(self.ser, protfilter=SBF_PROTOCOL|NMEA_PROTOCOL)  # 只讀 SBF 協定
                 
-                # ================= When output is GGA =================
-                if(fields[0] == "GPGGA"):
-                    self.GGA_list = [
-                        fields[0],  # message_id
-                        fields[1],  # utc_vector_fix
-                        fields[2],  # Latitude
-                        fields[3],  # N or S
-                        fields[4],  # Longitude
-                        fields[5],  # E or W
-                        fields[6],  # GPS Quality
-                        fields[7],  # --
-                        fields[8],  # HDOP
-                        fields[9],  # Orthometric height
-                        fields[10], # --
-                        fields[11], # Geoid separation
-                        fields[12], # --
-                        fields[13], # --
-                        fields[14], # --
-                        checksum    # checksum
-                    ]
+                # 連續讀取
+                for raw, msg in reader:
+                    # raw 是原始二進位資料 bytes
+                    # msg 是已解析的 SBFMessage 物件
+                    #print("Raw len:", len(raw), " bytes")
+                    #print(msg)  # 會以可讀形式顯示欄位與值
+                    if msg.identity == 'PVTGeodetic':
+                        # 根據 msg 屬性名稱取經緯度（若 msg 有這些屬性）
+                        tow = msg.TOW  # 秒
+                        wnc = msg.WNc  # 週
+                        utc = gps_time_to_utc(wnc, tow)
+                        self.utc_time = utc
+                        
+                        #print(f"🕒 GPS Time (UTC): {utc.strftime('%Y-%m-%d %H:%M:%S')} TOW:{tow}, WNC:{wnc}")
+                        lat = msg.Latitude  # 有些 PVT message 有這欄
+                        lon = msg.Longitude
+
+                        self.utc_time = utc
+                        self.lat = math.degrees(lat)
+                        self.lon = math.degrees(lon)
+                        self.alt = msg.Height
+                        self.undulation = msg.Undulation
+                        # 有時候是 X, Y, Z 坐標，而不是經緯度
+                        #print(f"Latitude: {math.degrees(lat)}°, Longitude: {math.degrees(lon)}°")
+                    elif msg.identity == 'DOP':
+                        HDOP = msg.HDOP
+                        VDOP = msg.VDOP
+                        self.HDOP = HDOP
+                        self.VDOP = VDOP
+                        #print(f"HDOP: {HDOP}, VDOP: {VDOP}")
+                    elif msg.identity == 'PosCovGeodetic':
+                        cov_latlat = msg.Cov_latlat
+                        cov_lonlon = msg.Cov_lonlon
+                        cov_heightheight = msg.Cov_hgthgt
+                        lat_acc, lon_acc, alt_acc = position_accuracy(cov_latlat, cov_lonlon, cov_heightheight)
+                        self.lat_acc = lat_acc
+                        self.lon_acc = lon_acc
+                        self.alt_acc = alt_acc
+                        #print(f"Position Accuracy - Lat: {lat_acc:.3f} m, Lon: {lon_acc:.3f} m, Alt: {alt_acc:.3f} m")
+                    elif msg.identity == 'PTNLAVR':
+                        self.tilt = msg.tilt
+                        self.yaw = msg.yaw
+                        #print(f"  Tilt: {msg.tilt:.2f}°, Heading: {msg.yaw:.2f}°")
+                    elif msg.identity == 'GPRMC':
+                        self.speed = msg.spd
+                        #print(f"  Speed: {msg.spd:.2f}")
+                    else:
+                        #print("其他 SBF 訊息類型:", msg.identity)
+                        pass
+
                 
 
             except(serial.serialutil.SerialException): # if serial error
                 print("Serial Error...")
                 print("Trying to reconnect...")
-
             except Exception as e: # if other error
-                print(e)
+                print("❌ 開啟串口或解析時發生錯誤：", e)
         
     def get_GSTList(self):
         return self.GST_list

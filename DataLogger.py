@@ -105,15 +105,15 @@ class DataLogger(GTool):
 
         # 更新 Log 資料
         try:
-            self.log_data.timestamp = datetime.now().strftime('%Y%m%d-%H:%M:%S')
+            self.log_data.timestamp = self._toolBox.deviceManager.ardusimple_device.utc_time if self._toolBox.deviceManager.ardusimple_device else datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             # Pixhawk Data
             self.log_data.time_usec = mav_gps_data['time_usec']
             self.log_data.fix_type = mav_gps_data['fix_type']
-            self.log_data.lat = mav_gps_data['lat']
-            self.log_data.lon = mav_gps_data['lon']
-            self.log_data.alt = mav_gps_data['alt']
-            self.log_data.HDOP = mav_gps_data['HDOP']
-            self.log_data.VDOP = mav_gps_data['VDOP']
+            self.log_data.lat = self._toolBox.deviceManager.ardusimple_device.lat #mav_gps_data['lat']
+            self.log_data.lon = self._toolBox.deviceManager.ardusimple_device.lon #mav_gps_data['lon']
+            self.log_data.alt = self._toolBox.deviceManager.ardusimple_device.alt #mav_gps_data['alt']
+            self.log_data.HDOP = self._toolBox.deviceManager.ardusimple_device.HDOP #mav_gps_data['HDOP']
+            self.log_data.VDOP = self._toolBox.deviceManager.ardusimple_device.VDOP #mav_gps_data['VDOP']
             self.log_data.depth = mav_depth
             # V2新增
             self.log_data.speed = mav_vfr_hud['groundspeed']
@@ -122,16 +122,16 @@ class DataLogger(GTool):
             self.log_data.yaw = mav_gps['yaw'] 
 
             # ArduSimple Accuracy
-            self.log_data.lat_acc = acc_data[0]
-            self.log_data.lon_acc = acc_data[1]
-            self.log_data.alt_acc = acc_data[2]
+            self.log_data.lat_acc = self._toolBox.deviceManager.ardusimple_device.lat_acc
+            self.log_data.lon_acc = self._toolBox.deviceManager.ardusimple_device.lon_acc
+            self.log_data.alt_acc = self._toolBox.deviceManager.ardusimple_device.alt_acc
             # V2新增
-            self.log_data.gps_speed = rmc_data[5]
-            self.log_data.gps_tilt = avr_data[4]
-            self.log_data.gps_yaw = avr_data[2]
+            self.log_data.gps_speed = self._toolBox.deviceManager.ardusimple_device.speed
+            self.log_data.gps_tilt = self._toolBox.deviceManager.ardusimple_device.tilt
+            self.log_data.gps_yaw = self._toolBox.deviceManager.ardusimple_device.yaw
             # V3新增
-            self.log_data.gps_orthometric_height = gga_data[9]
-            self.log_data.geoid_separation = gga_data[11]
+            self.log_data.gps_orthometric_height = self._toolBox.deviceManager.ardusimple_device.alt - self._toolBox.deviceManager.ardusimple_device.undulation
+            self.log_data.geoid_separation = self._toolBox.deviceManager.ardusimple_device.undulation
 
 
 
