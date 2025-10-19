@@ -35,13 +35,7 @@ class SuperTaiRaDevice(Device):
                 # print(f"send:{data}")
             except Exception as e:
                 print(f"Taira發送問題:{e}")   
-                try:
-                    self.ser.close()
-                    time.sleep(1)
-                    self.ser = serial.Serial(self.dev_path, baudrate=READ_TIMEOUT, timeout=READ_TIMEOUT)
-                except Exception as re:
-                    print(f"重連失敗:{re}") 
-
+                self.ser = serial.Serial(self.dev_path, baudrate=READ_TIMEOUT, timeout=READ_TIMEOUT)
             finally:
                 time.sleep(1)
 
