@@ -15,6 +15,7 @@ class SuperTaiRaDevice(Device):
         self.ser = serial.Serial(
             port=self.dev_path, timeout=READ_TIMEOUT, baudrate=BAUD
         )
+        print(f"------> SuperTairaComport:{self.dev_path}")
         time.sleep(0.2)
 
         # 啟動讀寫執行緒
@@ -33,7 +34,14 @@ class SuperTaiRaDevice(Device):
                 self.ser.write(data)
                 # print(f"send:{data}")
             except Exception as e:
-                print(f"Taira發送問題:{e}")    
+                print(f"Taira發送問題:{e}")   
+                try:
+                    self.ser.close()
+                    time.sleep(1)
+                    self.ser = serial.Serial(self.dev_path, baudrate=READ_TIMEOUT, timeout=READ_TIMEOUT)
+                except Exception as re:
+                    print(f"重連失敗:{re}") 
+
             finally:
                 time.sleep(1)
 
