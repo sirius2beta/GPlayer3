@@ -1,6 +1,7 @@
 import time       
 import serial 
 import threading 
+import logging
 from Dev.Device import Device 
 
 BAUD = 115200
@@ -15,7 +16,8 @@ class SuperTaiRaDevice(Device):
         self.ser = serial.Serial(
             port=self.dev_path, timeout=READ_TIMEOUT, baudrate=BAUD
         )
-        print(f"------> SuperTairaComport:{self.dev_path}")
+        logging.info(f"SuperTairaComport:{self.dev_path}")
+        logging.info(f"SuperTaira initialized")
         time.sleep(0.2)
 
         # 啟動讀寫執行緒
@@ -28,13 +30,15 @@ class SuperTaiRaDevice(Device):
         pass
 
     def transmitter(self):
+        logging.info(f"SuperTaira Started")
         while(True):
             try:
                 data = b'\x55\x54\x53\x00\x01\x02'
                 self.ser.write(data)
-                # print(f"send:{data}")
+                print(f"send:{data}")
+                # logging.info(f"send:{data}")
             except Exception as e:
-                print(f"Taira發送問題:{e}")   
+                logging.error(f"Taira:{e}")
                 self.ser = serial.Serial(self.dev_path, baudrate=READ_TIMEOUT, timeout=READ_TIMEOUT)
             finally:
                 time.sleep(1)
