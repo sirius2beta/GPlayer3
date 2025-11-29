@@ -169,10 +169,9 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         while not input_q.empty():
             msg = input_q.get()
             logging.info(f"Received:{msg}")
-
             if msg[0] == "f":
                 device_id, vformat, width, height, fps, host, port = msg[1:]
-                video_pipeline = f'v4l2src device=/dev/video{device_id} ! video/x-raw, format=YUY2, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! appsink'
+                video_pipeline = f'v4l2src device=/dev/video{device_id} !  video/x-mpeg format=YUY2, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! appsink'
                 cap_send = reopen_camera(device_id, video_pipeline)
 
                 out_send = cv2.VideoWriter(

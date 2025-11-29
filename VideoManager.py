@@ -2,6 +2,7 @@ import gi
 import glob
 import logging
 import subprocess
+import re, subprocess
 gi.require_version("Gst", "1.0")
 from gi.repository import Gst, GLib, GObject
 
@@ -95,6 +96,59 @@ class VideoManager(GTool):
 						all_formats.append((fmt, w, h, fps	))
 			logging.info(f"video{cam} formats: {all_formats}")
 			self.pipelines[cam]["formats"] = all_formats
+	def getMJPGFrameRate(self, cam, width=None, height=None):
+		"""
+		從系統抓出 cam 支援的 YUYV 格式最高 fps。
+		如果 width/height 提供，就限定解析度。
+		"""
+		
+		dev = f"/dev/video{cam}"
+		try:
+			output = subprocess.check_output(
+				["v4l2-ctl", "-d", dev, "--list-formats-ext"],
+				stderr=subprocess.DEVNULL,
+				text=True
+			)
+		except subprocess.CalledProcessError:
+			return ""
+
+		fmt = None
+		match_res = False
+		fps_list = []
+
+		for line in output.splitlines():
+			line = line.strip()
+
+			# --- 找格式 ---
+			if line.startswith("[") and "]" in line:
+				# e.g. [0]: 'YUYV' (YUYV 4:2:2)
+				parts = line.split("'")
+				fmt = parts[1] if len(parts) > 1 else None
+				continue
+
+			# --- 找尺寸 ---
+			if fmt == "MJPG" and line.startswith("Size: Discrete"):
+				# e.g. Size: Discrete 1280x720
+				toks = line.replace("Size: Discrete", "").strip().split("x")
+				if len(toks) == 2:
+					w, h = map(int, toks)
+					if (width is None or w == width) and (height is None or h == height):
+						match_res = True
+					else:
+						match_res = False
+				continue
+
+			# --- 找 fps ---
+			if match_res and line.startswith("Interval: Discrete"):
+				# e.g. Interval: Discrete 0.033s (30.000 fps)
+				m = re.search(r"\(([\d\.]+)\s*fps\)", line)
+				if m:
+					fps_list.append(float(m.group(1)))
+
+		if fps_list:
+			return int(max(fps_list))  # 回傳最高 fps
+		return ""
+
 	def get_videoFormatList_legacy(self):
 		"""
 		產生舊版 videoFormatList 結構：
@@ -282,7 +336,7 @@ class VideoManager(GTool):
 				print("JetsonDetect not ready")
 				return
 			if cam != self.ai_cam:		
-				YUYVfps = self.getYUYVFrameRate(cam, width, height)
+				YUYVfps = self.getMJPGFrameRate(cam, width, height)
 				if YUYVfps != "":
 					self._toolBox.jetsonDetect.play([cam, "YUYV", width, height, YUYVfps, IP, port])
 					print(f"start ai on cam:{cam}")
@@ -320,7 +374,7 @@ class VideoManager(GTool):
 		print(f"stop pipeline on cam:{cam}")
 	def setSeagrassCamera(self, cam, format, width, height, framerate, encoder, IP, port):
 		print(f"set seagrass camera: {cam} {format} {width} {height} {framerate} {encoder} {IP} {port}")
-		YUYVfps = self.getYUYVFrameRate(cam, width, height)
+		YUYVfps = self.getMJPGFrameRate(cam, width, height)
 		if YUYVfps != "":
 			logging.info(f"YUYV fps for video{cam}: {YUYVfps}")
 			self.seagrass_cam_format = [cam, "YUYV", width, height, YUYVfps, IP, port]
