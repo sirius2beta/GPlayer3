@@ -3,6 +3,7 @@ import serial
 from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusException
 import struct
+import logging
 
 from Dev.Device import Device
 from config import Config as CF
