@@ -107,7 +107,7 @@ class DataLogger(GTool):
         try:
             self.log_data.timestamp = self._toolBox.deviceManager.ardusimple_device.utc_time if self._toolBox.deviceManager.ardusimple_device else datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
             # Pixhawk Data
-            self.log_data.time_usec = mav_gps_data['time_usec']
+            self.log_data.time_usec = self._toolBox.deviceManager.ardusimple_device.utc_time
             self.log_data.fix_type = mav_gps_data['fix_type']
             self.log_data.lat = self._toolBox.deviceManager.ardusimple_device.lat #mav_gps_data['lat']
             self.log_data.lon = self._toolBox.deviceManager.ardusimple_device.lon #mav_gps_data['lon']
