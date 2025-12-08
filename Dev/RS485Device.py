@@ -32,7 +32,7 @@ class RS485Device(Device):
         self.isSerialInit = True
         self.sonarPWR = 0
         self.status_code = 1
-        print(f"RS485Device initialized on {self.dev_path}")
+        logging.info("RS485Device initialized")
     def close(self):
         self.client.close()
     
@@ -43,10 +43,10 @@ class RS485Device(Device):
             coil_addr = 0  
             self.client.write_coil(coil_addr, on, device_id=self.node1_addr)
             self.sonarPWR = 1 if on else 0
-            print(f"[Node1] Set sonar {'ON' if on else 'OFF'}")
+            logging.info(f"[Node1] Set sonar {'ON' if on else 'OFF'}")
             self.node1Connected = True
         except ModbusException as e:
-            print(f"[Node1] Set sonar failed: {e}")
+            logging.info(f"[Node1] Set sonar failed: {e}")
             self.node1Connected = False
 
     # ---------- Node 2 (Motor Controller) ----------
@@ -55,25 +55,25 @@ class RS485Device(Device):
         try:
             coil_addr = 0  
             self.client.write_coil(coil_addr, False, device_id=self.node2_addr)
-            print(f"[Node2] stop motor")
+            logging.info(f"[Node2] stop motor")
         except ModbusException as e:
-            print(f"[Node2] Set motor failed: {e}")
+            logging.info(f"[Node2] Set motor failed: {e}")
             self.node2Connected = False
 
     def setMaxSpeed(self, speed):
         try:
             self.client.write_register(0, speed, device_id=self.node2_addr)
-            print(f"[Node2] Set MaxSpeed = {speed}")
+            logging.info(f"[Node2] Set MaxSpeed = {speed}")
         except ModbusException as e:
-            print(f"[Node2] Set MaxSpeed failed: {e}")
+            logging.info(f"[Node2] Set MaxSpeed failed: {e}")
             self.node2Connected = False
 
     def setAcc(self, acc):
         try:
             self.client.write_register(1, acc, device_id=self.node2_addr)
-            print(f"[Node2] Set Acc = {acc}")
+            logging.info(f"[Node2] Set Acc = {acc}")
         except ModbusException as e:
-            print(f"[Node2] Set Acc failed: {e}")
+            logging.info(f"[Node2] Set Acc failed: {e}")
             self.node2Connected = False
 
     def setTensionThreshold(self, tension):
@@ -81,25 +81,25 @@ class RS485Device(Device):
             high = (tension >> 16) & 0xFFFF
             low = tension & 0xFFFF
             self.client.write_registers(2, [high, low], device_id=self.node2_addr)
-            print(f"[Node2] Set Tension Threshold = {tension}")
+            logging.info(f"[Node2] Set Tension Threshold = {tension}")
         except ModbusException as e:
-            print(f"[Node2] Set Tension Threshold failed: {e}")
+            logging.info(f"[Node2] Set Tension Threshold failed: {e}")
             self.node2Connected = False
 
     def getCurrentStep(self):
         try:
             result = self.client.read_input_registers(8, count=2, device_id=self.node2_addr)
             if result.isError():
-                print("[Node2] Get Current Step failed")
+                logging.info("[Node2] Get Current Step failed")
             else:
                 high, low = result.registers
                 step = (high << 16) | low
                 if step & 0x80000000:  # 補 signed
                     step -= 0x100000000
-                print(f"[Node2] Current Step = {step}")
+                logging.info(f"[Node2] Current Step = {step}")
                 return step
         except ModbusException as e:
-            print(f"[Node2] Get Current Step failed: {e}")
+            logging.info(f"[Node2] Get Current Step failed: {e}")
             self.node2Connected = False
         return None
 
@@ -108,9 +108,9 @@ class RS485Device(Device):
             high = (step >> 16) & 0xFFFF
             low = step & 0xFFFF
             self.client.write_registers(6, [high, low], device_id=self.node2_addr)
-            print(f"[Node2] Set Current Step = {step}")
+            logging.info(f"[Node2] Set Current Step = {step}")
         except ModbusException as e:
-            print(f"[Node2] Set Current Step failed: {e}")
+            logging.info(f"[Node2] Set Current Step failed: {e}")
             self.node2Connected = False
 
     def setTargetStep(self, step):
@@ -119,9 +119,9 @@ class RS485Device(Device):
             low = step & 0xFFFF
             # ESP 定義在 Hreg[4] → 40005
             self.client.write_registers(4, [high, low], device_id=self.node2_addr)
-            print(f"[Node2] Set Target Step = {step}")
+            logging.info(f"[Node2] Set Target Step = {step}")
         except ModbusException as e:
-            print(f"[Node2] Set Target Step failed: {e}")
+            logging.info(f"[Node2] Set Target Step failed: {e}")
             self.node2Connected = False
 
     def getStatus(self):
@@ -130,7 +130,7 @@ class RS485Device(Device):
         try:
             result = self.client.read_input_registers(6, count=5, device_id=self.node2_addr)
             if result.isError():
-                print("[Node2] Get Status failed")
+                logging.info("[Node2] Get Status failed")
                 return None
             else:
                 regs = result.registers
@@ -139,7 +139,7 @@ class RS485Device(Device):
                 if step & 0x80000000:  # 補 signed
                     step -= 0x100000000
                 runningState = regs[4]
-                #print(f"[Node2] Status - Tension: {tension}, Step: {step}, RunningState: {'Running' if runningState==0xFF else 'Stopped'}")
+                #logging.info(f"[Node2] Status - Tension: {tension}, Step: {step}, RunningState: {'Running' if runningState==0xFF else 'Stopped'}")
                 tension = (regs[0] << 16) | regs[1]
                 if runningState == 0:
                     status = 0
@@ -155,7 +155,7 @@ class RS485Device(Device):
                 
                 return tension, step
         except ModbusException as e:
-            print(f"[Node2] Get Status failed: {e}")
+            logging.info(f"[Node2] Get Status failed: {e}")
             self.node2Connected = False
         return None
         
@@ -164,7 +164,7 @@ class RS485Device(Device):
         try:
             result = self.client.read_input_registers(20, count=42, device_id=self.node2_addr)
             if result.isError():
-                print("[Node2] Get Aqua Data failed")
+                logging.info("[Node2] Get Aqua Data failed")
                 self.node2Connected = False
                 self.status_code = 0
                 return None
@@ -181,11 +181,11 @@ class RS485Device(Device):
                     if i//2 < len(self.sensor_group_list[1].get_all()):
                         self.sensor_group_list[1].get_sensor(i//2).data = float_value
                 self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
-                #print(f"[Node2] Aqua Data: {aqua_data}")
+                #logging.info(f"[Node2] Aqua Data: {aqua_data}")
                 self.status_code = 2
                 return aqua_data
         except ModbusException as e:
-            print(f"[Node2] Get Aqua Data failed: {e}")
+            logging.info(f"[Node2] Get Aqua Data failed: {e}")
             self.node2Connected = False
             return None
 
@@ -275,9 +275,9 @@ class RS485Device(Device):
                 self.setCurrentStep(0)
                 logging.info("WinchDevic: reset")
         elif control_type == 2:
-            print("SonarDevice::getMsg")
+            logging.info("SonarDevice::getMsg")
             command_type = int(cmd[0])
-            print(f"control:{control_type}, command type:{command_type}, ")
+            logging.info(f"control:{control_type}, command type:{command_type}, ")
             if command_type == 0:  # 讀取全部參數
                 pass
             elif command_type == 1:  # 讀取部分參數
@@ -294,10 +294,10 @@ class RS485Device(Device):
                 self.power = cmd[1]
                 if self.power == 1:
                     self.setSonarPWR(True)
-                    print("power on")
+                    logging.info("power on")
                 else:
                     self.setSonarPWR(False)
-                    print("power off")
+                    logging.info("power off")
             elif command_type == 7: #power
                 data = struct.pack("<B", 2)
                 data += struct.pack("<B", 7)
