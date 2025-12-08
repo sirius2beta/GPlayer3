@@ -31,6 +31,8 @@ class RS485Device(Device):
 
         self.isSerialInit = True
         self.sonarPWR = 0
+        self.status_code = 1
+        print(f"RS485Device initialized on {self.dev_path}")
     def close(self):
         self.client.close()
     
@@ -164,6 +166,7 @@ class RS485Device(Device):
             if result.isError():
                 print("[Node2] Get Aqua Data failed")
                 self.node2Connected = False
+                self.status_code = 0
                 return None
             else:
                 regs = result.registers
@@ -175,10 +178,11 @@ class RS485Device(Device):
                     float_value = struct.unpack('>f', struct.pack('>I', combined))[0]
                     aqua_data.append(float_value)
                     #save to sensor group 1
-                    if i//2 < len(self.sensor_group_list[1].sensors):
+                    if i//2 < len(self.sensor_group_list[1].get_all()):
                         self.sensor_group_list[1].get_sensor(i//2).data = float_value
                 self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
-                print(f"[Node2] Aqua Data: {aqua_data}")
+                #print(f"[Node2] Aqua Data: {aqua_data}")
+                self.status_code = 2
                 return aqua_data
         except ModbusException as e:
             print(f"[Node2] Get Aqua Data failed: {e}")

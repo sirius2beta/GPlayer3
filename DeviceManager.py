@@ -18,7 +18,7 @@ DEVICE_TYPES = {
 	("1209", "5740"): ("Pixhawk", Device, 0, False),
 	("1d6b", "0002"): ("Winch", WinchDevice, 2, True),
 	("0bda", "5489"): ("Winch", WinchDevice, 2, True),
-	("1a86", "7523"): ("Winch", RS485Device, 2, True),
+	("1a86", "7523"): ("RS485Device", RS485Device, 2, True),
 	("0403", "6001"): ("Aqua", AquaDevice, 7, True),
 	("10c4", "ea60"): ("NodeMCU", Device, 3, True),
 	("067b", "2303"): ("RS485", RS485Device, 4, True),
@@ -152,8 +152,9 @@ class DeviceManager(GTool):
 		elif name == "Aqua":
 			self.aqua_device = dev
 			self.device_status[3] = 1  # Aqua connected
-		elif name == "Winch":
+		elif name == "RS485Device":
 			self.winch_device = dev
+			self.aqua_device = dev  # RS485Device 也負責 Aqua 功能
 			self.device_status[2] = 1  # Winch connected
 		elif name == "SuperTaiRa":
 			self.super_taira_device = dev
