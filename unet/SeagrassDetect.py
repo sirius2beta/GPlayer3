@@ -43,7 +43,7 @@ class SeagrassDetect(GTool):
             try:
                 queue.put_nowait(msg)
             except Exception:
-                logging.warning(f"Warning: failed to enqueue message {msg}")
+                logging.warning(f"SeagrassDetect: failed to enqueue message {msg}")
 
     def setFormat(self, msg):
         msg_cpy = ["f"] + msg
@@ -75,7 +75,7 @@ class SeagrassDetect(GTool):
 
         self.outputLoop = threading.Thread(target=self.OutputLoop, daemon=True)
         self.outputLoop.start()
-        logging.info("SeagrassDetect initialized")
+        logging.info(" [O] SeagrassDetect initialized")
 
     def OutputLoop(self):
         while True:
@@ -88,7 +88,7 @@ class SeagrassDetect(GTool):
         with self.csv_lock:
             with open(index_path, mode='a', newline='') as f:
                 csv.writer(f).writerow([results[0], results[1]])
-        logging.info(f"Detection results:{results}")
+        logging.info(f"SeagrassDetect: Detection results:{results}")
 
     def startRecording(self):
         self.safe_enqueue(self.in_conn, ["r"])
@@ -120,7 +120,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         trt_model = TRTModule()
         trt_model.load_state_dict(torch.load(trt_path))
         model.net = trt_model
-        logging.info("✅ TensorRT model loaded!")
+        logging.info("SeagrassDetect: ✅ TensorRT model loaded!")
         return model
 
 
@@ -146,7 +146,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         }.get(os_type, None)
 
     if not encode_string:
-        logging.warning("Unsupported OS type")
+        logging.warning("SeagrassDetect: Unsupported OS type")
         return
     cap_send = None
     out_send = None
@@ -168,7 +168,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         # Process incoming commands
         while not input_q.empty():
             msg = input_q.get()
-            logging.info(f"Received:{msg}")
+            logging.info(f"SeagrassDetect: Received:{msg}")
             if msg[0] == "f":
                 device_id, vformat, width, height, fps, host, port = msg[1:]
                 video_pipeline = f'v4l2src device=/dev/video{device_id} !  video/x-mpeg format=YUY2, width={width}, height={height}, framerate={fps}/1 ! videoconvert ! appsink'
@@ -204,7 +204,7 @@ def detectTask(os_type, conn, input_q, seagrass_dir):
         ret, frame = cap_send.read()
         file_name = ""
         if not ret or frame is None:
-            logging.warning("⚠️ Camera disconnected...")
+            logging.warning("SeagrassDetect: ⚠️ Camera disconnected...")
             cap_send = reopen_camera(device_id, video_pipeline)
             continue
         

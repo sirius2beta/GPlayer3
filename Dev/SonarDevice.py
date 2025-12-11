@@ -17,7 +17,7 @@ class SonarDevice(Device):
         self.power = 0
         
         if self._toolBox.OS == 'buster':
-            print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
+            print(f"    [O] SonarDevice initialized: OS:{self._toolBox.OS}")
             import RPi.GPIO as GPIO
             self.GPIO = GPIO
             #GPIO.cleanup()
@@ -25,14 +25,14 @@ class SonarDevice(Device):
             self.GPIO.setup(11, GPIO.OUT)
             self.GPIO.output(11, GPIO.LOW)
         elif self._toolBox.OS == "focal":
-            print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
+            print(f"    [O] SonarDevice initialized: OS:{self._toolBox.OS}")
             import Jetson.GPIO as GPIO
             self.GPIO = GPIO
             self.GPIO.setmode(GPIO.BCM)
             self.GPIO.setup(13, GPIO.OUT)
             self.GPIO.output(13, GPIO.LOW)
         elif self._toolBox.OS == "jammy":
-            print(f"SonarDevice::create sonar device: OS:{self._toolBox.OS}")
+            print(f"    [O] SonarDevice initialized: OS:{self._toolBox.OS}")
             import Jetson.GPIO as GPIO
             self.GPIO = GPIO
             self.GPIO.setmode(GPIO.BCM)
@@ -44,7 +44,7 @@ class SonarDevice(Device):
         if control_type == self.control_type:
             print("SonarDevice::getMsg")
             command_type = int(cmd[0])
-            print(f"control:{control_type}, command type:{command_type}, ")
+            print(f"SonarDevice: control:{control_type}, command type:{command_type}, ")
             if command_type == 0:  # 讀取全部參數
                 print("  - set")
                 # 待新增
@@ -64,10 +64,10 @@ class SonarDevice(Device):
                 self.power = cmd[1]
                 if self.power == 1:
                     self.GPIO.output(13, self.GPIO.HIGH)
-                    print("power on")
+                    print("SonarDevice: power on")
                 else:
                     self.GPIO.output(13, self.GPIO.LOW)
-                    print("power off")
+                    print("SonarDevice: power off")
             elif command_type == 7: #power
                 data = struct.pack("<B", self.control_type)
                 data += struct.pack("<B", 7)

@@ -31,6 +31,7 @@ DEVICE_TYPES = {
 
 class DeviceManager(GTool):
 	def __init__(self, toolBox):
+		logging.info(" [ ] DeviceManager: initializing...")
 		super().__init__(toolBox)
 		self.aqua_device = None
 		self.ardusimple_device = None
@@ -57,23 +58,14 @@ class DeviceManager(GTool):
 				if device:
 					self.device_list.append(device)
 
-		# 建立 GPIO 類裝置（例：Sonar）
-		for device in self._createGPIODevice():
-			self.device_list.append(device)
 		
-	def _createGPIODevice(self):
-		"""建立 GPIO 相關的裝置，例如 SonarDevice"""
-		devices = []
-		try:
-			sonar_device = SonarDevice(self._toolBox)
-			devices.append(sonar_device)
-		except Exception as e:
-			logging.error(f"建立 SonarDevice 失敗: {e}")
-		return devices
+
+		logging.info(" [O] DeviceManager: initialized")
+		
 
 	def _scan_devices(self):
 		"""取得所有可能的 serial device 路徑"""
-		patterns = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/ttyAMA*", "/dev/video*"]
+		patterns = ["/dev/ttyACM*", "/dev/ttyUSB*", "/dev/ttyAMA*"]
 		devlist = []
 		for pattern in patterns:
 			devlist.extend(glob.glob(pattern))
@@ -106,21 +98,24 @@ class DeviceManager(GTool):
 
 				if idVendor and idProduct:
 					if (idVendor, idProduct) in DEVICE_TYPES:
-						device = self._deviceFactory(idVendor, idProduct, dev_path)
+						
 						logging.info(
-							f"Device found: {manufacturer}, Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
+							f"  - Device found: Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
 						)
+						device = self._deviceFactory(idVendor, idProduct, dev_path)
 						return device
 					else:
 						logging.info(
-							f"Skip non-supported device: {manufacturer}, Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
+							f"  - Skip non-supported device: Vendor={idVendor}, Product={idProduct}, Path={dev_path}"
 						)
 					break
 
 		except subprocess.CalledProcessError as e:
 			logging.error(f"udevadm failed for {dev_path}: {e}")
+			raise e
 		except Exception as e:
 			logging.exception(f"Unexpected error for {dev_path}: {e}")
+			raise e
 		return None
 
 	def _deviceFactory(self, idVendor, idProduct, dev_path):
@@ -129,12 +124,17 @@ class DeviceManager(GTool):
 
 		# 特殊條件
 		if name == "Pixhawk":
-			if self.SITL_connect or self.Pixhawk_exist:
+			if self.Pixhawk_exist:
+				logging.info("    Skipping duplicated Pixhawk device")
+				return None
+			elif self.SITL_connect:
+				logging.info("    Skipping Pixhawk device due to SITL connection")
 				return None
 		elif name == "ArduSimple" and self.ardusimple_exist:
+			logging.info("    Skipping duplicated ardusimple device")
 			return None
 
-		logging.info(f"Creating {name} device on {dev_path}")
+		logging.info(f"    Creating {name} device on {dev_path}")
 		dev = cls(dev_type, dev_path, self.sensor_group_list, self._toolBox.networkManager)
 
 		if start_loop:
@@ -142,9 +142,10 @@ class DeviceManager(GTool):
 		dev.isOpened = True
 
 		if name == "Pixhawk":
+			self.Pixhawk_exist = True
 			self._toolBox.mavManager.connectVehicle(dev_path)
 			self.device_status[0] = 1  # Flight control connected
-			self.Pixhawk_exist = True
+			
 		elif name == "ArduSimple":
 			self.ardusimple_device = dev
 			self.device_status[1] = 1  # GPS connected

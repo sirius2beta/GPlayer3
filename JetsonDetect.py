@@ -46,7 +46,7 @@ class JetsonDetect(GTool):
             try:
                 self.in_conn.put_nowait(msg_cpy)
             except Exception:
-                print("Warning: failed to enqueue play msg")
+                logging.warning("JetsonDetect: failed to enqueue play msg")
     def stop(self):
         try:
             self.in_conn.put_nowait(["x"])
@@ -59,7 +59,7 @@ class JetsonDetect(GTool):
             try:
                 self.in_conn.put_nowait(msg_cpy)
             except Exception:
-                print("Warning: failed to enqueue play msg")
+                logging.warning("JetsonDetect: failed to enqueue stop msg")
         #self.in_conn.put(["x"])
         self.video_no = -1
     def updateIMU(self, msg): #[pitch, roll]
@@ -75,7 +75,7 @@ class JetsonDetect(GTool):
         self.outputLoop = threading.Thread(target=self.OutputLoop)
         self.outputLoop.daemon = True
         self.outputLoop.start()
-        logging.info("JetsonDetect initialized")
+        logging.info(" [O] JetsonDetect initialized")
 
     def OutputLoop(self): # Thread that send data to the networkmanager
         while True:
@@ -152,10 +152,10 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
                     , True)
 
                 if not cap_send.isOpened():
-                    print('VideoCapture not opened')
+                    logging.error('JetsonDetect: VideoCapture not opened')
                     continue
                 if not out_send.isOpened():
-                    print('VideoWriter not opened')
+                    logging.error('JetsonDetect: VideoWriter not opened')
                     continue
                 playing = True
                 
@@ -181,7 +181,7 @@ def detectTask(os, conn, input): # Thread that read data from oak camera
             
         ret,frame = cap_send.read()
         if not ret:
-            print('JetsonDetect: Error!! empty frame')
+            logging.error('JetsonDetect: empty frame')
             break
         
         results = model.predict(frame, conf=0.5, verbose=False)

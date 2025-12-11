@@ -13,7 +13,6 @@ class Device():
         io_thread = threading.Thread(target = self._io_loop)
         io_thread.daemon = True
         io_thread.start()
-        print("device loop started")
 
     # getter
     def get(self): 

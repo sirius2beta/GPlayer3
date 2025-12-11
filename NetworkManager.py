@@ -28,6 +28,7 @@ SYSTEM   = b'\x09'
 
 class NetworkManager(GTool):
     def __init__(self, toolbox):
+
         super().__init__(toolbox)
 
         # Connection info
@@ -72,11 +73,16 @@ class NetworkManager(GTool):
         }
 
     def startLoop(self):
-        self.thread_cli = threading.Thread(target=self.aliveLoop, daemon=True)
-        self.thread_ser = threading.Thread(target=self.listenLoop, daemon=True)
-        self.thread_cli.start()
-        self.thread_ser.start()
-        logging.info("NetworkManager started")
+        try:
+            self.thread_cli = threading.Thread(target=self.aliveLoop, daemon=True)
+            self.thread_ser = threading.Thread(target=self.listenLoop, daemon=True)
+            self.thread_cli.start()
+            self.thread_ser.start()
+        except Exception as e:
+            logging.error(f" [X] NetworkManager starting failed")
+            raise e
+            return
+        logging.info(" [O] NetworkManager started")
 
     def stopLoop(self):
         self.thread_terminate = True

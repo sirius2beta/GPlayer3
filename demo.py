@@ -5,6 +5,7 @@ import sys
 import os
 import time
 import re
+import logging
 from datetime import datetime
 from GToolBox import GToolBox
 
@@ -67,14 +68,12 @@ if __name__ == '__main__':
 
     warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
 
-    now = datetime.now()
-    logging.info("*********************************")
-    logging.info(f"Program started in: {now}")
-    logging.info("*********************************")
-
     toolBox = GToolBox(0) # initiate all modules
     try:
         while True:
             time.sleep(1)
+    except Exception as e:
+        logging.error(f"{e}")
+        pass
     except KeyboardInterrupt:
         print("Exiting...")

@@ -1,5 +1,5 @@
 import os
-
+import logging
 os.environ['MAVLINK20'] = '1'
 os.environ['MAVLINK_DIALECT'] = 'ardupilotmega'
 
@@ -80,7 +80,7 @@ class MavManager(GTool):
 	def startLoop(self):
 		self.loop.start()
 		self.loop2.start()
-		print("[o] MavManager: started")
+		logging.info(" [O] MavManager: started")
 	def setSensorGroupList(self, sgl):
 		self.sensor_group_list = sgl
 	# connect to Ground Control Station(GCS) with udp
@@ -92,7 +92,7 @@ class MavManager(GTool):
 				self.gcs_conn.close()			
 			self.gcs_conn = mavutil.mavlink_connection(f'udp:{ip}:14450', input=False)
 			self.GCS_connected = True
-			print(f"MavManager: GCS connected to {ip}")
+			logging.info(f" [O] MavManager: GCS connected to {ip}")
 		self.lock.release()
 		
 	# connect to pixhawk board with usb
@@ -102,7 +102,11 @@ class MavManager(GTool):
 		
 		self.vehicle_conn = mavutil.mavlink_connection(dev, baud=57600)
 		self.FC_connected = True
-		
+
+		# wait for heartbeat
+		while not self.vehicle_conn.wait_heartbeat(timeout=5):
+			logging.warning("  [!] MavManager: 飛控無回應...")
+		self.mav_connected = True
 		msg = self.vehicle_conn.mav.request_data_stream_encode(
 			0,
 			0,
@@ -110,9 +114,8 @@ class MavManager(GTool):
 			1, # rate(Hz)
 			1, # Turn on
 		)
-		print("start request data stream")
 		self.vehicle_conn.mav.send(msg)
-		print(f"MavManager: FC connected to {dev}")
+		logging.info(f" [O] MavManager: 飛控已連接於{dev}")
 
 	def loopFunction(self):
 		while True:

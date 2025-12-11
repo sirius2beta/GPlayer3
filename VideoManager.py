@@ -13,29 +13,31 @@ import VideoFormat
 
 class VideoManager(GTool):
 	def __init__(self, toolbox):
-		super().__init__(toolbox)
-		self.sys = 'buster'
+		logging.info(" [ ] VideoManager: initializing...")
+		try:
+			super().__init__(toolbox)
+			self.sys = 'buster'
+			
+			# pipeline 管理：key=cam index, value=dict
+			self.pipelines = {}  # { cam: {"pipeline": Gst.Pipeline, "state": bool, "port": int, "encoder": str} }
+			self.camera_format = []
+			self.videoFormatList = {}
+			self.videoWithYUYV = []
+			self.ai_cam = -1
+			self.seagrass_cam = -1
+			self.seagrass_cam_format = None
+			self.portOccupied = {}  # {port: cam}
+			
 
+			self.get_video_format_generic()
 
-		# pipeline 管理：key=cam index, value=dict
-		self.pipelines = {}  # { cam: {"pipeline": Gst.Pipeline, "state": bool, "port": int, "encoder": str} }
-		self.camera_format = []
-		self.videoFormatList = {}
-		self.videoWithYUYV = []
-		self.ai_cam = -1
-		self.seagrass_cam = -1
-		self.seagrass_cam_format = None
-		self.portOccupied = {}  # {port: cam}
-		
-
-		self.get_video_format_generic()
-
-		self.portOccupied = {} # {port, videoNo}
-
-		GObject.threads_init()
-		Gst.init(None)
-
-		print(" [O] VideoManager: started")
+			self.portOccupied = {} # {port, videoNo}
+			GObject.threads_init()
+			Gst.init(None)
+		except Exception as e:
+			logging.error(f" [X] VideoManager initialization error: {e}")
+			return
+		logging.info(" [O] VideoManager initialized")
 
 	def getFormatInfoByIndex(self, formatIndex):
 		formatMap = {
@@ -59,7 +61,7 @@ class VideoManager(GTool):
 		"""掃描 /dev/video*，只保留 MJPEG>YUYV，h264 不加入"""
 		devices = sorted(glob.glob("/dev/video*"))
 		if not devices:
-			print("[x] no video devices found")
+			print("no video devices found")
 			return
 
 		for dev in devices:
@@ -94,8 +96,10 @@ class VideoManager(GTool):
 						fps = 30
 						key = (w, h, fps)
 						all_formats.append((fmt, w, h, fps	))
-			logging.info(f"video{cam} formats: {all_formats}")
+			if all_formats != []:
+				logging.info(f"  - video{cam} formats: {all_formats}")
 			self.pipelines[cam]["formats"] = all_formats
+
 	def getMJPGFrameRate(self, cam, width=None, height=None):
 		"""
 		從系統抓出 cam 支援的 YUYV 格式最高 fps。
