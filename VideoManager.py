@@ -35,7 +35,7 @@ class VideoManager(GTool):
 		GObject.threads_init()
 		Gst.init(None)
 
-		print("[o] VideoManager: started")
+		print(" [O] VideoManager: started")
 
 	def getFormatInfoByIndex(self, formatIndex):
 		formatMap = {

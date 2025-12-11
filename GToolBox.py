@@ -45,7 +45,7 @@ class GToolBox:
 		self.mav_conn, self.child_conn = multiprocessing.Pipe() # Pipe for modules with multiprocess
 
 		# Initialize all modules here
-		logging.info("GPlayer initializing...")
+		logging.info("Modules initializing...")
 		self.networkManager = NetworkManager(self)
 		self.mavManager = MavManager(self)
 		# need to set sensorgrouplist before DeviceManager started, which let sensor message of pixhawk come in
@@ -56,17 +56,10 @@ class GToolBox:
 		self.dataLogger = DataLogger(self)
 		
 		if self.OS != "buster":
-			logging.info("Starting SeagrassDetect and JetsonDetect in parallel...")
 
-			with concurrent.futures.ThreadPoolExecutor() as executor:
-				seagrass_future = executor.submit(load_seagrass_detect, self)
-				jetson_future = executor.submit(load_jetson_detect, self)
 
-				seagrassDetect = seagrass_future.result()
-				jetsonDetect = jetson_future.result()
-
-			self.seagrassDetect = seagrassDetect # add to toolbox
-			self.jetsonDetect = jetsonDetect # add to toolbox
+			self.seagrassDetect = load_seagrass_detect(self) # add to toolbox
+			self.jetsonDetect = load_jetson_detect(self) # add to toolbox
 			self.jetsonDetect.startLoop() # start the JetsonDetect loop
 			self.seagrassDetect.startLoop() # start the SeagrassDetect loop
 

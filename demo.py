@@ -15,7 +15,6 @@ log_directory = os.path.expanduser(log_folder_path)       # 設定log存放路�
 if(not os.path.exists(log_directory)):                         # 如果路徑不存在，則建立
     os.makedirs(log_directory)                                 # 建立路徑
 
-
 # 找出所有 log_xxxxxxxx.csv 檔案
 existing_files = [f for f in os.listdir(log_directory) if f.startswith("log_") and f.endswith(".txt")]
 
@@ -29,7 +28,7 @@ for f in existing_files:
 # 取最大值 + 1，如果沒有檔案就從 1 開始
 file_index = max(indices) + 1 if indices else 1
 
-# 檔名格式：log_00000001.csv
+# 檔名格式：log_00000001.txt
 file_name = f"log_{file_index:08d}.txt"
 
 
@@ -68,7 +67,6 @@ if __name__ == '__main__':
 
     warnings.filterwarnings("ignore", category=UserWarning, module="numpy")
 
-    logging.info("GPlayer initialized successfully.")
     now = datetime.now()
     logging.info("*********************************")
     logging.info(f"Program started in: {now}")
