@@ -35,7 +35,7 @@ class SuperTaiRaDevice(Device):
             try:
                 data = b'\x55\x54\x53\x00\x01\x02'
                 self.ser.write(data)
-                print(f"send:{data}")
+                # print(f"send:{data}")
                 # logging.info(f"send:{data}")
             except Exception as e:
                 logging.error(f"Taira:{e}")
