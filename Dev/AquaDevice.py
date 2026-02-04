@@ -79,7 +79,7 @@ class AquaDevice(Device):
                         except Exception as e:
                             #logging.info(f"{i}:{e}")
                             continue
-                else:
+                    self._toolBox.DataLogger.aqua_data = self.data_list # store the data in the DataLogger
                     data = self.send(command = self.command_set[3]) # send command to device
                     try:
                         value = data[3] + data[4] + data[5] + data[6] # get the value

@@ -78,11 +78,7 @@ class DataLogger(GTool):
         except Exception as e:
             print(f'DataLogger exception: MAV_data: msg:{e}')
         
-        try:
-            if self._toolBox.deviceManager.aqua_device is not None:
-                aqua_data = self._toolBox.deviceManager.aqua_device.get_aqua_data()
-        except Exception as e:
-            print(f'DataLogger exception: Aqua_data: msg:{e}')
+        # we don't access aqua_data directly, get from AquaDevice
         
         try:
             if self._toolBox.deviceManager.ardusimple_device is not None:
