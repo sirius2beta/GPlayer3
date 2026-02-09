@@ -6,7 +6,6 @@ from concurrent.futures import ThreadPoolExecutor
 from GTool import GTool
 from Dev.Device import Device
 from Dev.TestDevice import TestDevice
-from Dev.AquaDevice import AquaDevice
 from Dev.RS485Device import RS485Device
 from Dev.WinchDevice import WinchDevice
 from Dev.ArduSimpleDevice import ArduSimpleDevice
@@ -19,7 +18,6 @@ DEVICE_TYPES = {
 	("1d6b", "0002"): ("Winch", WinchDevice, 2, True),
 	("0bda", "5489"): ("Winch", WinchDevice, 2, True),
 	("1a86", "7523"): ("RS485Device", RS485Device, 2, True),
-	("0403", "6001"): ("Aqua", AquaDevice, 7, True),
 	("10c4", "ea60"): ("NodeMCU", Device, 3, True),
 	("067b", "2303"): ("RS485", RS485Device, 4, True),
 	("2341", "8037"): ("Arduino", WinchDevice, 5, True),
