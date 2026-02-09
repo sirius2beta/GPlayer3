@@ -156,6 +156,7 @@ class DeviceManager(GTool):
 		elif name == "RS485Device":
 			self.winch_device = dev
 			self.aqua_device = dev  # RS485Device 也負責 Aqua 功能
+			dev.setToolBox(self._toolBox)  # 傳遞 toolBox 給 RS485Device
 			self.device_status[2] = 1  # Winch connected
 		elif name == "SuperTaiRa":
 			self.super_taira_device = dev

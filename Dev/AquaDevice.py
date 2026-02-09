@@ -45,6 +45,7 @@ class AquaDevice(Device):
         self.read_all = True # If read_all as False, only read depth data.
         self.ser = serial.Serial(port = self.dev_path, baudrate = 19200, bytesize = 8, parity = 'E', stopbits = 1, timeout = 1)
         threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
+        logging.info("AquaDevice: Connected to Aqua device.") 
     
     def get_aqua_data(self):
         return self.data_list
@@ -60,7 +61,7 @@ class AquaDevice(Device):
             self.status_code = 1
         else:
             self.status_code = 2
-        #logging.info(f"response:{response}")
+        logging.info(f"response:{response}")
         return response 
 
     def reader(self): # read data from the device and store it in the data_list.
@@ -77,7 +78,7 @@ class AquaDevice(Device):
                             value = struct.unpack('>f', bytes.fromhex(value))[0] # convert hex to float
                             self.data_list[i] = value # store the value
                         except Exception as e:
-                            #logging.info(f"{i}:{e}")
+                            logging.info(f"{i}:{e}")
                             continue
                     self._toolBox.DataLogger.aqua_data = self.data_list # store the data in the DataLogger
                     data = self.send(command = self.command_set[3]) # send command to device

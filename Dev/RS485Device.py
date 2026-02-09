@@ -4,6 +4,7 @@ from pymodbus.client import ModbusSerialClient
 from pymodbus.exceptions import ModbusException
 import struct
 import logging
+import threading
 
 from Dev.Device import Device
 from config import Config as CF
@@ -33,10 +34,17 @@ class RS485Device(Device):
             self.isSerialInit = True
             self.sonarPWR = 0
             self.status_code = 1
+
+            self.aqua_data = [0.0] * 21
+            
+            logging.info("RS485Device: Connected to RS485 device.") 
         except Exception as e:
             logging.info(f"   [X] RS485Device failed to start")
             raise e
         logging.info("   [O] RS485Device initialized")
+    def setToolBox(self, toolBox):
+        self._toolBox = toolBox
+        threading.Thread(target = self.reader, daemon = True).start() # start the reader thread
     def close(self):
         self.client.close()
     
@@ -181,11 +189,14 @@ class RS485Device(Device):
                     combined = (high << 16) | low
                     float_value = struct.unpack('>f', struct.pack('>I', combined))[0]
                     aqua_data.append(float_value)
+                    self.aqua_data[i//2] = float_value # store the data in the aqua_data list
                     #save to sensor group 1
                     if i//2 < len(self.sensor_group_list[1].get_all()):
                         self.sensor_group_list[1].get_sensor(i//2).data = float_value
-                self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager 
-                #logging.info(f"[Node2] Aqua Data: {aqua_data}")
+                self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager
+                    
+                
+                logging.info(f"[Node2] Aqua Data: {aqua_data}")
                 self.status_code = 2
                 return aqua_data
         except ModbusException as e:
@@ -317,3 +328,7 @@ class RS485Device(Device):
                 self.getStatus()
                 time.sleep(0.2)
                 
+    def reader(self): # read data from the device and store it in the data_list.
+        while True:
+            self.get_aqua_data()
+            time.sleep(1)

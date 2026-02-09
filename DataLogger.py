@@ -130,29 +130,28 @@ class DataLogger(GTool):
             self.log_data.geoid_separation = self._toolBox.deviceManager.ardusimple_device.undulation
 
 
-
             # Aqua Data
-            self.log_data.temperature = aqua_data[0]                         # 1. 水溫
-            self.log_data.pressure = aqua_data[1]                            # 2. 壓力
-            self.log_data.aqua_depth = aqua_data[2]                          # 3. 深度
-            self.log_data.level_depth_to_water = aqua_data[3]                # 4. 水位深度
-            self.log_data.level_surface_elevation = aqua_data[4]             # 5. 表面高程
-            self.log_data.actual_conductivity = aqua_data[5]                 # 6. 實際導電率
-            self.log_data.specific_conductivity = aqua_data[6]               # 7. 特定導電率
-            self.log_data.resistivity = aqua_data[7]                         # 8. 電阻率
-            self.log_data.salinity = aqua_data[8]                            # 9. 鹽度
-            self.log_data.total_dissolved_solids = aqua_data[9]              # 10. 總溶解固體
-            self.log_data.density_of_water = aqua_data[10]                   # 11. 水密度
-            self.log_data.barometric_pressure = aqua_data[11]                # 12. 大氣壓力
-            self.log_data.ph = aqua_data[12]                                 # 13. pH 值
-            self.log_data.ph_mv = aqua_data[13]                              # 14. pH 毫伏
-            self.log_data.orp = aqua_data[14]                                # 15. 氧化還原電位 (ORP)
-            self.log_data.dissolved_oxygen_concentration = aqua_data[15]     # 16. 溶解氧濃度
-            self.log_data.dissolved_oxygen_saturation = aqua_data[16]        # 17. 溶解氧飽和度百分比
-            self.log_data.turbidity = aqua_data[17]                          # 18. 濁度
-            self.log_data.oxygen_partial_pressure = aqua_data[18]            # 19. 氧分壓
-            self.log_data.external_voltage = aqua_data[19]                   # 20. 外部電壓
-            self.log_data.battery_capacity_remaining = aqua_data[20]         # 21. 電池剩餘容量
+            self.log_data.temperature = self._toolBox.deviceManager.aqua_device.aqua_data[0]                         # 1. 水溫
+            self.log_data.pressure = self._toolBox.deviceManager.aqua_device.aqua_data[1]                            # 2. 壓力
+            self.log_data.aqua_depth = self._toolBox.deviceManager.aqua_device.aqua_data[2]                          # 3. 深度
+            self.log_data.level_depth_to_water = self._toolBox.deviceManager.aqua_device.aqua_data[3]                # 4. 水位深度
+            self.log_data.level_surface_elevation = self._toolBox.deviceManager.aqua_device.aqua_data[4]             # 5. 表面高程
+            self.log_data.actual_conductivity = self._toolBox.deviceManager.aqua_device.aqua_data[5]                 # 6. 實際導電率
+            self.log_data.specific_conductivity = self._toolBox.deviceManager.aqua_device.aqua_data[6]               # 7. 特定導電率
+            self.log_data.resistivity = self._toolBox.deviceManager.aqua_device.aqua_data[7]                         # 8. 電阻率
+            self.log_data.salinity = self._toolBox.deviceManager.aqua_device.aqua_data[8]                            # 9. 鹽度
+            self.log_data.total_dissolved_solids = self._toolBox.deviceManager.aqua_device.aqua_data[9]              # 10. 總溶解固體
+            self.log_data.density_of_water = self._toolBox.deviceManager.aqua_device.aqua_data[10]                   # 11. 水密度
+            self.log_data.barometric_pressure = self._toolBox.deviceManager.aqua_device.aqua_data[11]                # 12. 大氣壓力
+            self.log_data.ph = self._toolBox.deviceManager.aqua_device.aqua_data[12]                                 # 13. pH 值
+            self.log_data.ph_mv = self._toolBox.deviceManager.aqua_device.aqua_data[13]                              # 14. pH 毫伏
+            self.log_data.orp = self._toolBox.deviceManager.aqua_device.aqua_data[14]                                # 15. 氧化還原電位 (ORP)
+            self.log_data.dissolved_oxygen_concentration = self._toolBox.deviceManager.aqua_device.aqua_data[15]     # 16. 溶解氧濃度
+            self.log_data.dissolved_oxygen_saturation = self._toolBox.deviceManager.aqua_device.aqua_data[16]        # 17. 溶解氧飽和度百分比
+            self.log_data.turbidity = self._toolBox.deviceManager.aqua_device.aqua_data[17]                          # 18. 濁度
+            self.log_data.oxygen_partial_pressure = self._toolBox.deviceManager.aqua_device.aqua_data[18]            # 19. 氧分壓
+            self.log_data.external_voltage = self._toolBox.deviceManager.aqua_device.aqua_data[19]                   # 20. 外部電壓
+            self.log_data.battery_capacity_remaining = self._toolBox.deviceManager.aqua_device.aqua_data[20]         # 21. 電池剩餘容量
 
             self.log_data.kbest_boat_rssi = kbest_boat_rssi            # Kbest-船載接收訊號強度指標
             self.log_data.kbest_ground_rssi = kbest_ground_rssi            # Kbest-基站接收訊
