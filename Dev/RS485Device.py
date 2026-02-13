@@ -166,7 +166,7 @@ class RS485Device(Device):
                 self.networkManager.sendMsg(b'\x05', data)
                 
                 return tension, step
-        except ModbusException as e:
+        except Exception as e:
             logging.info(f"RS485Device: [Node2] Get Status failed: {e}")
             self.node2Connected = False
         return None
@@ -195,8 +195,8 @@ class RS485Device(Device):
                         self.sensor_group_list[1].get_sensor(i//2).data = float_value
                 self.networkManager.sendMsg(SENSOR, self.sensor_group_list[1].pack()) # send the data to the network manager
                     
-                
-                logging.info(f"[Node2] Aqua Data: {aqua_data}")
+                # for debug
+                #logging.info(f"[Node2] Aqua Data: {aqua_data}")
                 self.status_code = 2
                 return aqua_data
         except ModbusException as e:
