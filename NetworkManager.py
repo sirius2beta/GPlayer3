@@ -189,6 +189,7 @@ class NetworkManager(GTool):
             self.sendMsg(FORMAT, msg)
 
     def handleCommand(self, data, addr):
+        logging.info(f"COMMAND packet received, from {addr}")
         self._toolBox.videoManager.handleMsg(data, addr)
 
     def handleSensor(self, data, addr):

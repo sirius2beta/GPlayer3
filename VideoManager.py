@@ -316,7 +316,7 @@ class VideoManager(GTool):
 
 		# 生成 GStreamer 指令
 		gstring = VideoFormat.getFormatCMD(self._toolBox.OS, cam, fmtFound, width, height, fps, encoder, IP, port)
-		print(f"[Pipeline] cam={cam}, port={port}, encoder={encoder}")
+		print(f"[Pipeline] cam={cam}, port={port}, encoder={encoder}, addr={IP}")
 		print(gstring)
 
 		# 釋放被占用的 port
@@ -355,6 +355,7 @@ class VideoManager(GTool):
 				return
 
 		# 一般播放
+		print(gstring)
 		pipeline = self._create_pipeline(cam, gstring, port, encoder)
 		self._start_pipeline(cam)
 		self.portOccupied[port] = cam
@@ -470,5 +471,5 @@ class VideoManager(GTool):
 
 		# 3. 呼叫新版 play()
 		self.play(videoNo, width, height, fps, encoder, ip, port, ai_enabled)
-		logging.info(f"handleSetFormat: video{videoNo} {fmtFound} {width}x{height}@{fps} encoder={encoder}, ai={ai_enabled}")
+		logging.info(f"handleSetFormat: video{videoNo} {fmtFound} {width}x{height}@{fps} encoder={encoder}, ip={ip}, ai={ai_enabled}")
 
