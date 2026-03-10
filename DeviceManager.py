@@ -50,13 +50,12 @@ class DeviceManager(GTool):
 		# 掃描 USB 裝置
 		devlist = self._scan_devices()
 
-		# 平行檢查 USB 裝置並建立物件
-		with ThreadPoolExecutor() as executor:
-			for device in executor.map(self._inspect_device, devlist):
-				if device:
-					self.device_list.append(device)
+		# 取消平行檢查 USB 裝置並建立物件
+		for dev in devlist:
+			device = self._inspect_device(dev)
+			if device:
+				self.device_list.append(device)
 
-		
 
 		logging.info(" [O] DeviceManager: initialized")
 		
@@ -145,9 +144,13 @@ class DeviceManager(GTool):
 			self.device_status[0] = 1  # Flight control connected
 			
 		elif name == "ArduSimple":
-			self.ardusimple_device = dev
-			self.device_status[1] = 1  # GPS connected
-			#self.ardusimple_exist = True
+			if self.ardusimple_exist:
+				logging.info("    Skipping duplicated ArduSimple device")
+				
+			else:
+				self.ardusimple_device = dev
+				self.device_status[1] = 1  # GPS connected
+				self.ardusimple_exist = True
 		elif name == "Aqua":
 			self.aqua_device = dev
 			self.device_status[3] = 1  # Aqua connected

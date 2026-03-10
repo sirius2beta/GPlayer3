@@ -33,7 +33,7 @@ def position_accuracy(cov_latlat, cov_lonlon, cov_heightheight):
 
 class ArduSimpleDevice(Device):           
     def __init__(self, device_type, dev_path="", sensor_group_list = [], networkManager = None):
-        super().__init__(device_type, dev_path, sensor_group_list, networkManager)
+        super().__init__(device_type, "/dev/sensors/gps_data", sensor_group_list, networkManager)
         
         # [message_id, utc_position_fix, rms_pseudorange_residual, semi_major_error, semi_minor_error, ellipse_orientation, lat_acc, lon_acc, alt_acc, checksum]
         self.GST_list = [None, None, None, None, None, None, None, None, None, None]
@@ -118,7 +118,7 @@ class ArduSimpleDevice(Device):
                         #print(f"  Tilt: {msg.tilt:.2f}°, Heading: {msg.yaw:.2f}°")
                     elif msg.identity == 'GPRMC':
                         self.speed = msg.spd
-                        #print(f"  Speed: {msg.spd:.2f}")
+                        print(f"  Speed: {msg.spd}")
                     else:
                         #print("其他 SBF 訊息類型:", msg.identity)
                         pass
