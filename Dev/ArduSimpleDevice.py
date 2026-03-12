@@ -115,10 +115,10 @@ class ArduSimpleDevice(Device):
                     elif msg.identity == 'PTNLAVR':
                         self.tilt = msg.tilt
                         self.yaw = msg.yaw
-                        #print(f"  Tilt: {msg.tilt:.2f}°, Heading: {msg.yaw:.2f}°")
+                        #print(f"  Tilt: {msg.tilt}°, Heading: {msg.yaw}°")
                     elif msg.identity == 'GPRMC':
                         self.speed = msg.spd
-                        print(f"  Speed: {msg.spd}")
+                        #print(f"  Speed: {msg.spd}")
                     else:
                         #print("其他 SBF 訊息類型:", msg.identity)
                         pass
