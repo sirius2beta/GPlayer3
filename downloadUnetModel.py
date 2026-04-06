@@ -3,6 +3,16 @@ import torch
 from torch2trt import torch2trt
 from unet.unet import Unet
 
+# 節省空間
+# sudo systemctl isolate multi-user.target
+# sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+
+# 查看空間運用
+# watch -n 0.5 free -h
+
+# best model
+https://drive.google.com/file/d/13WE7yi_qX41LSE5gqqSUjUpBUGsTcZJu/view?usp=drive_link
+
 def download_model(drive_url, model_path):
     """從 Google Drive 下載模型（支援 fuzzy 模式）"""
     try:
@@ -52,9 +62,13 @@ if isinstance(model.net, torch.nn.DataParallel):
     model.net = model.net.module
 
 dummy_input = torch.randn(1, 3, 512, 512).cuda()
+import gc
 
+# 在轉換前執行
+gc.collect()
+torch.cuda.empty_cache()
 print("轉換為 TensorRT 中，請稍候...")
-model.net = torch2trt(model.net, [dummy_input], fp16_mode=True)
+model.net = torch2trt(model.net, [dummy_input], fp16_mode=True, max_workspace_size=1 << 28)
 print("TensorRT 模型轉換完成")
 
 save_path = os.path.join(model_dir, "seagrass_model_resnet50_trt.pth")
